@@ -1,9 +1,9 @@
 <?php
-require_once '../../core/Database.php';
-require_once '../../config/config.php';
-require_once __DIR__ . '../../partials/sidebar.php';
-require_once __DIR__ . '../../partials/navbar.php';
-require_once '../helpers/authCheck.php';
+require_once __DIR__ . '/../../core/Database.php';
+require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../partials/sidebar.php';
+require_once __DIR__ . '/../partials/navbar.php';
+require_once __DIR__ . '/../helpers/authCheck.php';
 ?>
 
 <!DOCTYPE html>
@@ -235,14 +235,6 @@ require_once '../helpers/authCheck.php';
             loadStatistics();
         });
     </script>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            loadTypeCategories();
-            loadStatistics(); // بدون فلترة = نفس النتائج القديمة
-        });
-    </script>
-
 
 </body>
 

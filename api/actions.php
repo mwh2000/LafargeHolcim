@@ -6,7 +6,7 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
 
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../core/Database.php';
-require_once __DIR__ . '/../controllers/ActionController.php';
+require_once __DIR__ . '/../controllers/actionController.php';
 require_once __DIR__ . '/../middlewares/AuthMiddleware.php';
 
 // ✅ تحميل إعدادات المشروع
