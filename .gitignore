@@ -1,0 +1,7 @@
+.env
+core/Database.php
+core/cors.php
+config/config.php
+config/firebase-service-account.json
+vendor/
+index.html

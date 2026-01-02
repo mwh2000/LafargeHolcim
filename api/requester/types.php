@@ -1,0 +1,53 @@
+<?php
+header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../core/Database.php';
+require_once __DIR__ . '/../../core/ApiResponseTrait.php';
+require_once __DIR__ . '/../../controllers/typesController.php';
+require_once __DIR__ . '/../../middlewares/AuthMiddleware.php';
+
+$config = require __DIR__ . '/../../config/config.php';
+
+try {
+    // الاتصال بقاعدة البيانات
+    $db = new Database($config['db']);
+    $conn = $db->getConnection();
+
+    // تهيئة الكنترولر والـ Middleware
+    $auth = new AuthMiddleware();
+    $decoded = $auth->verifyToken();
+    $auth->requireRoles($decoded, ['requester']);
+
+    $controller = new TypesController($conn);
+
+    // تحديد نوع الطلب
+    $method = $_SERVER['REQUEST_METHOD'];
+
+    switch ($method) {
+        /** ✅ Get all (with search & pagination) */
+        case 'GET':
+            if (isset($_GET['id'])) {
+                $controller->getById((int) $_GET['id']);
+            } else {
+                $filters = [
+                    'search' => $_GET['search'] ?? null,
+                    'limit' => $_GET['limit'] ?? null,
+                    'offset' => $_GET['offset'] ?? null
+                ];
+                $controller->getAll($filters);
+            }
+            break;
+        /** ❌ Unsupported method */
+        default:
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);
+            break;
+    }
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Server Error',
+        'error' => $e->getMessage()
+    ]);
+}
