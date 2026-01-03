@@ -2,8 +2,8 @@
 require_once '../core/Database.php';
 require_once '../config/config.php';
 
-require_once __DIR__ . '../partials/sidebar.php';
-require_once __DIR__ . '../partials/navbar.php';
+require_once __DIR__ . '/partials/sidebar.php';
+require_once __DIR__ . '/partials/navbar.php';
 
 require_once 'helpers/authCheck.php';
 

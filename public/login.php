@@ -135,8 +135,6 @@ require_once __DIR__ . '/../config/config.php';
     <img src="images/logo.png" alt="Logo" style="max-width:210px;" />
 
     <h3 style="color: #0b6f76">Strong Leadear Ship Visibality</h3>
-    <p>You are now entering the first step in the Digitalization World of
-      reserving mobile equipment</p>
 
     <form id="loginForm">
       <div class="input-field">

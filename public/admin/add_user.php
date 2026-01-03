@@ -65,13 +65,6 @@ require_once '../helpers/authCheck.php';
                                 class="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0b6f76] transition" />
                         </div>
 
-                        <!-- Phone -->
-                        <div class="flex flex-col">
-                            <label for="Phone" class="text-sm text-gray-600 mb-1">Phone</label>
-                            <input id="Phone" type="tel"
-                                class="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0b6f76] transition" />
-                        </div>
-
                         <!-- Department -->
                         <div class="flex flex-col">
                             <label for="Department" class="text-sm text-gray-600 mb-1">Department</label>
@@ -216,7 +209,6 @@ require_once '../helpers/authCheck.php';
                 name: document.getElementById("Name").value.trim(),
                 email: document.getElementById("Email").value.trim(),
                 password: document.getElementById("Password").value.trim(),
-                phone: document.getElementById("Phone").value.trim(),
                 department: document.getElementById("Department").value.trim(),
                 manager_id: document.getElementById("manager").value.trim(),
                 role_id: document.getElementById("role").value,
