@@ -25,7 +25,7 @@ require_once '../helpers/authCheck.php';
 <body class="bg-gray-50">
 
     <!-- ✅ Layout -->
-    <?php renderNavbar('New Report', '/public/manager.php'); ?>
+    <?php renderNavbar('New Report', '/public/notifications.php'); ?>
     <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]">
         <?php renderSidebar('create_action'); ?>
 

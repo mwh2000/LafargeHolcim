@@ -46,7 +46,14 @@ class ActionController
             $data['created_by']
         ]);
 
-        return $this->respond(true, 'Action created successfully', ['id' => $this->conn->lastInsertId()], null, 201);
+        return [
+            'success' => true,
+            'message' => 'Action created successfully',
+            'data' => [
+                'id' => $this->conn->lastInsertId(),
+                'assigned_user_id' => $data['assigned_user_id']
+            ]
+        ];
     }
 
 

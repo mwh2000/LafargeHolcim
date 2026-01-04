@@ -24,9 +24,9 @@ require_once 'helpers/authCheck.php';
 
 <body>
 
-    <?php renderNavbar('Action', '/public/manager.php'); ?>
+    <?php renderNavbar('Action', '/public/notifications.php'); ?>
     <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]">
-        <?php renderSidebar('users'); ?>
+        <?php renderSidebar('dashboard'); ?>
 
         <!-- ✅ Main Content -->
         <div class="flex-1 flex flex-col sm:ml-64 transition-all">

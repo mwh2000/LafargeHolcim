@@ -20,7 +20,7 @@ require_once __DIR__ . '/../helpers/authCheck.php';
 </head>
 
 <body>
-    <?php renderNavbar('Dashboard', '/public/manager.php'); ?>
+    <?php renderNavbar('Dashboard', '/public/notifications.php'); ?>
     <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]">
         <?php renderSidebar('dashboard'); ?>
 

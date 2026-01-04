@@ -7,7 +7,7 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../core/Database.php';
 require_once __DIR__ . '/../../core/JWTHandler.php';
-require_once __DIR__ . '/../../controllers/UserController.php';
+require_once __DIR__ . '/../../controllers/userController.php';
 require_once __DIR__ . '/../../middlewares/AuthMiddleware.php';
 
 $config = require __DIR__ . '/../../config/config.php';
