@@ -199,9 +199,9 @@ require_once __DIR__ . '/../config/config.php';
           });
 
           setTimeout(() => {
-            if (user.role_id == 1) window.location.href = "admin/dashboard.php";
-            else if (user.role_id == 2) window.location.href = "requester/actions_assigned_to_me.php";
-            else if (user.role_id == 3) window.location.href = "executer.php";
+            if (user.role_id == 1) window.location.href = "dashboard.php";
+            else if (user.role_id == 2) window.location.href = "dashboard.php";
+            else if (user.role_id == 3) window.location.href = "dashboard.php";
             else window.location.href = "login.php";
           }, 1200);
 

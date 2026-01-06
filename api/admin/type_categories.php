@@ -16,7 +16,7 @@ try {
     // تهيئة الكنترولر والـ Middleware
     $auth = new AuthMiddleware();
     $decoded = $auth->verifyToken(); // يتحقق من التوكن
-    $auth->requireAdmin($decoded);   // يسمح فقط للـ Admin / Super Admin
+    // $auth->requireAdmin($decoded);   // يسمح فقط للـ Admin / Super Admin
 
     $controller = new TypeCategoriesController($conn);
 

@@ -28,6 +28,10 @@ try {
         case 'GET':
             $auth = new AuthMiddleware();
             $decoded = $auth->verifyToken();
+            $filters = array_merge(
+                $_GET ?? [],
+                $_POST ?? []
+            );
 
             // ✅ جلب إجراء محدد بالـ ID
             if (isset($_GET['id'])) {
@@ -37,7 +41,7 @@ try {
 
             // ✅ جلب الإجراءات المسندة للمستخدم
             if ($action === 'assigned_to_me') {
-                $controller->getAssignedToMe($user_id, []);
+                $controller->getAssignedToMe($user_id, $filters);
                 break;
             }
 
@@ -48,18 +52,15 @@ try {
             }
 
             if ($action === 'getStatistics') {
-                $auth->requireRoles($decoded, ['admin']);
-                $filters = array_merge(
-                    $_GET ?? [],
-                    $_POST ?? []
-                );
+                // $auth->requireRoles($decoded, ['admin']);
+                $filters = $_GET ?? [];
 
                 $controller->getStatistics($filters);
                 break;
             }
 
             // ✅ الافتراضي: كل الإجراءات
-            $controller->getAll([]);
+            $controller->getAll($filters);
             break;
 
         case 'PUT':

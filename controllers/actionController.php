@@ -162,7 +162,7 @@ class ActionController
     {
         $query = "
             SELECT 
-                a.id, a.title, a.description, a.expiry_date, a.image, a.attachment, a.created_at,
+                a.id, a.status, a.description, a.expiry_date, a.image, a.attachment, a.created_at,
                 t.name AS type_name,
                 u.name AS assigned_user_name
             FROM actions a
@@ -189,6 +189,18 @@ class ActionController
         if (!empty($filters['assigned_user_id'])) {
             $query .= " AND a.assigned_user_id = ?";
             $params[] = (int) $filters['assigned_user_id'];
+        }
+
+        if (isset($filters['status']) && $filters['status'] !== '') {
+
+            if ($filters['status'] === 'overdue') {
+                $query .= " AND a.status = 'open' AND a.expiry_date < CURDATE()";
+            } elseif ($filters['status'] === 'open') {
+                $query .= " AND a.status = 'open' AND a.expiry_date > CURDATE()";
+            } else {
+                $query .= " AND a.status = ?";
+                $params[] = $filters['status'];
+            }
         }
 
         // Pagination
@@ -300,6 +312,18 @@ class ActionController
             $params[] = (int) $filters['type_id'];
         }
 
+        if (isset($filters['status']) && $filters['status'] !== '') {
+
+            if ($filters['status'] === 'overdue') {
+                $query .= " AND a.status = 'open' AND a.expiry_date < CURDATE()";
+            } elseif ($filters['status'] === 'open') {
+                $query .= " AND a.status = 'open' AND a.expiry_date > CURDATE()";
+            } else {
+                $query .= " AND a.status = ?";
+                $params[] = $filters['status'];
+            }
+        }
+
         // Pagination
         $limit = isset($filters['limit']) ? (int) $filters['limit'] : 20;
         $offset = isset($filters['offset']) ? (int) $filters['offset'] : 0;
@@ -339,13 +363,18 @@ class ActionController
             $params[':to_date'] = $filters['to_date'] . " 23:59:59";
         }
 
-        // فلترة حسب تصنيف النوع (type category)
+        // فلترة حسب تصنيف النوع
         if (!empty($filters['type_category_id'])) {
             $baseConditions[] = "tc.id = :type_category_id";
             $params[':type_category_id'] = (int) $filters['type_category_id'];
         }
 
-        // شرط إضافي فقط إذا توجد فلترة
+        // ✅ فلترة حسب المستخدم المسند له الأكشن (اختياري)
+        if (!empty($filters['assigned_user_id'])) {
+            $baseConditions[] = "a.assigned_user_id = :assigned_user_id";
+            $params[':assigned_user_id'] = (int) $filters['assigned_user_id'];
+        }
+
         $baseWhere = $baseConditions
             ? " AND " . implode(" AND ", $baseConditions)
             : "";
@@ -405,7 +434,7 @@ class ActionController
         LEFT JOIN types t ON a.type_id = t.id
         LEFT JOIN type_categories tc ON t.category_id = tc.id
         WHERE a.status = 'open'
-          AND a.expiry_date < NOW()
+          AND a.expiry_date < CURDATE()
         $baseWhere
     ";
         $stmt = $this->conn->prepare($overdueSql);
@@ -442,6 +471,7 @@ class ActionController
             'actions_by_type' => $typeStats
         ]);
     }
+
 
 
 

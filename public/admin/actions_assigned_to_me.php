@@ -26,7 +26,7 @@ require_once '../helpers/authCheck.php';
 <body class="bg-gray-50">
 
     <!-- ✅ Layout -->
-    <?php renderNavbar('Actions', '/public/notifications.php'); ?>
+    <?php renderNavbar('Actions', '/public/manager.php'); ?>
     <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]">
         <?php renderSidebar('actions_assigned_to_me'); ?>
 
@@ -63,8 +63,6 @@ require_once '../helpers/authCheck.php';
         const TOKEN = "<?= $_SESSION['token'] ?? '' ?>";
         const user_id = "<?= $_SESSION['id'] ?? '' ?>";
         const BASE_API = `../../api/actions.php?action=assigned_to_me&user_id=${user_id}`;
-
-        console.log(TOKEN)
 
         async function fetchActions() {
             // تجهيز URL parameters
