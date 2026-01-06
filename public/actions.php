@@ -65,17 +65,17 @@ require_once 'helpers/authCheck.php';
         /* ================= AUTH ================= */
         const TOKEN = "<?= $_SESSION['token'] ?? '' ?>";
         const USER_ID = "<?= $_SESSION['id'] ?? '' ?>";
-        const USER_ROLE = "<?= $_SESSION['role_id'] ?? '2' ?>"; // 1 = admin
-        const IS_ADMIN = USER_ROLE == 1;
+        const USER_ROLE = "<?= $_SESSION['user_type'] ?? '2' ?>"; // 1 = admin
+        const IS_ADMIN = Number(USER_ROLE) === 1;
 
         /* ================= BASE API ================= */
         function getBaseApi() {
-            // Admin → كل الأكشنات
+            // الادمن يرى كل الأكشنات
             if (IS_ADMIN) {
-                return '../api/actions.php';
+                return '../api/actions.php?action=getAll';
             }
 
-            // Assigned to me
+            // المستخدم العادي يرى فقط المسند له
             return `../api/actions.php?action=assigned_to_me&user_id=${USER_ID}`;
         }
 
@@ -93,9 +93,10 @@ require_once 'helpers/authCheck.php';
 
         /* ================= FETCH ACTIONS ================= */
         async function fetchActions() {
-
             const params = new URLSearchParams(window.location.search);
             const baseApi = getBaseApi();
+
+            // للادمن: كل الأكشنات، للمستخدم العادي: فقط المسند له
             const finalUrl = baseApi + (params.toString() ? '&' + params.toString() : '');
 
             try {
@@ -113,34 +114,32 @@ require_once 'helpers/authCheck.php';
 
             } catch (error) {
                 document.getElementById('actionsTableBody').innerHTML = `
-            <tr>
-                <td colspan="4" class="text-center py-4 text-red-500">
-                    ${error.message}
-                </td>
-            </tr>`;
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-red-500">
+                            ${error.message}
+                        </td>
+                    </tr>`;
             }
         }
 
         /* ================= RENDER ================= */
         function renderActions(actions) {
-
             const tbody = document.getElementById('actionsTableBody');
             tbody.innerHTML = '';
 
             if (!actions || !actions.length) {
                 tbody.innerHTML = `
-            <tr>
-                <td colspan="4" class="text-center py-4 text-gray-400">
-                    No actions found
-                </td>
-            </tr>`;
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-gray-400">
+                            No actions found
+                        </td>
+                    </tr>`;
                 return;
             }
 
             const today = new Date();
 
             actions.forEach(action => {
-
                 let status = action.status ?? 'open';
                 const expiry = new Date(action.expiry_date);
 
@@ -156,19 +155,19 @@ require_once 'helpers/authCheck.php';
                 }[status];
 
                 tbody.innerHTML += `
-            <tr class="border-b">
-                <td class="px-6 py-4">${action.description}</td>
-                <td class="px-6 py-4">${action.expiry_date}</td>
-                <td class="px-6 py-4 font-semibold ${statusColor}">
-                    ${status.toUpperCase()}
-                </td>
-                <td class="px-6 py-4 text-right">
-                    <a href="action.php?id=${action.id}"
-                       class="text-blue-600 hover:underline">
-                       View
-                    </a>
-                </td>
-            </tr>`;
+                    <tr class="border-b">
+                        <td class="px-6 py-4">${action.description}</td>
+                        <td class="px-6 py-4">${action.expiry_date}</td>
+                        <td class="px-6 py-4 font-semibold ${statusColor}">
+                            ${status.toUpperCase()}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <a href="action.php?id=${action.id}"
+                               class="text-blue-600 hover:underline">
+                               View
+                            </a>
+                        </td>
+                    </tr>`;
             });
         }
 

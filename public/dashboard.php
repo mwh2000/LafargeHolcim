@@ -73,18 +73,22 @@ require_once __DIR__ . '/helpers/authCheck.php';
         /* ================= AUTH ================= */
         const TOKEN = "<?= $_SESSION['token'] ?? '' ?>";
         const USER_ID = "<?= $_SESSION['id'] ?? '' ?>";
-        const USER_ROLE = "<?= $_SESSION['user_type'] ?? '2' ?>";
-        const IS_ADMIN = USER_ROLE == 1;
+        const USER_ROLE = "<?= $_SESSION['user_type'] ?? '2' ?>"; // 1=Admin, 2=User
+        const IS_ADMIN = Number(USER_ROLE) === 1; // إذا 1 → Admin
 
         /* ================= ACTIONS URL ================= */
         function getActionsBaseUrl(status = '') {
-            let base = IS_ADMIN
-                ? '../public/actions.php'
-                : '../public/actions.php?assigned_to_me=1';
+            let base = '../public/actions.php';
+
+            if (!IS_ADMIN) {
+                // المستخدم العادي فقط
+                base += '?assigned_to_me=1';
+            }
 
             if (status) {
                 base += (base.includes('?') ? '&' : '?') + 'status=' + status;
             }
+
             return base;
         }
 
@@ -125,7 +129,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 if (toDate) params.append("to_date", toDate);
                 if (typeCategory) params.append("type_category_id", typeCategory);
 
-                // ✅ فلترة حسب المستخدم إذا مو Admin
+                // ✅ فلترة حسب المستخدم فقط للمستخدمين الغير ادمن
                 if (!IS_ADMIN) {
                     params.append("assigned_user_id", USER_ID);
                 }
