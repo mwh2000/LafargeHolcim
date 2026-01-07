@@ -97,7 +97,7 @@ require_once 'helpers/authCheck.php';
 
                                     <dl class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <dt class="text-xs text-slate-500">Assigned to</dt>
+                                            <dt class="text-xs text-green-700 font-semibold">Assigned to</dt>
                                             <dd class="mt-1 flex items-center gap-3">
                                                 <span id="assigned_avatar"
                                                     class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-600">A</span>
@@ -109,46 +109,46 @@ require_once 'helpers/authCheck.php';
                                         </div>
 
                                         <div>
-                                            <dt class="text-xs text-slate-500">Expiry date</dt>
+                                            <dt class="text-xs text-green-700 font-semibold">Expiry date</dt>
                                             <dd id="expiry_date" class="mt-1 text-sm text-slate-700">2025-12-31 • <span
-                                                    class="text-xs text-slate-500">in 30 days</span></dd>
+                                                    class="text-xs text-green-700 font-semibold">in 30 days</span></dd>
                                         </div>
 
                                         <div>
-                                            <dt class="text-xs text-slate-500">Location</dt>
+                                            <dt class="text-xs text-green-700 font-semibold">Location</dt>
                                             <dd id="location" class="mt-1 text-sm text-slate-700">2025-12-31 • <span
-                                                    class="text-xs text-slate-500">in 30 days</span></dd>
+                                                    class="text-xs text-green-700 font-semibold">in 30 days</span></dd>
                                         </div>
 
                                         <div>
-                                            <dt class="text-xs text-slate-500">Related to CCM
+                                            <dt class="text-xs text-green-700 font-semibold">Related to CCM
                                                 topics</dt>
                                             <dd id="related_topics" class="mt-1 text-sm text-slate-700">2025-12-31 •
-                                                <span class="text-xs text-slate-500">in 30 days</span>
+                                                <span class="text-xs text-green-700 font-semibold">in 30 days</span>
                                             </dd>
                                         </div>
 
                                         <div>
-                                            <dt class="text-xs text-slate-500">Did the Incident Cause
+                                            <dt class="text-xs text-green-700 font-semibold">Did the Incident Cause
                                                 one of the following</dt>
                                             <dd id="incident_cause" class="mt-1 text-sm text-slate-700">2025-12-31 •
-                                                <span class="text-xs text-slate-500">in 30 days</span>
+                                                <span class="text-xs text-green-700 font-semibold">in 30 days</span>
                                             </dd>
                                         </div>
 
                                         <div>
-                                            <dt class="text-xs text-slate-500">Site Visit
+                                            <dt class="text-xs text-green-700 font-semibold">Site Visit
                                                 Duration</dt>
                                             <dd id="visit_duration" class="mt-1 text-sm text-slate-700">2025-12-31 •
-                                                <span class="text-xs text-slate-500">in 30 days</span>
+                                                <span class="text-xs text-green-700 font-semibold">in 30 days</span>
                                             </dd>
                                         </div>
 
                                         <div>
-                                            <dt class="text-xs text-slate-500">Area Visited
+                                            <dt class="text-xs text-green-700 font-semibold">Area Visited
                                                 /Department</dt>
                                             <dd id="area_visited" class="mt-1 text-sm text-slate-700">2025-12-31 •
-                                                <span class="text-xs text-slate-500">in 30 days</span>
+                                                <span class="text-xs text-green-700 font-semibold">in 30 days</span>
                                             </dd>
                                         </div>
 

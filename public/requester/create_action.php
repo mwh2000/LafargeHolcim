@@ -40,18 +40,58 @@ require_once '../helpers/authCheck.php';
                     <form id="createActionForm" enctype="multipart/form-data"
                         class="max-w-5xl mx-auto grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 p-4 sm:p-6">
 
+                        <!-- Group -->
+                        <div class="col-span-1">
+                            <label for="group" class="text-sm text-green-700 mb-2 block">Group</label>
+                            <select id="group" name="group"
+                                class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
+                                <option value="">Select Group</option>
+                                <!-- options from A to M capital -->
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                                <option value="E">E</option>
+                                <option value="F">F</option>
+                                <option value="G">G</option>
+                                <option value="H">H</option>
+                                <option value="I">I</option>
+                                <option value="J">J</option>
+                                <option value="K">K</option>
+                                <option value="L">L</option>
+                                <option value="M">M</option>
+                            </select>
+                        </div>
+
+                        <!-- Start Date -->
+                        <div class="col-span-1">
+                            <label for="start_date" class="text-sm text-green-700 mb-2 block">Start Date</label>
+                            <input id="start_date" name="start_date" type="date"
+                                class="w-full px-4 py-3 border border-gray-200 rounded-md focus:ring-1 focus:ring-[#0b6f76] focus:outline-none" />
+                        </div>
                         <!-- Type (full width) -->
                         <div class="col-span-1 sm:col-span-2 lg:col-span-3">
-                            <label for="type" class="text-sm text-gray-600 mb-2 block">Report Classification</label>
+                            <label for="type" class="text-sm text-green-700 mb-2 block">Safety</label>
                             <select id="type" aria-label="Type"
                                 class="w-full block px-4 py-3 border border-gray-200 rounded-md bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#0b6f76]">
                                 <option value="">Select Type</option>
                             </select>
                         </div>
 
+                        <!-- Environment -->
+                        <div class="col-span-1">
+                            <label for="environment" class="text-sm text-green-700 mb-2 block">Environment</label>
+                            <select id="environment" name="environment"
+                                class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
+                                <option value="">Select Environment</option>
+                                <option value="H.k">H.k</option>
+                                <option value="Weater">Weater</option>
+                                <option value="Dustiment">Dustiment</option>
+                            </select>
+                        </div>
                         <!-- Area Visited /Department -->
                         <div class="col-span-1">
-                            <label for="area_visited" class="text-sm text-gray-600 mb-2 block">Area Visited
+                            <label for="area_visited" class="text-sm text-green-700 mb-2 block">Area Visited
                                 /Department</label>
                             <select id="area_visited" name="area_visited"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
@@ -73,16 +113,21 @@ require_once '../helpers/authCheck.php';
 
                         <!-- Site Visit Duration -->
                         <div class="col-span-1">
-                            <label for="visit_duration" class="text-sm text-gray-600 mb-2 block">Site Visit
+                            <label for="visit_duration" class="text-sm text-green-700 mb-2 block">Site Visit
                                 Duration</label>
-                            <input id="visit_duration" name="visit_duration" type="text"
-                                class="w-full px-4 py-3 border border-gray-200 rounded-md focus:ring-1 focus:ring-[#0b6f76] focus:outline-none"
-                                autocomplete="off" />
+                            <select id="visit_duration" name="visit_duration"
+                                class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
+                                <option value="">Select Site Visit Duration</option>
+                                <option value="10">10</option>
+                                <option value="30">30</option>
+                                <option value="60">60</option>
+                                <option value="120">120</option>
+                            </select>
                         </div>
 
                         <!-- Related to CCM topics -->
                         <div class="col-span-1">
-                            <label for="related_topics" class="text-sm text-gray-600 mb-2 block">Related to CCM
+                            <label for="related_topics" class="text-sm text-green-700 mb-2 block">Related to CCM
                                 topics</label>
                             <select id="related_topics" name="related_topics"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
@@ -104,7 +149,7 @@ require_once '../helpers/authCheck.php';
 
                         <!-- Location -->
                         <div class="col-span-1">
-                            <label for="location" class="text-sm text-gray-600 mb-2 block">Location</label>
+                            <label for="location" class="text-sm text-green-700 mb-2 block">Location</label>
                             <select id="location" name="location"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
                                 <option value="">Select Location</option>
@@ -127,11 +172,10 @@ require_once '../helpers/authCheck.php';
 
                         <!-- Did the Incident Cause one of the following -->
                         <div class="col-span-1">
-                            <label for="incident_cause" class="text-sm text-gray-600 mb-2 block">Did the Incident Cause
-                                one of the following</label>
+                            <label for="incident_cause" class="text-sm text-green-700 mb-2 block">Incident</label>
                             <select id="incident_cause" name="incident_cause"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
-                                <option value="">Did the Incident Cause one of the following</option>
+                                <option value="">Incident</option>
                                 <option value="FA (First aid)">FA (First aid)</option>
                                 <option value="MI (Medical Injury)">MI (Medical Injury)</option>
                                 <option value="LTI (Lost Time Injury)">LTI (Lost Time Injury)</option>
@@ -142,7 +186,7 @@ require_once '../helpers/authCheck.php';
 
                         <!-- Assigned User -->
                         <div class="col-span-1">
-                            <label for="assigned_user" class="text-sm text-gray-600 mb-2 block">Assigned User</label>
+                            <label for="assigned_user" class="text-sm text-green-700 mb-2 block">Assigned User</label>
                             <select id="assigned_user" name="assigned_user"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
                                 <option value="">Select User</option>
@@ -151,21 +195,28 @@ require_once '../helpers/authCheck.php';
 
                         <!-- Description (full width) -->
                         <div class="col-span-1 sm:col-span-2 lg:col-span-3">
-                            <label for="description" class="text-sm text-gray-600 mb-2 block">Description</label>
+                            <label for="description" class="text-sm text-green-700 mb-2 block">Description</label>
                             <textarea id="description" name="description" rows="4"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md focus:ring-1 focus:ring-[#0b6f76] focus:outline-none"></textarea>
                         </div>
 
+                        <!-- Action -->
+                        <div class="col-span-1 sm:col-span-2 lg:col-span-3">
+                            <label for="action" class="text-sm text-green-700 mb-2 block">Action</label>
+                            <input id="action" name="action"
+                                class="w-full px-4 py-3 border border-gray-200 rounded-md focus:ring-1 focus:ring-[#0b6f76] focus:outline-none"></input>
+                        </div>
+
                         <!-- Expiry Date -->
                         <div class="col-span-1">
-                            <label for="expiry_date" class="text-sm text-gray-600 mb-2 block">Expiry Date</label>
+                            <label for="expiry_date" class="text-sm text-green-700 mb-2 block">Expiry Date</label>
                             <input id="expiry_date" name="expiry_date" type="date"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md focus:ring-1 focus:ring-[#0b6f76] focus:outline-none" />
                         </div>
 
                         <!-- Attachment (PDF) -->
                         <!-- <div class="col-span-1">
-                            <label for="attachment" class="text-sm text-gray-600 mb-2 block">Attachment (PDF)</label>
+                            <label for="attachment" class="text-sm text-green-700 mb-2 block">Attachment (PDF)</label>
                             <label
                                 class="flex items-center gap-3 w-full cursor-pointer px-3 py-2 border border-dashed border-gray-200 rounded-md hover:bg-gray-50">
                                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -181,7 +232,7 @@ require_once '../helpers/authCheck.php';
 
                         <!-- Image Upload with preview -->
                         <div class="col-span-1 sm:col-span-2 lg:col-span-3">
-                            <label for="image" class="text-sm text-gray-600 mb-2 block">Image (optional)</label>
+                            <label for="image" class="text-sm text-green-700 mb-2 block">Image (optional)</label>
                             <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                                 <label
                                     class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-dashed border-gray-200 rounded-md cursor-pointer hover:bg-gray-50">
@@ -213,7 +264,7 @@ require_once '../helpers/authCheck.php';
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 4v16m8-8H4"></path>
                                 </svg>
-                                New Report
+                                Submit
                             </button>
                         </div>
 
@@ -346,13 +397,17 @@ require_once '../helpers/authCheck.php';
 
             const formData = new FormData();
             formData.append("type_id", document.getElementById("type").value);
+            formData.append("group", document.getElementById("group").value);
             formData.append("location", document.getElementById("location").value);
             formData.append("related_topics", document.getElementById("related_topics").value);
             formData.append("incident_cause", document.getElementById("incident_cause").value);
             formData.append("visit_duration", document.getElementById("visit_duration").value);
+            formData.append("environment", document.getElementById("environment").value);
             formData.append("area_visited", document.getElementById("area_visited").value);
             formData.append("description", document.getElementById("description").value);
+            formData.append("action", document.getElementById("action").value);
             formData.append("assigned_user_id", document.getElementById("assigned_user").value);
+            formData.append("start_date", document.getElementById("start_date").value);
             formData.append("expiry_date", document.getElementById("expiry_date").value);
             formData.append("image", document.getElementById("image").files[0] || "");
             // formData.append("attachment", document.getElementById("attachment").files[0] || "");

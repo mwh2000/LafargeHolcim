@@ -175,42 +175,42 @@ require_once __DIR__ . '/helpers/authCheck.php';
             `;
 
                 /* ================= ACTIONS BY TYPE ================= */
-                document.getElementById("statsTable")?.remove();
+                // document.getElementById("statsTable")?.remove();
 
-                let html = `
-                <div id="statsTable" class="bg-white shadow-md rounded-lg p-5 mt-6">
-                    <h2 class="text-lg font-semibold text-gray-700 mb-3">Actions by Type</h2>
-                    <table class="w-full text-sm text-left text-gray-500">
-                        <thead class="bg-gray-50 text-xs uppercase">
-                        <tr>
-                            <th class="px-6 py-3">Type</th>
-                            <th class="px-6 py-3">Count</th>
-                        </tr>
-                        </thead>
-                        <tbody>`;
+                // let html = `
+                // <div id="statsTable" class="bg-white shadow-md rounded-lg p-5 mt-6">
+                //     <h2 class="text-lg font-semibold text-gray-700 mb-3">Actions by Type</h2>
+                //     <table class="w-full text-sm text-left text-gray-500">
+                //         <thead class="bg-gray-50 text-xs uppercase">
+                //         <tr>
+                //             <th class="px-6 py-3">Type</th>
+                //             <th class="px-6 py-3">Count</th>
+                //         </tr>
+                //         </thead>
+                //         <tbody>`;
 
-                if (!d.actions_by_type || d.actions_by_type.every(r => +r.action_count === 0)) {
-                    html += `
-                    <tr>
-                        <td colspan="2"
-                            class="px-6 py-6 text-center text-gray-400 italic">
-                            No actions available for selected filters
-                        </td>
-                    </tr>`;
-                } else {
-                    d.actions_by_type.forEach(r => {
-                        html += `
-                        <tr class="border-b">
-                            <td class="px-6 py-3">${r.type_name}</td>
-                            <td class="px-6 py-3 font-medium">${r.action_count}</td>
-                        </tr>`;
-                    });
-                }
+                // if (!d.actions_by_type || d.actions_by_type.every(r => +r.action_count === 0)) {
+                //     html += `
+                //     <tr>
+                //         <td colspan="2"
+                //             class="px-6 py-6 text-center text-gray-400 italic">
+                //             No actions available for selected filters
+                //         </td>
+                //     </tr>`;
+                // } else {
+                //     d.actions_by_type.forEach(r => {
+                //         html += `
+                //         <tr class="border-b">
+                //             <td class="px-6 py-3">${r.type_name}</td>
+                //             <td class="px-6 py-3 font-medium">${r.action_count}</td>
+                //         </tr>`;
+                //     });
+                // }
 
-                html += `</tbody></table></div>`;
-                document.getElementById("statsContainer").after(
-                    Object.assign(document.createElement("div"), { innerHTML: html })
-                );
+                // html += `</tbody></table></div>`;
+                // document.getElementById("statsContainer").after(
+                //     Object.assign(document.createElement("div"), { innerHTML: html })
+                // );
 
             } catch (err) {
                 console.error(err);

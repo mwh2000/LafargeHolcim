@@ -28,18 +28,22 @@ class ActionController
         $attachmentPath = $this->uploadFile($files['attachment'] ?? null, ['pdf'], 'uploads/attachments');
 
         $stmt = $this->conn->prepare("
-        INSERT INTO actions (type_id, location, related_topics, incident_cause, visit_duration, area_visited, description, assigned_user_id, expiry_date, image, attachment, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO actions (type_id, `group`, location, related_topics, incident_cause, visit_duration, environment, area_visited, description, action, assigned_user_id, start_date, expiry_date, image, attachment, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
         $stmt->execute([
             $data['type_id'],
+            $data['group'] ?? null,
             $data['location'] ?? null,
             $data['related_topics'] ?? null,
             $data['incident_cause'] ?? null,
             $data['visit_duration'] ?? null,
+            $data['environment'] ?? null,
             $data['area_visited'] ?? null,
             $data['description'],
+            $data['action'],
             $data['assigned_user_id'],
+            $data['start_date'],
             $data['expiry_date'],
             $imagePath,
             $attachmentPath,
