@@ -207,6 +207,19 @@ require_once '../helpers/authCheck.php';
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md focus:ring-1 focus:ring-[#0b6f76] focus:outline-none"></input>
                         </div>
 
+                        <!-- Priority -->
+                        <div class="col-span-1">
+                            <label for="priority" class="text-sm text-green-700 mb-2 block">Priority</label>
+                            <select id="priority" name="priority"
+                                class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
+                                <option value="">select priority</option>
+                                <option value="H">H</option>
+                                <option value="M">M</option>
+                                <option value="L">L</option>
+                                <option value="Major">Major</option>
+                            </select>
+                        </div>
+
                         <!-- Expiry Date -->
                         <div class="col-span-1">
                             <label for="expiry_date" class="text-sm text-green-700 mb-2 block">Expiry Date</label>
@@ -406,6 +419,7 @@ require_once '../helpers/authCheck.php';
             formData.append("area_visited", document.getElementById("area_visited").value);
             formData.append("description", document.getElementById("description").value);
             formData.append("action", document.getElementById("action").value);
+            formData.append("priority", document.getElementById("priority").value);
             formData.append("assigned_user_id", document.getElementById("assigned_user").value);
             formData.append("start_date", document.getElementById("start_date").value);
             formData.append("expiry_date", document.getElementById("expiry_date").value);

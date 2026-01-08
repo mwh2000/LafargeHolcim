@@ -52,6 +52,29 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <option value="">All Categories</option>
                         </select>
                     </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Incident Cause</label>
+                        <select id="incident_cause" name="incident_cause"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
+                            <option value="">Incident</option>
+                            <option value="FA (First aid)">FA (First aid)</option>
+                            <option value="MI (Medical Injury)">MI (Medical Injury)</option>
+                            <option value="LTI (Lost Time Injury)">LTI (Lost Time Injury)</option>
+                            <option value="PD (Property Damage)">PD (Property Damage)</option>
+                            <option value="none">None</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Environment</label>
+                        <select id="environment" name="environment"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
+                            <option value="">Select Environment</option>
+                            <option value="H.k">H.k</option>
+                            <option value="Weater">Weater</option>
+                            <option value="Dustiment">Dustiment</option>
+                        </select>
+                    </div>
 
                     <div class="flex items-end">
                         <button id="applyFilters"
@@ -123,11 +146,15 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 const fromDate = document.getElementById("from_date").value;
                 const toDate = document.getElementById("to_date").value;
                 const typeCategory = document.getElementById("type_category").value;
+                const incident_cause = document.getElementById("incident_cause").value;
+                const environment = document.getElementById("environment").value;
 
                 const params = new URLSearchParams();
                 if (fromDate) params.append("from_date", fromDate);
                 if (toDate) params.append("to_date", toDate);
                 if (typeCategory) params.append("type_category_id", typeCategory);
+                if (incident_cause) params.append("incident_cause", incident_cause);
+                if (environment) params.append("environment", environment);
 
                 // ✅ فلترة حسب المستخدم فقط للمستخدمين الغير ادمن
                 if (!IS_ADMIN) {

@@ -28,8 +28,8 @@ class ActionController
         $attachmentPath = $this->uploadFile($files['attachment'] ?? null, ['pdf'], 'uploads/attachments');
 
         $stmt = $this->conn->prepare("
-        INSERT INTO actions (type_id, `group`, location, related_topics, incident_cause, visit_duration, environment, area_visited, description, action, assigned_user_id, start_date, expiry_date, image, attachment, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO actions (type_id, `group`, location, related_topics, incident_cause, visit_duration, environment, area_visited, description, action, priority, assigned_user_id, start_date, expiry_date, image, attachment, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
         $stmt->execute([
             $data['type_id'],
@@ -42,6 +42,7 @@ class ActionController
             $data['area_visited'] ?? null,
             $data['description'],
             $data['action'],
+            $data['priority'],
             $data['assigned_user_id'],
             $data['start_date'],
             $data['expiry_date'],
@@ -302,11 +303,10 @@ class ActionController
         // أول قيمة لازم تكون userId
         $params = [$userId];
 
-        // 🔍 البحث بالعنوان أو الوصف
+        // 🔍 البحث بالوصف فقط
         if (!empty($filters['search'])) {
-            $query .= " AND (a.title LIKE ? OR a.description LIKE ?)";
+            $query .= " AND (a.description LIKE ?)";
             $search = '%' . $filters['search'] . '%';
-            $params[] = $search;
             $params[] = $search;
         }
 
@@ -314,6 +314,11 @@ class ActionController
         if (!empty($filters['type_id'])) {
             $query .= " AND a.type_id = ?";
             $params[] = (int) $filters['type_id'];
+        }
+
+        if (!empty($filters['created_at'])) {
+            $query .= " AND DATE(a.created_at) = ?";
+            $params[] = $filters['created_at'];
         }
 
         if (isset($filters['status']) && $filters['status'] !== '') {
@@ -327,6 +332,17 @@ class ActionController
                 $params[] = $filters['status'];
             }
         }
+
+        if (!empty($filters['from_date'])) {
+            $query .= " AND DATE(a.created_at) >= ?";
+            $params[] = $filters['from_date'];
+        }
+
+        if (!empty($filters['to_date'])) {
+            $query .= " AND DATE(a.created_at) <= ?";
+            $params[] = $filters['to_date'];
+        }
+
 
         // Pagination
         $limit = isset($filters['limit']) ? (int) $filters['limit'] : 20;
@@ -377,6 +393,18 @@ class ActionController
         if (!empty($filters['assigned_user_id'])) {
             $baseConditions[] = "a.assigned_user_id = :assigned_user_id";
             $params[':assigned_user_id'] = (int) $filters['assigned_user_id'];
+        }
+
+        // by incident_cause
+        if (!empty($filters['incident_cause'])) {
+            $baseConditions[] = "a.incident_cause = :incident_cause";
+            $params[':incident_cause'] = $filters['incident_cause'];
+        }
+
+        // by environment
+        if (!empty($filters['environment'])) {
+            $baseConditions[] = "a.environment = :environment";
+            $params[':environment'] = $filters['environment'];
         }
 
         $baseWhere = $baseConditions
