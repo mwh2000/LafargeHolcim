@@ -37,6 +37,7 @@ require_once 'helpers/authCheck.php';
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                         <div>
                             <h1 id="title" class="text-2xl sm:text-3xl font-semibold text-slate-800">Action Details</h1>
+                            <p id="category" class="mt-3 text-slate-600 leading-relaxed">category</p>
                             <p id="type" class="mt-3 text-slate-600 leading-relaxed">type</p>
                         </div>
                     </div>
@@ -107,6 +108,13 @@ require_once 'helpers/authCheck.php';
                                                 </div>
                                             </dd>
                                         </div>
+                                        <div>
+                                            <dt class="text-xs text-green-700 font-semibold">Created by</dt>
+                                            <dd class="mt-1 flex items-center gap-3">
+                                                <div id="created_by" class="text-sm font-medium text-slate-800">
+                                                </div>
+                                            </dd>
+                                        </div>
 
                                         <div>
                                             <dt class="text-xs text-green-700 font-semibold">Expiry date</dt>
@@ -129,8 +137,7 @@ require_once 'helpers/authCheck.php';
                                         </div>
 
                                         <div>
-                                            <dt class="text-xs text-green-700 font-semibold">Did the Incident Cause
-                                                one of the following</dt>
+                                            <dt class="text-xs text-green-700 font-semibold">Incident</dt>
                                             <dd id="incident_cause" class="mt-1 text-sm text-slate-700">2025-12-31 •
                                                 <span class="text-xs text-green-700 font-semibold">in 30 days</span>
                                             </dd>
@@ -214,6 +221,7 @@ require_once 'helpers/authCheck.php';
                 const action = result.data;
 
                 // ✅ تعبئة البيانات داخل الصفحة
+                document.getElementById("category").textContent = action.category_name;
                 document.getElementById("type").textContent = action.type_name;
                 document.getElementById("description").textContent = action.description;
                 document.getElementById("location").textContent = action.location;
@@ -247,6 +255,7 @@ require_once 'helpers/authCheck.php';
                 document.getElementById("expiry_date").textContent = action.expiry_date;
 
                 // المستخدم المكلف
+                document.getElementById("created_by").textContent = action.created_by || "Unassigned";
                 document.getElementById("assigned_name").textContent = action.assigned_user_name || "Unassigned";
                 document.getElementById("assigned_avatar").textContent =
                     action.assigned_user_name ? action.assigned_user_name.charAt(0).toUpperCase() : "U";

@@ -70,9 +70,9 @@ require_once __DIR__ . '/helpers/authCheck.php';
                         <select id="environment" name="environment"
                             class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
                             <option value="">Select Environment</option>
-                            <option value="H.k">H.k</option>
-                            <option value="Weater">Weater</option>
-                            <option value="Dustiment">Dustiment</option>
+                            <option value="HK">HK</option>
+                            <option value="Water Pollution">Water Pollution</option>
+                            <option value="Dust emissions">Dust emissions</option>
                         </select>
                     </div>
 

@@ -16,7 +16,7 @@ class ActionController
     public function create(array $data, array $files = [])
     {
         // التحقق من الحقول المطلوبة
-        $required = ['type_id', 'description', 'assigned_user_id', 'expiry_date'];
+        $required = ['assigned_user_id', 'expiry_date'];
         foreach ($required as $field) {
             if (empty($data[$field])) {
                 return $this->respond(false, "{$field} is required", null, ['field' => $field], 400);
@@ -31,6 +31,11 @@ class ActionController
         INSERT INTO actions (type_id, `group`, location, related_topics, incident_cause, visit_duration, environment, area_visited, description, action, priority, assigned_user_id, start_date, expiry_date, image, attachment, created_by)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
+
+        $startDate = (!empty($data['start_date']))
+            ? $data['start_date']
+            : null;
+
         $stmt->execute([
             $data['type_id'],
             $data['group'] ?? null,
@@ -44,7 +49,7 @@ class ActionController
             $data['action'],
             $data['priority'],
             $data['assigned_user_id'],
-            $data['start_date'],
+            $startDate,
             $data['expiry_date'],
             $imagePath,
             $attachmentPath,
@@ -146,10 +151,12 @@ class ActionController
             SELECT 
                 a.*, 
                 t.name AS type_name,
-                u.name AS assigned_user_name 
+                u.name AS assigned_user_name,
+                u.name AS created_by
             FROM actions a
             LEFT JOIN types t ON a.type_id = t.id
             LEFT JOIN users u ON a.assigned_user_id = u.id
+            LEFT JOIN users u2 ON a.created_by = u2.id
             WHERE a.id = ?
         ");
         $stmt->execute([$id]);

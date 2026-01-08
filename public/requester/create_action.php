@@ -45,7 +45,7 @@ require_once '../helpers/authCheck.php';
                             <label for="group" class="text-sm text-green-700 mb-2 block">Group</label>
                             <select id="group" name="group"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
-                                <option value="">Select Group</option>
+                                <option value=""></option>
                                 <!-- options from A to M capital -->
                                 <option value="A">A</option>
                                 <option value="B">B</option>
@@ -83,10 +83,10 @@ require_once '../helpers/authCheck.php';
                             <label for="environment" class="text-sm text-green-700 mb-2 block">Environment</label>
                             <select id="environment" name="environment"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
-                                <option value="">Select Environment</option>
-                                <option value="H.k">H.k</option>
-                                <option value="Weater">Weater</option>
-                                <option value="Dustiment">Dustiment</option>
+                                <option value=""></option>
+                                <option value="HK">HK</option>
+                                <option value="Water Pollution">Water Pollution</option>
+                                <option value="Dust emissions">Dust emissions</option>
                             </select>
                         </div>
                         <!-- Area Visited /Department -->
@@ -95,8 +95,7 @@ require_once '../helpers/authCheck.php';
                                 /Department</label>
                             <select id="area_visited" name="area_visited"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
-                                <option value="">Select Area Visited
-                                    /Department</option>
+                                <option value=""></option>
                                 <option value="prodution">Prodution</option>
                                 <option value="mechanic">Mechanic</option>
                                 <option value="safety">Safety</option>
@@ -107,17 +106,22 @@ require_once '../helpers/authCheck.php';
                                 <option value="quality">Quality</option>
                                 <option value="HFO Area">HFO Area</option>
                                 <option value="despatch">Despatch</option>
+                                <option value="Quarry">Quarry</option>
+                                <option value="Cement Mill">Cement Mill</option>
+                                <option value="Crusher">Crusher</option>
+                                <option value="Clinker">Clinker</option>
+                                <option value="Packing">Packing</option>
+                                <option value="Despatch">Despatch</option>
                                 <option value="other">Other</option>
                             </select>
                         </div>
 
                         <!-- Site Visit Duration -->
                         <div class="col-span-1">
-                            <label for="visit_duration" class="text-sm text-green-700 mb-2 block">Site Visit
-                                Duration</label>
+                            <label for="visit_duration" class="text-sm text-green-700 mb-2 block"></label>
                             <select id="visit_duration" name="visit_duration"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
-                                <option value="">Select Site Visit Duration</option>
+                                <option value=""></option>
                                 <option value="10">10</option>
                                 <option value="30">30</option>
                                 <option value="60">60</option>
@@ -127,11 +131,10 @@ require_once '../helpers/authCheck.php';
 
                         <!-- Related to CCM topics -->
                         <div class="col-span-1">
-                            <label for="related_topics" class="text-sm text-green-700 mb-2 block">Related to CCM
-                                topics</label>
+                            <label for="related_topics" class="text-sm text-green-700 mb-2 block"></label>
                             <select id="related_topics" name="related_topics"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
-                                <option value="">Select Related to CCM topics</option>
+                                <option value=""></option>
                                 <option value="Fatal Road Crush">Fatal Road Crush</option>
                                 <option value="Fall from height">Fall from height</option>
                                 <option value="Contact With Hot Meal">Contact With Hot Meal</option>
@@ -152,7 +155,7 @@ require_once '../helpers/authCheck.php';
                             <label for="location" class="text-sm text-green-700 mb-2 block">Location</label>
                             <select id="location" name="location"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
-                                <option value="">Select Location</option>
+                                <option value=""></option>
                                 <option value="Kiln & Cooler">Kiln & Cooler</option>
                                 <option value="Pre-heater">Pre-heater</option>
                                 <option value="Boiler & HFO Area">Boiler & HFO Area</option>
@@ -175,7 +178,7 @@ require_once '../helpers/authCheck.php';
                             <label for="incident_cause" class="text-sm text-green-700 mb-2 block">Incident</label>
                             <select id="incident_cause" name="incident_cause"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
-                                <option value="">Incident</option>
+                                <option value=""></option>
                                 <option value="FA (First aid)">FA (First aid)</option>
                                 <option value="MI (Medical Injury)">MI (Medical Injury)</option>
                                 <option value="LTI (Lost Time Injury)">LTI (Lost Time Injury)</option>
@@ -189,7 +192,7 @@ require_once '../helpers/authCheck.php';
                             <label for="assigned_user" class="text-sm text-green-700 mb-2 block">Assigned User</label>
                             <select id="assigned_user" name="assigned_user"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
-                                <option value="">Select User</option>
+                                <option value=""></option>
                             </select>
                         </div>
 
@@ -212,7 +215,7 @@ require_once '../helpers/authCheck.php';
                             <label for="priority" class="text-sm text-green-700 mb-2 block">Priority</label>
                             <select id="priority" name="priority"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
-                                <option value="">select priority</option>
+                                <option value=""></option>
                                 <option value="H">H</option>
                                 <option value="M">M</option>
                                 <option value="L">L</option>
@@ -222,7 +225,7 @@ require_once '../helpers/authCheck.php';
 
                         <!-- Expiry Date -->
                         <div class="col-span-1">
-                            <label for="expiry_date" class="text-sm text-green-700 mb-2 block">Expiry Date</label>
+                            <label for="expiry_date" class="text-sm text-green-700 mb-2 block">Due date</label>
                             <input id="expiry_date" name="expiry_date" type="date"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md focus:ring-1 focus:ring-[#0b6f76] focus:outline-none" />
                         </div>
