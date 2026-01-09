@@ -150,15 +150,18 @@ class ActionController
         $stmt = $this->conn->prepare("
             SELECT 
                 a.*, 
+                c.name AS category_name,
                 t.name AS type_name,
                 u.name AS assigned_user_name,
-                u.name AS created_by
+                u2.name AS created_by_name
             FROM actions a
             LEFT JOIN types t ON a.type_id = t.id
+            LEFT JOIN type_categories c ON t.category_id = c.id
             LEFT JOIN users u ON a.assigned_user_id = u.id
             LEFT JOIN users u2 ON a.created_by = u2.id
             WHERE a.id = ?
         ");
+
         $stmt->execute([$id]);
         $action = $stmt->fetch(PDO::FETCH_ASSOC);
 

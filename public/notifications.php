@@ -131,7 +131,7 @@ require_once __DIR__ . '/partials/navbar.php';
 </head>
 
 <body>
-    <?php renderNavbar('Action', '/public/notifications.php'); ?>
+    <?php renderNavbar('Action'); ?>
     <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]">
         <?php renderSidebar('users'); ?>
 

@@ -1,6 +1,6 @@
 <?php
 // navbar.php
-function renderNavbar($pageRoute = 'Dashboard', $notificationsPageURL = '/public/admin.php')
+function renderNavbar($pageRoute = 'Dashboard', $notificationsPageURL = '/public/notifications.php')
 {
     global $config;
     ?>

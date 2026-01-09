@@ -25,7 +25,7 @@ require_once '../helpers/authCheck.php';
 <body class="bg-gray-50">
 
     <!-- ✅ Layout -->
-    <?php renderNavbar('New Report', '/public/notifications.php'); ?>
+    <?php renderNavbar('New Report'); ?>
     <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]">
         <?php renderSidebar('create_action'); ?>
 
@@ -96,11 +96,6 @@ require_once '../helpers/authCheck.php';
                             <select id="area_visited" name="area_visited"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
                                 <option value=""></option>
-                                <option value="prodution">Prodution</option>
-                                <option value="mechanic">Mechanic</option>
-                                <option value="safety">Safety</option>
-                                <option value="security">Security</option>
-                                <option value="adminstration">Adminstration</option>
                                 <option value="quarry">Quarry</option>
                                 <option value="packing">Packing</option>
                                 <option value="quality">Quality</option>
@@ -112,13 +107,12 @@ require_once '../helpers/authCheck.php';
                                 <option value="Clinker">Clinker</option>
                                 <option value="Packing">Packing</option>
                                 <option value="Despatch">Despatch</option>
-                                <option value="other">Other</option>
                             </select>
                         </div>
 
                         <!-- Site Visit Duration -->
                         <div class="col-span-1">
-                            <label for="visit_duration" class="text-sm text-green-700 mb-2 block"></label>
+                            <label for="visit_duration" class="text-sm text-green-700 mb-2 block">Visit Duration</label>
                             <select id="visit_duration" name="visit_duration"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
                                 <option value=""></option>
@@ -131,7 +125,8 @@ require_once '../helpers/authCheck.php';
 
                         <!-- Related to CCM topics -->
                         <div class="col-span-1">
-                            <label for="related_topics" class="text-sm text-green-700 mb-2 block"></label>
+                            <label for="related_topics" class="text-sm text-green-700 mb-2 block">Related to CCM
+                                topics</label>
                             <select id="related_topics" name="related_topics"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
                                 <option value=""></option>

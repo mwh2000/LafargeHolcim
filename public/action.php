@@ -24,9 +24,9 @@ require_once 'helpers/authCheck.php';
 
 <body>
 
-    <?php renderNavbar('Action', '/public/notifications.php'); ?>
+    <?php renderNavbar('Action'); ?>
     <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]">
-        <?php renderSidebar('dashboard'); ?>
+        <?php renderSidebar(''); ?>
 
         <!-- ✅ Main Content -->
         <div class="flex-1 flex flex-col sm:ml-64 transition-all">
@@ -38,7 +38,7 @@ require_once 'helpers/authCheck.php';
                         <div>
                             <h1 id="title" class="text-2xl sm:text-3xl font-semibold text-slate-800">Action Details</h1>
                             <p id="category" class="mt-3 text-slate-600 leading-relaxed">category</p>
-                            <p id="type" class="mt-3 text-slate-600 leading-relaxed">type</p>
+                            <p id="type" class="mt-3 text-slate-600 leading-relaxed text-sm">type</p>
                         </div>
                     </div>
 
@@ -50,7 +50,7 @@ require_once 'helpers/authCheck.php';
                                 <div class="h-56 w-full bg-slate-50 flex items-center justify-center">
                                     <img id="action_image"
                                         src="https://via.placeholder.com/800x450.png?text=Action+Image"
-                                        alt="Action image" class="object-cover w-full h-full">
+                                        alt="Action image" class="object-cover">
                                 </div>
                                 <div class="p-3 border-t border-slate-100">
                                     <p class="text-sm text-slate-600">Main image for the action.</p>
@@ -117,7 +117,7 @@ require_once 'helpers/authCheck.php';
                                         </div>
 
                                         <div>
-                                            <dt class="text-xs text-green-700 font-semibold">Expiry date</dt>
+                                            <dt class="text-xs text-green-700 font-semibold">Due date</dt>
                                             <dd id="expiry_date" class="mt-1 text-sm text-slate-700">2025-12-31 • <span
                                                     class="text-xs text-green-700 font-semibold">in 30 days</span></dd>
                                         </div>
@@ -255,14 +255,19 @@ require_once 'helpers/authCheck.php';
                 document.getElementById("expiry_date").textContent = action.expiry_date;
 
                 // المستخدم المكلف
-                document.getElementById("created_by").textContent = action.created_by || "Unassigned";
+                document.getElementById("created_by").textContent = action.created_by_name || "Unassigned";
                 document.getElementById("assigned_name").textContent = action.assigned_user_name || "Unassigned";
                 document.getElementById("assigned_avatar").textContent =
                     action.assigned_user_name ? action.assigned_user_name.charAt(0).toUpperCase() : "U";
 
                 // الصورة
                 const imgElement = document.getElementById("action_image");
-                if (action.image) imgElement.src = `../${action.image}`;
+                if (action.image) {
+                    imgElement.src = `../${action.image}`;
+                } else {
+                    imgElement.src = "../public/images/logo.png";
+                    imgElement.alt = "Default image";
+                }
 
                 const downloadImage = document.getElementById("download_image");
                 if (action.image) {

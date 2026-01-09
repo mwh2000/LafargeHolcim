@@ -21,7 +21,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
 <body class="bg-gray-50">
 
-    <?php renderNavbar('Dashboard', '/public/notifications.php'); ?>
+    <?php renderNavbar('Dashboard'); ?>
 
     <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]">
         <?php renderSidebar('dashboard'); ?>

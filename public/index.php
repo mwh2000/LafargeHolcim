@@ -143,7 +143,7 @@ require_once __DIR__ . '/partials/navbar.php';
 </head>
 
 <body>
-  <?php renderNavbar('Notifications', '/public/notifications.php'); ?>
+  <?php renderNavbar('Notifications'); ?>
   <div class="dashboard-container min-h-screen bg-gray-50">
     <?php renderSidebar(); ?>
 
