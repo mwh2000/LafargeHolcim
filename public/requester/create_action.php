@@ -19,6 +19,9 @@ require_once '../helpers/authCheck.php';
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+
     <title>KCML / SLV | New Report</title>
 </head>
 
@@ -306,25 +309,47 @@ require_once '../helpers/authCheck.php';
         /**
          * 🔹 تحميل المستخدمين
          */
+        let userSelect; // نخزّن instance مال TomSelect
+
         async function loadUsers() {
             try {
                 const res = await fetch(API_USERS, {
                     headers: { "Authorization": `Bearer ${TOKEN}` }
                 });
+
                 const data = await res.json();
+                if (!data.success) throw new Error(data.message);
+
+                const users = data.data?.users || [];
                 const select = document.getElementById("assigned_user");
 
-                if (!data.success) throw new Error(data.message);
-                (data.data?.users || []).forEach(user => {
+                // نظف الخيارات
+                select.innerHTML = `<option value="">Select user</option>`;
+
+                users.forEach(user => {
                     const opt = document.createElement("option");
                     opt.value = user.id;
                     opt.textContent = `${user.name} (${user.email})`;
                     select.appendChild(opt);
                 });
+
+                // لو متفعّل قبل، دمّره
+                if (userSelect) {
+                    userSelect.destroy();
+                }
+
+                // فعّل البحث داخل الـ select
+                userSelect = new TomSelect("#assigned_user", {
+                    placeholder: "Search user...",
+                    allowEmptyOption: true,
+                    searchField: ["text"],
+                });
+
             } catch (e) {
                 console.error(e);
             }
         }
+
 
         /**
          * 🔹 تحميل الكاتيجوريز والأنواع
@@ -398,7 +423,6 @@ require_once '../helpers/authCheck.php';
 
             const formData = new FormData();
             formData.append("type_id", document.getElementById("type").value);
-            formData.append("group", document.getElementById("group").value);
             formData.append("location", document.getElementById("location").value);
             formData.append("related_topics", document.getElementById("related_topics").value);
             formData.append("incident_cause", document.getElementById("incident_cause").value);

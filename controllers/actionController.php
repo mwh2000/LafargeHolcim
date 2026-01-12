@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../core/ApiResponseTrait.php';
 
+session_start();
+
 class ActionController
 {
     private $conn;
@@ -15,30 +17,74 @@ class ActionController
     /** ✅ Create new Action */
     public function create(array $data, array $files = [])
     {
-        // التحقق من الحقول المطلوبة
-        $required = ['assigned_user_id', 'expiry_date'];
-        foreach ($required as $field) {
+        /* =========================
+         * 1️⃣ Validation
+         * ========================= */
+        foreach (['assigned_user_id', 'expiry_date'] as $field) {
             if (empty($data[$field])) {
                 return $this->respond(false, "{$field} is required", null, ['field' => $field], 400);
             }
         }
 
-        // رفع الملفات إن وجدت
-        $imagePath = $this->uploadFile($files['image'] ?? null, ['jpg', 'jpeg', 'png'], 'uploads/images');
-        $attachmentPath = $this->uploadFile($files['attachment'] ?? null, ['pdf'], 'uploads/attachments');
-
+        /* =========================
+         * 2️⃣ Current User Group
+         * ========================= */
         $stmt = $this->conn->prepare("
-        INSERT INTO actions (type_id, `group`, location, related_topics, incident_cause, visit_duration, environment, area_visited, description, action, priority, assigned_user_id, start_date, expiry_date, image, attachment, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        SELECT `group`
+        FROM users
+        WHERE id = ?
+        LIMIT 1
     ");
+        $stmt->execute([$_SESSION['id']]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        $startDate = (!empty($data['start_date']))
+        if (!$user) {
+            return $this->respond(false, "Unauthorized", null, null, 401);
+        }
+
+        $userGroup = $user['group'] ?? null;
+
+        /* =========================
+         * 3️⃣ Normalize Optional Fields
+         * ========================= */
+        $typeId = isset($data['type_id']) && $data['type_id'] !== ''
+            ? (int) $data['type_id']
+            : null;
+
+        $startDate = !empty($data['start_date'])
             ? $data['start_date']
             : null;
 
+        /* =========================
+         * 4️⃣ Upload Files
+         * ========================= */
+        $imagePath = $this->uploadFile(
+            $files['image'] ?? null,
+            ['jpg', 'jpeg', 'png'],
+            'uploads/images'
+        );
+
+        $attachmentPath = $this->uploadFile(
+            $files['attachment'] ?? null,
+            ['pdf'],
+            'uploads/attachments'
+        );
+
+        /* =========================
+         * 5️⃣ Insert Action
+         * ========================= */
+        $stmt = $this->conn->prepare("
+        INSERT INTO actions (
+            type_id, `group`, location, related_topics, incident_cause,
+            visit_duration, environment, area_visited, description,
+            action, priority, assigned_user_id, start_date, expiry_date,
+            image, attachment, created_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ");
+
         $stmt->execute([
-            $data['type_id'],
-            $data['group'] ?? null,
+            $typeId,
+            $userGroup,
             $data['location'] ?? null,
             $data['related_topics'] ?? null,
             $data['incident_cause'] ?? null,
@@ -48,7 +94,7 @@ class ActionController
             $data['description'],
             $data['action'],
             $data['priority'],
-            $data['assigned_user_id'],
+            (int) $data['assigned_user_id'],
             $startDate,
             $data['expiry_date'],
             $imagePath,
@@ -56,6 +102,9 @@ class ActionController
             $data['created_by']
         ]);
 
+        /* =========================
+         * 6️⃣ Response
+         * ========================= */
         return [
             'success' => true,
             'message' => 'Action created successfully',
@@ -65,6 +114,7 @@ class ActionController
             ]
         ];
     }
+
 
 
     /** ✅ Update Action */
