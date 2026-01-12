@@ -41,27 +41,7 @@ require_once '../helpers/authCheck.php';
                         class="max-w-5xl mx-auto grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 p-4 sm:p-6">
 
                         <!-- Group -->
-                        <div class="col-span-1">
-                            <label for="group" class="text-sm text-green-700 mb-2 block">Group</label>
-                            <select id="group" name="group"
-                                class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
-                                <option value=""></option>
-                                <!-- options from A to M capital -->
-                                <option value="A">A</option>
-                                <option value="B">B</option>
-                                <option value="C">C</option>
-                                <option value="D">D</option>
-                                <option value="E">E</option>
-                                <option value="F">F</option>
-                                <option value="G">G</option>
-                                <option value="H">H</option>
-                                <option value="I">I</option>
-                                <option value="J">J</option>
-                                <option value="K">K</option>
-                                <option value="L">L</option>
-                                <option value="M">M</option>
-                            </select>
-                        </div>
+
 
                         <!-- Start Date -->
                         <div class="col-span-1">
@@ -69,26 +49,20 @@ require_once '../helpers/authCheck.php';
                             <input id="start_date" name="start_date" type="date"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md focus:ring-1 focus:ring-[#0b6f76] focus:outline-none" />
                         </div>
-                        <!-- Type (full width) -->
-                        <div class="col-span-1 sm:col-span-2 lg:col-span-3">
-                            <label for="type" class="text-sm text-green-700 mb-2 block">Safety</label>
-                            <select id="type" aria-label="Type"
-                                class="w-full block px-4 py-3 border border-gray-200 rounded-md bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#0b6f76]">
-                                <option value="">Select Type</option>
+
+                        <!-- Site Visit Duration -->
+                        <div class="col-span-1">
+                            <label for="visit_duration" class="text-sm text-green-700 mb-2 block">Visit Duration</label>
+                            <select id="visit_duration" name="visit_duration"
+                                class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
+                                <option value=""></option>
+                                <option value="10">10</option>
+                                <option value="30">30</option>
+                                <option value="60">60</option>
+                                <option value="120">120</option>
                             </select>
                         </div>
 
-                        <!-- Environment -->
-                        <div class="col-span-1">
-                            <label for="environment" class="text-sm text-green-700 mb-2 block">Environment</label>
-                            <select id="environment" name="environment"
-                                class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
-                                <option value=""></option>
-                                <option value="HK">HK</option>
-                                <option value="Water Pollution">Water Pollution</option>
-                                <option value="Dust emissions">Dust emissions</option>
-                            </select>
-                        </div>
                         <!-- Area Visited /Department -->
                         <div class="col-span-1">
                             <label for="area_visited" class="text-sm text-green-700 mb-2 block">Area Visited
@@ -109,17 +83,24 @@ require_once '../helpers/authCheck.php';
                                 <option value="Despatch">Despatch</option>
                             </select>
                         </div>
-
-                        <!-- Site Visit Duration -->
+                        <!-- Type (full width) -->
                         <div class="col-span-1">
-                            <label for="visit_duration" class="text-sm text-green-700 mb-2 block">Visit Duration</label>
-                            <select id="visit_duration" name="visit_duration"
+                            <label for="type" class="text-sm text-green-700 mb-2 block">Safety</label>
+                            <select id="type" aria-label="Type"
+                                class="w-full block px-4 py-3 border border-gray-200 rounded-md bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#0b6f76]">
+                                <option value="">Select Type</option>
+                            </select>
+                        </div>
+
+                        <!-- Environment -->
+                        <div class="col-span-1">
+                            <label for="environment" class="text-sm text-green-700 mb-2 block">Environment</label>
+                            <select id="environment" name="environment"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
                                 <option value=""></option>
-                                <option value="10">10</option>
-                                <option value="30">30</option>
-                                <option value="60">60</option>
-                                <option value="120">120</option>
+                                <option value="HK">HK</option>
+                                <option value="Water Pollution">Water Pollution</option>
+                                <option value="Dust emissions">Dust emissions</option>
                             </select>
                         </div>
 
@@ -373,6 +354,14 @@ require_once '../helpers/authCheck.php';
                 typeSelect.innerHTML = "";
 
                 // تعبئة الأنواع والفئات
+                // 🟢 أوبشن فاضي بالبداية
+                const emptyOption = document.createElement("option");
+                emptyOption.value = "";
+                emptyOption.textContent = "Select type";
+                emptyOption.selected = true;
+                typeSelect.appendChild(emptyOption);
+
+                // 🟢 الأوبشنات الجاية من الـ API
                 categories.forEach(category => {
                     const optGroup = document.createElement("optgroup");
                     optGroup.label = category.name;
@@ -385,14 +374,15 @@ require_once '../helpers/authCheck.php';
                             optGroup.appendChild(option);
                         });
                     } else {
-                        const emptyOption = document.createElement("option");
-                        emptyOption.disabled = true;
-                        emptyOption.textContent = "(No types)";
-                        optGroup.appendChild(emptyOption);
+                        const noTypesOption = document.createElement("option");
+                        noTypesOption.disabled = true;
+                        noTypesOption.textContent = "(No types)";
+                        optGroup.appendChild(noTypesOption);
                     }
 
                     typeSelect.appendChild(optGroup);
                 });
+
 
             } catch (e) {
                 console.error("Error loading categories/types:", e);

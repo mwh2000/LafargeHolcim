@@ -72,6 +72,29 @@ require_once '../helpers/authCheck.php';
                                 class="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0b6f76] transition" />
                         </div>
 
+                        <!-- Group -->
+                        <div class="flex flex-col">
+                            <label for="group" class="text-sm text-gray-600 mb-1">Group</label>
+                            <select id="group" name="group"
+                                class="w-full px-4 py-2 border border-gray-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#0b6f76] transition">
+                                <option value=""></option>
+                                <!-- options from A to M capital -->
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                                <option value="E">E</option>
+                                <option value="F">F</option>
+                                <option value="G">G</option>
+                                <option value="H">H</option>
+                                <option value="I">I</option>
+                                <option value="J">J</option>
+                                <option value="K">K</option>
+                                <option value="L">L</option>
+                                <option value="M">M</option>
+                            </select>
+                        </div>
+
                         <!-- Manager user (select populated by JS) -->
                         <div class="flex flex-col">
                             <label for="usersList" class="text-sm text-gray-600 mb-1">Manager (optional)</label>
@@ -210,6 +233,7 @@ require_once '../helpers/authCheck.php';
                 email: document.getElementById("Email").value.trim(),
                 password: document.getElementById("Password").value.trim(),
                 department: document.getElementById("Department").value.trim(),
+                group: document.getElementById("group").value,
                 manager_id: document.getElementById("manager").value.trim(),
                 role_id: document.getElementById("role").value,
                 is_active: document.getElementById("status").value,

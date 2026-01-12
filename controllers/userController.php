@@ -35,8 +35,8 @@ class UserController
 
         // Insert user
         $stmt = $this->conn->prepare("
-            INSERT INTO users (name, email, password, phone, department, manager_id, time_target, role_id, is_active, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            INSERT INTO users (name, email, password, phone, department, `group`, manager_id, time_target, role_id, is_active, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ");
         $stmt->execute([
             $data['name'],
@@ -44,6 +44,7 @@ class UserController
             password_hash($data['password'], PASSWORD_DEFAULT),
             $data['phone'] ?? null,
             $data['department'] ?? null,
+            $data['group'] ?? null,
             $data['manager_id'] ?? null,
             $data['time_target'] ?? null,
             $data['role_id'] ?? 2,
@@ -175,7 +176,7 @@ class UserController
         }
 
         // نضيف limit و offset مباشرة بالاستعلام بعد التأكد أنها أرقام صحيحة
-        $limit = isset($filters['limit']) ? (int) $filters['limit'] : 100;
+        $limit = isset($filters['limit']) ? (int) $filters['limit'] : 200;
         $offset = isset($filters['offset']) ? (int) $filters['offset'] : 0;
 
         // ما نستخدم placeholders هنا

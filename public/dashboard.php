@@ -47,7 +47,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                     </div>
 
                     <div>
-                        <label class="block text-sm text-gray-600 mb-1">Type Category</label>
+                        <label class="block text-sm text-gray-600 mb-1">Safety</label>
                         <select id="type_category" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
                             <option value="">All Categories</option>
                         </select>
