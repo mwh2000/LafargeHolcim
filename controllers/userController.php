@@ -66,12 +66,28 @@ class UserController
         $values = [];
 
         // Include new fields
-        foreach (['name', 'email', 'phone', 'department', 'manager_id', 'time_target', 'role_id', 'is_active'] as $field) {
-            if (isset($data[$field])) {
-                $fields[] = "$field = ?";
+        foreach ([
+            'name',
+            'email',
+            'phone',
+            'department',
+            'group',
+            'manager_id',
+            'time_target',
+            'role_id',
+            'is_active'
+        ] as $field) {
+            if (array_key_exists($field, $data)) {
+                // ⚠️ معالجة خاصة لحقل group لأنه كلمة محجوزة
+                if ($field === 'group') {
+                    $fields[] = "`group` = ?";
+                } else {
+                    $fields[] = "$field = ?";
+                }
                 $values[] = $data[$field];
             }
         }
+
 
         if (!empty($data['password'])) {
             $fields[] = "password = ?";
@@ -116,7 +132,7 @@ class UserController
     {
         $stmt = $this->conn->prepare("
             SELECT 
-                u.id, u.name, u.email, u.phone, u.department, 
+                u.id, u.name, u.email, u.phone, u.department, u.`group`,
                 u.manager_id, m.name AS manager_name,
                 u.time_target, u.is_active, u.created_at, 
                 r.name AS role_name
