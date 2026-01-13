@@ -131,7 +131,7 @@ class ActionController
         $fields = [];
         $values = [];
 
-        foreach (['type_id', 'title', 'description', 'assigned_user_id', 'expiry_date'] as $field) {
+        foreach (['assigned_user_id', 'expiry_date'] as $field) {
             if (isset($data[$field])) {
                 $fields[] = "$field = ?";
                 $values[] = $data[$field];
@@ -176,7 +176,7 @@ class ActionController
         return $this->respond(true, 'Action deleted successfully');
     }
 
-    public function updateStatus(int $id, string $status = 'closed')
+    public function updateStatus(int $id, string $status = 'closed', string $note = '')
     {
         // تحقق من وجود السجل
         $check = $this->conn->prepare("SELECT * FROM actions WHERE id = ?");
@@ -187,8 +187,8 @@ class ActionController
             return $this->respond(false, 'Action not found', null, ['code' => 404], 404);
         }
 
-        $stmt = $this->conn->prepare("UPDATE actions SET status = ? WHERE id = ?");
-        $stmt->execute([$status, $id]);
+        $stmt = $this->conn->prepare("UPDATE actions SET status = ?, note = ? WHERE id = ?");
+        $stmt->execute([$status, $note, $id]);
 
         return $this->respond(true, 'Action status updated successfully');
     }
@@ -256,6 +256,12 @@ class ActionController
             $params[] = (int) $filters['assigned_user_id'];
         }
 
+        // crated by
+        if (!empty($filters['created_by'])) {
+            $query .= " AND a.created_by = ?";
+            $params[] = (int) $filters['created_by'];
+        }
+
         if (isset($filters['status']) && $filters['status'] !== '') {
 
             if ($filters['status'] === 'overdue') {
@@ -293,7 +299,7 @@ class ActionController
     {
         $query = "
         SELECT 
-            a.id, a.title, a.description, a.expiry_date, a.image, a.attachment, a.status, a.created_at,
+            a.id, a.description, a.expiry_date, a.image, a.attachment, a.status, a.created_at,
             t.name AS type_name,
             u.name AS assigned_user_name
         FROM actions a
@@ -465,6 +471,12 @@ class ActionController
         if (!empty($filters['environment'])) {
             $baseConditions[] = "a.environment = :environment";
             $params[':environment'] = $filters['environment'];
+        }
+
+        // by group
+        if (!empty($filters['group'])) {
+            $baseConditions[] = "a.`group` = :group";
+            $params[':group'] = $filters['group'];
         }
 
         $baseWhere = $baseConditions

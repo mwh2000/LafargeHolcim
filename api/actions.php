@@ -69,7 +69,7 @@ try {
 
             if ($action === 'update_status') {
                 if (isset($_GET['id'])) {
-                    $controller->updateStatus($_GET['id']);
+                    $controller->updateStatus($_GET['id'], 'closed', $input['note'] ?? '');
                 }
                 break;
             }

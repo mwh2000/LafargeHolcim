@@ -76,6 +76,28 @@ require_once __DIR__ . '/helpers/authCheck.php';
                         </select>
                     </div>
 
+                    <div>
+                        <label for="group" class="text-sm text-gray-600 mb-1">Group</label>
+                        <select id="group" name="group"
+                            class="w-full px-4 py-2 border border-gray-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#0b6f76] transition">
+                            <option value="">Select group</option>
+                            <!-- options from A to M capital -->
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                            <option value="E">E</option>
+                            <option value="F">F</option>
+                            <option value="G">G</option>
+                            <option value="H">H</option>
+                            <option value="I">I</option>
+                            <option value="J">J</option>
+                            <option value="K">K</option>
+                            <option value="L">L</option>
+                            <option value="M">M</option>
+                        </select>
+                    </div>
+
                     <div class="flex items-end">
                         <button id="applyFilters"
                             class="w-full bg-[#0b6f76] text-white px-4 py-2 rounded-md text-sm hover:bg-opacity-90">
@@ -148,6 +170,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 const typeCategory = document.getElementById("type_category").value;
                 const incident_cause = document.getElementById("incident_cause").value;
                 const environment = document.getElementById("environment").value;
+                const group = document.getElementById("group").value;
 
                 const params = new URLSearchParams();
                 if (fromDate) params.append("from_date", fromDate);
@@ -155,6 +178,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 if (typeCategory) params.append("type_category_id", typeCategory);
                 if (incident_cause) params.append("incident_cause", incident_cause);
                 if (environment) params.append("environment", environment);
+                if (group) params.append("group", group);
 
                 // ✅ فلترة حسب المستخدم فقط للمستخدمين الغير ادمن
                 if (!IS_ADMIN) {

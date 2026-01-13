@@ -309,6 +309,10 @@ require_once 'helpers/authCheck.php';
                     closeBtn.addEventListener("click", async () => {
                         const confirm = await Swal.fire({
                             title: "Are you sure?",
+                            // note input: 'textarea',
+                            input: 'textarea',
+                            inputLabel: 'Note (optional)',
+                            inputPlaceholder: 'Enter a note...',
                             text: "This action will be marked as closed.",
                             icon: "warning",
                             showCancelButton: true,
@@ -317,6 +321,8 @@ require_once 'helpers/authCheck.php';
 
                         if (!confirm.isConfirmed) return;
 
+                        const note = confirm.value || "";
+
                         try {
                             const updateResponse = await fetch(`../api/actions.php?action=update_status&id=${actionId}`, {
                                 method: "PUT",
@@ -324,7 +330,7 @@ require_once 'helpers/authCheck.php';
                                     "Authorization": `Bearer ${TOKEN}`,
                                     "Content-Type": "application/json"
                                 },
-                                body: JSON.stringify({ status: "closed" })
+                                body: JSON.stringify({ status: "closed", note: note })
                             });
 
                             const updateResult = await updateResponse.json();
