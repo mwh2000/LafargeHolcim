@@ -153,18 +153,34 @@ require_once '../helpers/authCheck.php';
                             </select>
                         </div>
 
-                        <!-- Did the Incident Cause one of the following -->
+                        <!-- Incident Classification -->
+                        <?php if (($_SESSION['user_type'] ?? null) == 4): ?>
+                            <div class="col-span-1">
+                                <label for="incident_classfication" class="text-sm text-green-700 mb-2 block">
+                                    Incident Classification
+                                </label>
+                                <select id="incident_classfication" name="incident_classfication"
+                                    class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
+                                    <option value=""></option>
+                                    <option value="FA (First aid)">FA (First aid)</option>
+                                    <option value="MI (Medical Injury)">MI (Medical Injury)</option>
+                                    <option value="LTI (Lost Time Injury)">LTI (Lost Time Injury)</option>
+                                    <option value="PD (Property Damage)">PD (Property Damage)</option>
+                                    <option value="none">None</option>
+                                </select>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- Incident -->
                         <div class="col-span-1">
-                            <label for="incident_classfication" class="text-sm text-green-700 mb-2 block">Incident
-                                Classfication</label>
-                            <select id="incident_classfication" name="incident_classfication"
+                            <label for="incident" class="text-sm text-green-700 mb-2 block">Incident</label>
+                            <select id="incident" name="incident"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
                                 <option value=""></option>
-                                <option value="FA (First aid)">FA (First aid)</option>
-                                <option value="MI (Medical Injury)">MI (Medical Injury)</option>
-                                <option value="LTI (Lost Time Injury)">LTI (Lost Time Injury)</option>
-                                <option value="PD (Property Damage)">PD (Property Damage)</option>
-                                <option value="none">None</option>
+                                <option value="Injuries">Injuries</option>
+                                <option value="Property">Property</option>
+                                <option value="Damage">Damage</option>
+                                <option value="Fire">Fire</option>
                             </select>
                         </div>
 
@@ -204,7 +220,7 @@ require_once '../helpers/authCheck.php';
                             </select>
                         </div>
 
-                        <!-- Expiry Date -->
+                        <!-- Due Date -->
                         <div class="col-span-1">
                             <label for="expiry_date" class="text-sm text-green-700 mb-2 block">Due date</label>
                             <input id="expiry_date" name="expiry_date" type="date"
@@ -427,7 +443,15 @@ require_once '../helpers/authCheck.php';
             formData.append("type_id", document.getElementById("type").value);
             formData.append("location", document.getElementById("location").value);
             formData.append("related_topics", document.getElementById("related_topics").value);
-            formData.append("incident_classfication", document.getElementById("incident_classfication").value);
+
+            const incidentClassificationEl =
+                document.getElementById("incident_classfication");
+
+            if (incidentClassificationEl && incidentClassificationEl.value !== "") {
+                formData.append("incident_classfication", incidentClassificationEl.value);
+            }
+
+            formData.append("incident", document.getElementById("incident").value);
             formData.append("visit_duration", document.getElementById("visit_duration").value);
             formData.append("environment", document.getElementById("environment").value);
             formData.append("area_visited", document.getElementById("area_visited").value);
@@ -438,6 +462,7 @@ require_once '../helpers/authCheck.php';
             formData.append("start_date", document.getElementById("start_date").value);
             formData.append("expiry_date", document.getElementById("expiry_date").value);
             formData.append("image", document.getElementById("image").files[0] || "");
+
             // formData.append("attachment", document.getElementById("attachment").files[0] || "");
             formData.append("created_by", ID);
 

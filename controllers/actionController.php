@@ -75,11 +75,11 @@ class ActionController
          * ========================= */
         $stmt = $this->conn->prepare("
         INSERT INTO actions (
-            type_id, `group`, location, related_topics, incident_classfication,
+            type_id, `group`, location, related_topics, incident_classfication, incident,
             visit_duration, environment, area_visited, description,
             action, priority, assigned_user_id, start_date, expiry_date,
             image, attachment, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
         $stmt->execute([
@@ -88,6 +88,7 @@ class ActionController
             $data['location'] ?? null,
             $data['related_topics'] ?? null,
             $data['incident_classfication'] ?? null,
+            $data['incident'] ?? null,
             $data['visit_duration'] ?? null,
             $data['environment'] ?? null,
             $data['area_visited'] ?? null,

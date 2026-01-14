@@ -56,7 +56,7 @@ require_once 'helpers/authCheck.php';
                         <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
                             <tr>
                                 <th class="px-6 py-3">Description</th>
-                                <th class="px-6 py-3">Expiry Date</th>
+                                <th class="px-6 py-3">Due Date</th>
                                 <th class="px-6 py-3">Status</th>
                                 <th class="px-6 py-3 text-right">Actions</th>
                             </tr>

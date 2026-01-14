@@ -56,7 +56,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                         <label class="block text-sm text-gray-600 mb-1">Incident Classfication</label>
                         <select id="incident_classfication" name="incident_classfication"
                             class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
-                            <option value="">Incident</option>
+                            <option value="">Incident Classfication</option>
                             <option value="FA (First aid)">FA (First aid)</option>
                             <option value="MI (Medical Injury)">MI (Medical Injury)</option>
                             <option value="LTI (Lost Time Injury)">LTI (Lost Time Injury)</option>

@@ -137,7 +137,8 @@ require_once 'helpers/authCheck.php';
                                         </div>
 
                                         <div>
-                                            <dt class="text-xs text-green-700 font-semibold">Incident</dt>
+                                            <dt class="text-xs text-green-700 font-semibold">Incident Classification
+                                            </dt>
                                             <dd id="incident_classfication" class="mt-1 text-sm text-slate-700">
                                                 2025-12-31 •
                                                 <span class="text-xs text-green-700 font-semibold">in 30 days</span>
