@@ -75,7 +75,7 @@ class ActionController
          * ========================= */
         $stmt = $this->conn->prepare("
         INSERT INTO actions (
-            type_id, `group`, location, related_topics, incident_cause,
+            type_id, `group`, location, related_topics, incident_classfication,
             visit_duration, environment, area_visited, description,
             action, priority, assigned_user_id, start_date, expiry_date,
             image, attachment, created_by
@@ -87,7 +87,7 @@ class ActionController
             $userGroup,
             $data['location'] ?? null,
             $data['related_topics'] ?? null,
-            $data['incident_cause'] ?? null,
+            $data['incident_classfication'] ?? null,
             $data['visit_duration'] ?? null,
             $data['environment'] ?? null,
             $data['area_visited'] ?? null,
@@ -461,10 +461,10 @@ class ActionController
             $params[':assigned_user_id'] = (int) $filters['assigned_user_id'];
         }
 
-        // by incident_cause
-        if (!empty($filters['incident_cause'])) {
-            $baseConditions[] = "a.incident_cause = :incident_cause";
-            $params[':incident_cause'] = $filters['incident_cause'];
+        // by incident_classfication
+        if (!empty($filters['incident_classfication'])) {
+            $baseConditions[] = "a.incident_classfication = :incident_classfication";
+            $params[':incident_classfication'] = $filters['incident_classfication'];
         }
 
         // by environment

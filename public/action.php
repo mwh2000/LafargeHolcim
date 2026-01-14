@@ -138,7 +138,8 @@ require_once 'helpers/authCheck.php';
 
                                         <div>
                                             <dt class="text-xs text-green-700 font-semibold">Incident</dt>
-                                            <dd id="incident_cause" class="mt-1 text-sm text-slate-700">2025-12-31 •
+                                            <dd id="incident_classfication" class="mt-1 text-sm text-slate-700">
+                                                2025-12-31 •
                                                 <span class="text-xs text-green-700 font-semibold">in 30 days</span>
                                             </dd>
                                         </div>
@@ -226,7 +227,7 @@ require_once 'helpers/authCheck.php';
                 document.getElementById("description").textContent = action.description;
                 document.getElementById("location").textContent = action.location;
                 document.getElementById("related_topics").textContent = action.related_topics;
-                document.getElementById("incident_cause").textContent = action.incident_cause;
+                document.getElementById("incident_classfication").textContent = action.incident_classfication;
                 document.getElementById("visit_duration").textContent = action.visit_duration;
                 document.getElementById("area_visited").textContent = action.area_visited;
 

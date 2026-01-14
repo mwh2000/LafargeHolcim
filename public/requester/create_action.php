@@ -104,6 +104,7 @@ require_once '../helpers/authCheck.php';
                                 <option value="HK">HK</option>
                                 <option value="Water Pollution">Water Pollution</option>
                                 <option value="Dust emissions">Dust emissions</option>
+                                <option value="NCR">NCR</option>
                             </select>
                         </div>
 
@@ -154,8 +155,9 @@ require_once '../helpers/authCheck.php';
 
                         <!-- Did the Incident Cause one of the following -->
                         <div class="col-span-1">
-                            <label for="incident_cause" class="text-sm text-green-700 mb-2 block">Incident</label>
-                            <select id="incident_cause" name="incident_cause"
+                            <label for="incident_classfication" class="text-sm text-green-700 mb-2 block">Incident
+                                Classfication</label>
+                            <select id="incident_classfication" name="incident_classfication"
                                 class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
                                 <option value=""></option>
                                 <option value="FA (First aid)">FA (First aid)</option>
@@ -425,7 +427,7 @@ require_once '../helpers/authCheck.php';
             formData.append("type_id", document.getElementById("type").value);
             formData.append("location", document.getElementById("location").value);
             formData.append("related_topics", document.getElementById("related_topics").value);
-            formData.append("incident_cause", document.getElementById("incident_cause").value);
+            formData.append("incident_classfication", document.getElementById("incident_classfication").value);
             formData.append("visit_duration", document.getElementById("visit_duration").value);
             formData.append("environment", document.getElementById("environment").value);
             formData.append("area_visited", document.getElementById("area_visited").value);

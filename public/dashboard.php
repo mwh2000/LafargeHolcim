@@ -53,8 +53,8 @@ require_once __DIR__ . '/helpers/authCheck.php';
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm text-gray-600 mb-1">Incident Cause</label>
-                        <select id="incident_cause" name="incident_cause"
+                        <label class="block text-sm text-gray-600 mb-1">Incident Classfication</label>
+                        <select id="incident_classfication" name="incident_classfication"
                             class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
                             <option value="">Incident</option>
                             <option value="FA (First aid)">FA (First aid)</option>
@@ -73,6 +73,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <option value="HK">HK</option>
                             <option value="Water Pollution">Water Pollution</option>
                             <option value="Dust emissions">Dust emissions</option>
+                            <option value="NCR">NCR</option>
                         </select>
                     </div>
 
@@ -168,7 +169,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 const fromDate = document.getElementById("from_date").value;
                 const toDate = document.getElementById("to_date").value;
                 const typeCategory = document.getElementById("type_category").value;
-                const incident_cause = document.getElementById("incident_cause").value;
+                const incident_classfication = document.getElementById("incident_classfication").value;
                 const environment = document.getElementById("environment").value;
                 const group = document.getElementById("group").value;
 
@@ -176,7 +177,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 if (fromDate) params.append("from_date", fromDate);
                 if (toDate) params.append("to_date", toDate);
                 if (typeCategory) params.append("type_category_id", typeCategory);
-                if (incident_cause) params.append("incident_cause", incident_cause);
+                if (incident_classfication) params.append("incident_classfication", incident_classfication);
                 if (environment) params.append("environment", environment);
                 if (group) params.append("group", group);
 
