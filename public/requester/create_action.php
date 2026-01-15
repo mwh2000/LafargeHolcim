@@ -270,7 +270,7 @@ require_once '../helpers/authCheck.php';
 
                         <!-- Submit -->
                         <div class="col-span-1 sm:col-span-2 lg:col-span-3 mt-2 flex justify-end">
-                            <button type="submit"
+                            <button type="submit" id="submitBtn"
                                 class="inline-flex items-center gap-2 px-6 py-3 bg-[#0b6f76] text-white text-sm font-medium rounded-lg hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0b6f76]">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                                     xmlns="http://www.w3.org/2000/svg">
@@ -327,11 +327,28 @@ require_once '../helpers/authCheck.php';
         /**
          * 🔹 تحميل المستخدمين
          */
-        let userSelect; // نخزّن instance مال TomSelect
+        let userSelect;
+        let filter_roles = [];
+
 
         async function loadUsers() {
             try {
-                const res = await fetch(API_USERS, {
+                let url = API_USERS;
+
+                const select = document.getElementById("assigned_user");
+                if (userSelect) {
+                    userSelect.destroy();
+                    userSelect = null;
+                }
+
+                // نظف القائمة واضف خيار مؤقت
+                select.innerHTML = `<option value="">Loading...</option>`;
+
+                if (filter_roles.length > 0) {
+                    url += `&role_id=${filter_roles.join(",")}`;
+                }
+
+                const res = await fetch(url, {
                     headers: { "Authorization": `Bearer ${TOKEN}` }
                 });
 
@@ -339,9 +356,7 @@ require_once '../helpers/authCheck.php';
                 if (!data.success) throw new Error(data.message);
 
                 const users = data.data?.users || [];
-                const select = document.getElementById("assigned_user");
 
-                // نظف الخيارات
                 select.innerHTML = `<option value="">Select user</option>`;
 
                 users.forEach(user => {
@@ -351,12 +366,8 @@ require_once '../helpers/authCheck.php';
                     select.appendChild(opt);
                 });
 
-                // لو متفعّل قبل، دمّره
-                if (userSelect) {
-                    userSelect.destroy();
-                }
+                if (userSelect) userSelect.destroy();
 
-                // فعّل البحث داخل الـ select
                 userSelect = new TomSelect("#assigned_user", {
                     placeholder: "Search user...",
                     allowEmptyOption: true,
@@ -367,6 +378,19 @@ require_once '../helpers/authCheck.php';
                 console.error(e);
             }
         }
+
+        document
+            .getElementById("incident_classfication")
+            ?.addEventListener("change", function () {
+
+                filter_roles = []; // reset
+
+                if (this.value) {
+                    filter_roles.push(3, 4);
+                } // 👈 تنظيف القائمة قبل التحميل
+                loadUsers(); // 👈 هنا يصير التحديث فعلياً
+            });
+
 
 
         /**
@@ -439,6 +463,10 @@ require_once '../helpers/authCheck.php';
         document.getElementById("createActionForm").addEventListener("submit", async (e) => {
             e.preventDefault();
 
+            const submitBtn = document.getElementById("submitBtn");
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Submitting...";
+
             const formData = new FormData();
             formData.append("type_id", document.getElementById("type").value);
             formData.append("location", document.getElementById("location").value);
@@ -485,6 +513,8 @@ require_once '../helpers/authCheck.php';
                 });
 
                 e.target.reset();
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Submit";
             } catch (err) {
                 Toastify({
                     text: err.message || "Something went wrong.",
@@ -494,6 +524,8 @@ require_once '../helpers/authCheck.php';
                     backgroundColor: "#ff5f6d",
                     stopOnFocus: true,
                 }).showToast();
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Submit";
             }
         });
 

@@ -181,10 +181,24 @@ class UserController
             $params[] = $filters['department'];
         }
 
+        // ✅ فلترة حسب role_id (يدعم أكثر من ID)
         if (!empty($filters['role_id'])) {
-            $query .= " AND u.role_id = ?";
-            $params[] = (int) $filters['role_id'];
+
+            // إذا جاية سترنك "1,2,3" نحولها array
+            $roleIds = is_array($filters['role_id'])
+                ? $filters['role_id']
+                : explode(',', $filters['role_id']);
+
+            // تنظيف وتحويل لأرقام
+            $roleIds = array_values(array_filter(array_map('intval', $roleIds)));
+
+            if (!empty($roleIds)) {
+                $placeholders = implode(',', array_fill(0, count($roleIds), '?'));
+                $query .= " AND u.role_id IN ($placeholders)";
+                $params = array_merge($params, $roleIds);
+            }
         }
+
 
         if (isset($filters['is_active'])) {
             $query .= " AND u.is_active = ?";
