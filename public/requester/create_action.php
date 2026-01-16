@@ -155,7 +155,7 @@ require_once '../helpers/authCheck.php';
                         </div>
 
                         <!-- Incident Classification -->
-                        <?php if (($_SESSION['user_type'] ?? null) == 4): ?>
+                        <?php if (($_COOKIE['user_type'] ?? null) == 4): ?>
                             <div class="col-span-1">
                                 <label for="incident_classfication" class="text-sm text-green-700 mb-2 block">
                                     Incident Classification
@@ -289,8 +289,8 @@ require_once '../helpers/authCheck.php';
                         const API_USERS = "../../api/requester/users.php?action=all";
                         const API_TYPES = "../../api/requester/types.php";
                         const API_CREATE = "../../api/requester/actions.php?action=create";
-                        const ID = "<?= $_SESSION['id'] ?? '' ?>";
-                        const TOKEN = "<?= $_SESSION['token'] ?? '' ?>";
+                        const ID = "<?= $_COOKIE['user_id'] ?? '' ?>";
+                        const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
 
                         const el = {
                             form: document.getElementById("createActionForm"),

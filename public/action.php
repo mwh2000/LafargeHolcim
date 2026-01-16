@@ -195,8 +195,8 @@ require_once 'helpers/authCheck.php';
 
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
-            const TOKEN = "<?= $_SESSION['token'] ?? '' ?>";
-            const user_id = "<?= $_SESSION['id'] ?? '' ?>";
+            const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
+            const user_id = "<?= $_COOKIE['user_id'] ?? '' ?>";
             const params = new URLSearchParams(window.location.search);
             const actionId = params.get("id");
 

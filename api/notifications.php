@@ -11,13 +11,13 @@ $database = new Database($config['db']);
 $conn = $database->getConnection();
 $controller = new NotificationController($conn);
 
-file_put_contents("log.txt", "Session ID: " . ($_SESSION['id'] ?? 'none') . "\n", FILE_APPEND);
+file_put_contents("log.txt", "Session ID: " . ($_COOKIE['user_id'] ?? 'none') . "\n", FILE_APPEND);
 
 
 //get user notifications
 if ($action === 'get_notifications' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    if (isset($_SESSION['id'])) {
-        $user_id = $_SESSION['id'];
+    if (isset($_COOKIE['user_id'])) {
+        $user_id = $_COOKIE['user_id'];
         $is_opened = null;
         $day = $_GET['day'] ?? null;
         $notifications = $controller->getUserNotifications($user_id, $is_opened, $day);

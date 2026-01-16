@@ -81,7 +81,7 @@ require_once '../helpers/authCheck.php';
     <script>
         const BASE_API = "../../api/admin/users.php?action=all";
         const DELETE_API = "../../api/admin/users.php?action=delete";
-        const TOKEN = "<?= $_SESSION['token'] ?? '' ?>";
+        const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
 
         // ================= FETCH USERS =================
         async function fetchUsers() {

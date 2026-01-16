@@ -63,9 +63,9 @@ require_once 'helpers/authCheck.php';
 
     <script>
         /* ================= AUTH ================= */
-        const TOKEN = "<?= $_SESSION['token'] ?? '' ?>";
-        const USER_ID = "<?= $_SESSION['id'] ?? '' ?>";
-        const USER_ROLE = "<?= $_SESSION['user_type'] ?? '2' ?>"; // 1 = admin
+        const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
+        const USER_ID = "<?= $_COOKIE['user_id'] ?? '' ?>";
+        const USER_ROLE = "<?= $_COOKIE['user_type'] ?? '2' ?>"; // 1 = admin
         const IS_ADMIN = Number(USER_ROLE) === 1;
 
         /* ================= BASE API ================= */

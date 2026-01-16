@@ -165,7 +165,7 @@ require_once '../helpers/authCheck.php';
         const API_USERS = "../../api/admin/users.php?action=all";
         const API_ROLES = "../../api/admin/roles.php";
         const API_CREATE_USER = "../../api/admin/users.php?action=create";
-        const TOKEN = "<?= $_SESSION['token'] ?? '' ?>";
+        const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
 
         /**
          * 🔹 تحميل المدراء

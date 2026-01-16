@@ -35,7 +35,7 @@ class ActionController
         WHERE id = ?
         LIMIT 1
     ");
-        $stmt->execute([$_SESSION['id']]);
+        $stmt->execute([$_COOKIE['user_id']]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$user) {
@@ -452,33 +452,64 @@ class ActionController
 
         // فلترة حسب تصنيف النوع
         if (!empty($filters['type_category_id'])) {
-            $baseConditions[] = "tc.id = :type_category_id";
-            $params[':type_category_id'] = (int) $filters['type_category_id'];
+            $ids = (array) $filters['type_category_id'];
+            $placeholders = [];
+            foreach ($ids as $i => $id) {
+                $key = ":type_id_$i";
+                $placeholders[] = $key;
+                $params[$key] = (int) $id;
+            }
+            $baseConditions[] = "tc.id IN (" . implode(',', $placeholders) . ")";
         }
 
         // ✅ فلترة حسب المستخدم المسند له الأكشن (اختياري)
         if (!empty($filters['assigned_user_id'])) {
-            $baseConditions[] = "a.assigned_user_id = :assigned_user_id";
-            $params[':assigned_user_id'] = (int) $filters['assigned_user_id'];
+            $ids = (array) $filters['assigned_user_id'];
+            $placeholders = [];
+            foreach ($ids as $i => $id) {
+                $key = ":assigned_user_$i";
+                $placeholders[] = $key;
+                $params[$key] = (int) $id;
+            }
+            $baseConditions[] = "a.assigned_user_id IN (" . implode(',', $placeholders) . ")";
         }
 
         // by incident_classfication
         if (!empty($filters['incident_classfication'])) {
-            $baseConditions[] = "a.incident_classfication = :incident_classfication";
-            $params[':incident_classfication'] = $filters['incident_classfication'];
+            $values = (array) $filters['incident_classfication'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":incident_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $baseConditions[] = "a.incident_classfication IN (" . implode(',', $placeholders) . ")";
         }
 
         // by environment
         if (!empty($filters['environment'])) {
-            $baseConditions[] = "a.environment = :environment";
-            $params[':environment'] = $filters['environment'];
+            $values = (array) $filters['environment'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":environment_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $baseConditions[] = "a.environment IN (" . implode(',', $placeholders) . ")";
         }
 
         // by group
         if (!empty($filters['group'])) {
-            $baseConditions[] = "a.`group` = :group";
-            $params[':group'] = $filters['group'];
+            $values = (array) $filters['group'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":group_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $baseConditions[] = "a.`group` IN (" . implode(',', $placeholders) . ")";
         }
+
 
         $baseWhere = $baseConditions
             ? " AND " . implode(" AND ", $baseConditions)

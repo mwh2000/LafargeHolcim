@@ -59,9 +59,12 @@ class AuthController
             'role_id' => $user['role_id']
         ]);
 
-        @$_SESSION['id'] = $user['id'];
-        @$_SESSION['token'] = $tokenData['token'];
-        @$_SESSION['user_type'] = $user['role_id'];
+        $expire = time() + 365 * 24 * 60 * 60; // سنة
+
+        setcookie('user_id', $user['id'], $expire, '/', '', false, true);
+        setcookie('token', $tokenData['token'], $expire, '/', '', false, true);
+        setcookie('user_type', $user['role_id'], $expire, '/', '', false, true);
+
 
         return $this->respond(true, 'Login successful', [
             'token' => $tokenData['token'],

@@ -74,8 +74,8 @@ require_once 'helpers/authCheck.php';
 
     <script>
         /* ================= AUTH ================= */
-        const TOKEN = "<?= $_SESSION['token'] ?? '' ?>";
-        const user_id = "<?= $_SESSION['id'] ?? '' ?>";
+        const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
+        const user_id = "<?= $_COOKIE['user_id'] ?? '' ?>";
         const BASE_API = `../api/actions.php?action=assigned_to_me&user_id=${user_id}`;
 
         /* ================= ELEMENTS ================= */

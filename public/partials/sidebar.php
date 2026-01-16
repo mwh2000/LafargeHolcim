@@ -4,7 +4,7 @@
 function renderSidebar($activePage = '')
 {
   //get user role
-  $userRole = $_SESSION['user_type'];
+  $userRole = $_COOKIE['user_type'];
 
   switch ($userRole) {
     // admin

@@ -138,7 +138,7 @@ require_once '../helpers/authCheck.php';
     </div>
 
     <script>
-        const TOKEN = "<?= $_SESSION['token'] ?? '' ?>";
+        const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
 
         const urlParams = new URLSearchParams(window.location.search);
         const USER_ID = urlParams.get("id");
