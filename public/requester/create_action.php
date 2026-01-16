@@ -21,6 +21,7 @@ require_once '../helpers/authCheck.php';
     <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+    <script src="/action.js"></script>
 
     <title>KCML / SLV | New Report</title>
 </head>
@@ -283,6 +284,269 @@ require_once '../helpers/authCheck.php';
 
                     </form>
 
+
+                    <script>
+                        const API_USERS = "../../api/requester/users.php?action=all";
+                        const API_TYPES = "../../api/requester/types.php";
+                        const API_CREATE = "../../api/requester/actions.php?action=create";
+                        const ID = "<?= $_SESSION['id'] ?? '' ?>";
+                        const TOKEN = "<?= $_SESSION['token'] ?? '' ?>";
+
+                        const el = {
+                            form: document.getElementById("createActionForm"),
+                            submitBtn: document.getElementById("submitBtn"),
+                            assignedUser: document.getElementById("assigned_user"),
+                            incidentClassification: document.getElementById("incident_classfication"),
+                            incident: document.getElementById("incident"),
+                            cmm: document.getElementById("related_topics"),
+                            type: document.getElementById("type"),
+                            imageInput: document.getElementById("image"),
+                            imagePreview: document.getElementById("imagePreview"),
+                        };
+
+                        el.imageInput?.addEventListener("change", (e) => {
+                            const file = e.target.files?.[0];
+                            el.imagePreview.innerHTML = "";
+
+                            if (!file) {
+                                el.imagePreview.innerHTML =
+                                    '<span class="text-xs text-gray-400">No image selected</span>';
+                                return;
+                            }
+
+                            const img = document.createElement("img");
+                            img.src = URL.createObjectURL(file);
+                            img.className = "object-cover w-full h-full";
+                            el.imagePreview.appendChild(img);
+                        });
+
+                        /* =========================
+                         * 🔹 Users & Roles Logic
+                         * ========================= */
+                        let userSelect;
+
+                        let filter_roles = [];
+
+                        const roleSources = {
+                            incidentClassification: [],
+                            cmm: [],
+                            incident: [],
+                            type: []
+                        };
+
+                        // دالة لدمج كل القيم وتحديث المستخدمين
+                        function updateFilterRoles() {
+                            filter_roles = [
+                                ...new Set(
+                                    Object.values(roleSources).flat()
+                                )
+                            ];
+                            loadUsers();
+                        }
+
+                        // دالة عامة للتعامل مع أي input وتعيين قيمه الخاصة
+                        function handleRolesChange(sourceKey, roles, value) {
+                            roleSources[sourceKey] = value ? roles : [];
+                            updateFilterRoles();
+                        }
+
+                        // ربط inputs مع handler الخاص بهم
+                        [
+                            ["incidentClassification", el.incidentClassification, [3, 4]],
+                            ["cmm", el.cmm, [3, 4]],
+                        ].forEach(([key, element, roles]) => {
+                            element?.addEventListener("change", function () {
+                                handleRolesChange(key, roles, this.value);
+                            });
+                        });
+
+                        // input آخر مستقل
+                        el.incident?.addEventListener("change", function () {
+                            handleRolesChange("incident", [2, 4], this.value);
+                        });
+
+                        // دالة للحصول على اسم optgroup لأي خيار محدد
+                        function getSelectedOptGroupName(selectEl) {
+                            const option = selectEl.selectedOptions[0]; // الخيار المحدد
+                            if (!option) return null;
+
+                            const optGroup = option.parentElement;
+                            if (optGroup && optGroup.tagName === "OPTGROUP") {
+                                return optGroup.label; // اسم الـ optgroup
+                            }
+
+                            return null; // إذا الخيار بدون optgroup
+                        }
+
+                        // التعامل مع type
+                        el.type.addEventListener("change", function () {
+                            const groupName = getSelectedOptGroupName(this);
+                            if (["NM", "VPC", "Hazard"].includes(groupName)) {
+                                handleRolesChange("type", [2, 4], true);
+                            } else if (["CVPC"].includes(groupName)) {
+                                handleRolesChange("type", [3, 4], true); // إذا تريد مسح القيم للبقية
+                            } else {
+                                handleRolesChange("type", [], false);
+                            }
+                        });
+
+                        async function loadUsers() {
+                            try {
+                                let url = API_USERS;
+
+                                const select = document.getElementById("assigned_user");
+                                if (userSelect) {
+                                    userSelect.destroy();
+                                    userSelect = null;
+                                }
+
+                                // نظف القائمة واضف خيار مؤقت
+                                select.innerHTML = `<option value="">Loading...</option>`;
+
+                                if (filter_roles.length > 0) {
+                                    url += `&role_id=${filter_roles.join(",")}`;
+                                }
+
+                                const res = await fetch(url, {
+                                    headers: { "Authorization": `Bearer ${TOKEN}` }
+                                });
+
+                                const data = await res.json();
+                                if (!data.success) throw new Error(data.message);
+
+                                const users = data.data?.users || [];
+
+                                select.innerHTML = `<option value="">Select user</option>`;
+
+                                users.forEach(user => {
+                                    const opt = document.createElement("option");
+                                    opt.value = user.id;
+                                    opt.textContent = `${user.name} (${user.email})`;
+                                    select.appendChild(opt);
+                                });
+
+                                if (userSelect) userSelect.destroy();
+
+                                userSelect = new TomSelect("#assigned_user", {
+                                    placeholder: "Search user...",
+                                    allowEmptyOption: true,
+                                    searchField: ["text"],
+                                });
+
+                            } catch (e) {
+                                console.error(e);
+                            }
+                        }
+                        /* =========================
+                     * 🔹 Categories & Types
+                     * ========================= */
+                        async function loadCategoriesAndTypes() {
+                            try {
+                                const res = await fetch(API_TYPES, {
+                                    headers: { Authorization: `Bearer ${TOKEN}` }
+                                });
+
+                                const { success, data, message } = await res.json();
+                                if (!success) throw new Error(message);
+
+                                const categories = data?.categories || [];
+                                el.type.innerHTML = `<option value="">Select type</option>`;
+
+                                categories.forEach(category => {
+                                    const optGroup = document.createElement("optgroup");
+                                    optGroup.label = category.name;
+
+                                    (category.types || []).forEach(type => {
+                                        optGroup.appendChild(
+                                            new Option(type.name, type.id)
+                                        );
+                                    });
+
+                                    el.type.appendChild(optGroup);
+                                });
+
+                            } catch (err) {
+                                console.error("❌ Load categories error:", err);
+                            }
+                        }
+                        /* =========================
+                     * 🔹 Submit Form
+                     * ========================= */
+                        el.form.addEventListener("submit", async (e) => {
+                            e.preventDefault();
+
+                            el.submitBtn.disabled = true;
+                            el.submitBtn.textContent = "Submitting...";
+
+                            const formData = new FormData();
+                            formData.append("type_id", document.getElementById("type").value);
+                            formData.append("location", document.getElementById("location").value);
+                            formData.append("related_topics", document.getElementById("related_topics").value);
+
+                            const incidentClassificationEl =
+                                document.getElementById("incident_classfication");
+
+                            if (incidentClassificationEl && incidentClassificationEl.value !== "") {
+                                formData.append("incident_classfication", incidentClassificationEl.value);
+                            }
+
+                            formData.append("incident", document.getElementById("incident").value);
+                            formData.append("visit_duration", document.getElementById("visit_duration").value);
+                            formData.append("environment", document.getElementById("environment").value);
+                            formData.append("area_visited", document.getElementById("area_visited").value);
+                            formData.append("description", document.getElementById("description").value);
+                            formData.append("action", document.getElementById("action").value);
+                            formData.append("priority", document.getElementById("priority").value);
+                            formData.append("assigned_user_id", document.getElementById("assigned_user").value);
+                            formData.append("start_date", document.getElementById("start_date").value);
+                            formData.append("expiry_date", document.getElementById("expiry_date").value);
+                            formData.append("image", document.getElementById("image").files[0] || "");
+                            formData.append("created_by", ID);
+
+                            try {
+                                const res = await fetch(API_CREATE, {
+                                    method: "POST",
+                                    headers: { Authorization: `Bearer ${TOKEN}` },
+                                    body: formData
+                                });
+
+                                const data = await res.json();
+                                if (!data.success) throw new Error(data.message);
+
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "Success",
+                                    text: "Action created successfully!",
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+
+                                el.form.reset();
+                                el.assignedUser.tomselect.clear();
+
+                            } catch (err) {
+                                Toastify({
+                                    text: err.message || "Something went wrong.",
+                                    duration: 3000,
+                                    gravity: "top",
+                                    position: "right",
+                                    backgroundColor: "#ff5f6d",
+                                }).showToast();
+                            } finally {
+                                el.submitBtn.disabled = false;
+                                el.submitBtn.textContent = "Submit";
+                            }
+                        });
+
+                        /* =========================
+                         * 🔹 Init
+                         * ========================= */
+                        document.addEventListener("DOMContentLoaded", () => {
+                            loadUsers();
+                            loadCategoriesAndTypes();
+                        });
+                    </script>
+
                     <script>
                         // Image preview and attachment name display (keeps existing ids)
                         (function () {
@@ -317,224 +581,6 @@ require_once '../helpers/authCheck.php';
         </div>
     </div>
 
-    <script>
-        const API_USERS = "../../api/requester/users.php?action=all";
-        const API_TYPES = "../../api/requester/types.php";
-        const API_CREATE = "../../api/requester/actions.php?action=create";
-        const ID = "<?= $_SESSION['id'] ?? '' ?>";
-        const TOKEN = "<?= $_SESSION['token'] ?? '' ?>";
-
-        /**
-         * 🔹 تحميل المستخدمين
-         */
-        let userSelect;
-        let filter_roles = [];
-
-
-        async function loadUsers() {
-            try {
-                let url = API_USERS;
-
-                const select = document.getElementById("assigned_user");
-                if (userSelect) {
-                    userSelect.destroy();
-                    userSelect = null;
-                }
-
-                // نظف القائمة واضف خيار مؤقت
-                select.innerHTML = `<option value="">Loading...</option>`;
-
-                if (filter_roles.length > 0) {
-                    url += `&role_id=${filter_roles.join(",")}`;
-                }
-
-                const res = await fetch(url, {
-                    headers: { "Authorization": `Bearer ${TOKEN}` }
-                });
-
-                const data = await res.json();
-                if (!data.success) throw new Error(data.message);
-
-                const users = data.data?.users || [];
-
-                select.innerHTML = `<option value="">Select user</option>`;
-
-                users.forEach(user => {
-                    const opt = document.createElement("option");
-                    opt.value = user.id;
-                    opt.textContent = `${user.name} (${user.email})`;
-                    select.appendChild(opt);
-                });
-
-                if (userSelect) userSelect.destroy();
-
-                userSelect = new TomSelect("#assigned_user", {
-                    placeholder: "Search user...",
-                    allowEmptyOption: true,
-                    searchField: ["text"],
-                });
-
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        document
-            .getElementById("incident_classfication")
-            ?.addEventListener("change", function () {
-
-                filter_roles = []; // reset
-
-                if (this.value) {
-                    filter_roles.push(3, 4);
-                } // 👈 تنظيف القائمة قبل التحميل
-                loadUsers(); // 👈 هنا يصير التحديث فعلياً
-            });
-
-
-
-        /**
-         * 🔹 تحميل الكاتيجوريز والأنواع
-         */
-        async function loadCategoriesAndTypes() {
-            try {
-                const res = await fetch(API_TYPES, {
-                    headers: { "Authorization": `Bearer ${TOKEN}` }
-                });
-                const data = await res.json();
-                console.log("📦 Types Data:", data); // لتأكيد البيانات في الكونسول
-
-                // ✅ البيانات موجودة داخل data.data.categories
-                const categories = data.data?.categories || [];
-
-                if (!data.success || !Array.isArray(categories)) {
-                    throw new Error(data.message || "Invalid response");
-                }
-
-                const typeSelect = document.getElementById("type");
-                if (!typeSelect) {
-                    console.error("❌ Element with id='type' not found in DOM!");
-                    return;
-                }
-
-                // تنظيف القائمة
-                typeSelect.innerHTML = "";
-
-                // تعبئة الأنواع والفئات
-                // 🟢 أوبشن فاضي بالبداية
-                const emptyOption = document.createElement("option");
-                emptyOption.value = "";
-                emptyOption.textContent = "Select type";
-                emptyOption.selected = true;
-                typeSelect.appendChild(emptyOption);
-
-                // 🟢 الأوبشنات الجاية من الـ API
-                categories.forEach(category => {
-                    const optGroup = document.createElement("optgroup");
-                    optGroup.label = category.name;
-
-                    if (Array.isArray(category.types) && category.types.length > 0) {
-                        category.types.forEach(type => {
-                            const option = document.createElement("option");
-                            option.value = type.id;
-                            option.textContent = type.name;
-                            optGroup.appendChild(option);
-                        });
-                    } else {
-                        const noTypesOption = document.createElement("option");
-                        noTypesOption.disabled = true;
-                        noTypesOption.textContent = "(No types)";
-                        optGroup.appendChild(noTypesOption);
-                    }
-
-                    typeSelect.appendChild(optGroup);
-                });
-
-
-            } catch (e) {
-                console.error("Error loading categories/types:", e);
-            }
-        }
-
-
-        /**
-         * 🔹 إنشاء الأكشن
-         */
-        document.getElementById("createActionForm").addEventListener("submit", async (e) => {
-            e.preventDefault();
-
-            const submitBtn = document.getElementById("submitBtn");
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Submitting...";
-
-            const formData = new FormData();
-            formData.append("type_id", document.getElementById("type").value);
-            formData.append("location", document.getElementById("location").value);
-            formData.append("related_topics", document.getElementById("related_topics").value);
-
-            const incidentClassificationEl =
-                document.getElementById("incident_classfication");
-
-            if (incidentClassificationEl && incidentClassificationEl.value !== "") {
-                formData.append("incident_classfication", incidentClassificationEl.value);
-            }
-
-            formData.append("incident", document.getElementById("incident").value);
-            formData.append("visit_duration", document.getElementById("visit_duration").value);
-            formData.append("environment", document.getElementById("environment").value);
-            formData.append("area_visited", document.getElementById("area_visited").value);
-            formData.append("description", document.getElementById("description").value);
-            formData.append("action", document.getElementById("action").value);
-            formData.append("priority", document.getElementById("priority").value);
-            formData.append("assigned_user_id", document.getElementById("assigned_user").value);
-            formData.append("start_date", document.getElementById("start_date").value);
-            formData.append("expiry_date", document.getElementById("expiry_date").value);
-            formData.append("image", document.getElementById("image").files[0] || "");
-
-            // formData.append("attachment", document.getElementById("attachment").files[0] || "");
-            formData.append("created_by", ID);
-
-            try {
-                const res = await fetch(API_CREATE, {
-                    method: "POST",
-                    headers: { "Authorization": `Bearer ${TOKEN}` },
-                    body: formData
-                });
-
-                const data = await res.json();
-                if (!data.success) throw new Error(data.message);
-
-                Swal.fire({
-                    icon: "success",
-                    title: "Success",
-                    text: "Action created successfully!",
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-
-                e.target.reset();
-                submitBtn.disabled = false;
-                submitBtn.innerText = "Submit";
-            } catch (err) {
-                Toastify({
-                    text: err.message || "Something went wrong.",
-                    duration: 3000,
-                    gravity: "top",
-                    position: "right",
-                    backgroundColor: "#ff5f6d",
-                    stopOnFocus: true,
-                }).showToast();
-                submitBtn.disabled = false;
-                submitBtn.innerText = "Submit";
-            }
-        });
-
-        // ✅ تحميل البيانات عند فتح الصفحة
-        document.addEventListener("DOMContentLoaded", () => {
-            loadUsers();
-            loadCategoriesAndTypes();
-        });
-    </script>
 </body>
 
 </html>
