@@ -462,7 +462,7 @@ class ActionController
             $baseConditions[] = "tc.id IN (" . implode(',', $placeholders) . ")";
         }
 
-        // ✅ فلترة حسب المستخدم المسند له الأكشن (اختياري)
+        // فلترة حسب المستخدم المسند له الأكشن
         if (!empty($filters['assigned_user_id'])) {
             $ids = (array) $filters['assigned_user_id'];
             $placeholders = [];
@@ -474,7 +474,13 @@ class ActionController
             $baseConditions[] = "a.assigned_user_id IN (" . implode(',', $placeholders) . ")";
         }
 
-        // by incident_classfication
+        // ✅ فلترة حسب المدير (manager_id)
+        if (!empty($filters['manager_id'])) {
+            $baseConditions[] = "u.manager_id = :manager_id";
+            $params[':manager_id'] = (int) $filters['manager_id'];
+        }
+
+        // Incident classification
         if (!empty($filters['incident_classfication'])) {
             $values = (array) $filters['incident_classfication'];
             $placeholders = [];
@@ -486,7 +492,7 @@ class ActionController
             $baseConditions[] = "a.incident_classfication IN (" . implode(',', $placeholders) . ")";
         }
 
-        // by environment
+        // Environment
         if (!empty($filters['environment'])) {
             $values = (array) $filters['environment'];
             $placeholders = [];
@@ -498,7 +504,7 @@ class ActionController
             $baseConditions[] = "a.environment IN (" . implode(',', $placeholders) . ")";
         }
 
-        // by group
+        // Group
         if (!empty($filters['group'])) {
             $values = (array) $filters['group'];
             $placeholders = [];
@@ -510,7 +516,6 @@ class ActionController
             $baseConditions[] = "a.`group` IN (" . implode(',', $placeholders) . ")";
         }
 
-
         $baseWhere = $baseConditions
             ? " AND " . implode(" AND ", $baseConditions)
             : "";
@@ -519,8 +524,9 @@ class ActionController
          * 2️⃣ Total Actions
          * ========================= */
         $totalSql = "
-        SELECT COUNT(*) 
+        SELECT COUNT(*)
         FROM actions a
+        LEFT JOIN users u ON a.assigned_user_id = u.id
         LEFT JOIN types t ON a.type_id = t.id
         LEFT JOIN type_categories tc ON t.category_id = tc.id
         WHERE 1=1
@@ -536,6 +542,7 @@ class ActionController
         $openSql = "
         SELECT COUNT(*)
         FROM actions a
+        LEFT JOIN users u ON a.assigned_user_id = u.id
         LEFT JOIN types t ON a.type_id = t.id
         LEFT JOIN type_categories tc ON t.category_id = tc.id
         WHERE a.status = 'open'
@@ -552,6 +559,7 @@ class ActionController
         $closedSql = "
         SELECT COUNT(*)
         FROM actions a
+        LEFT JOIN users u ON a.assigned_user_id = u.id
         LEFT JOIN types t ON a.type_id = t.id
         LEFT JOIN type_categories tc ON t.category_id = tc.id
         WHERE a.status = 'closed'
@@ -567,6 +575,7 @@ class ActionController
         $overdueSql = "
         SELECT COUNT(*)
         FROM actions a
+        LEFT JOIN users u ON a.assigned_user_id = u.id
         LEFT JOIN types t ON a.type_id = t.id
         LEFT JOIN type_categories tc ON t.category_id = tc.id
         WHERE a.status = 'open'
@@ -586,6 +595,7 @@ class ActionController
             COUNT(a.id) AS action_count
         FROM types t
         LEFT JOIN actions a ON a.type_id = t.id
+        LEFT JOIN users u ON a.assigned_user_id = u.id
         LEFT JOIN type_categories tc ON t.category_id = tc.id
         WHERE 1=1
         $baseWhere
@@ -607,9 +617,6 @@ class ActionController
             'actions_by_type' => $typeStats
         ]);
     }
-
-
-
 
 
     /** 🔹 Private: Upload helper */

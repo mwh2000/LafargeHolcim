@@ -203,7 +203,15 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 environment.forEach(val => params.append("environment[]", val));
                 group.forEach(val => params.append("group[]", val));
 
-                if (!IS_ADMIN) params.append("assigned_user_id", USER_ID);
+                // Admin → يشوف الكل (لا فلترة)
+                if (USER_ROLE === '3') {
+                    // Manager → يشوف أكشنات فريقه
+                    params.append("manager_id", USER_ID);
+                } else if (!IS_ADMIN) {
+                    // User عادي → يشوف أكشناته فقط
+                    params.append("assigned_user_id", USER_ID);
+                }
+
 
                 const response = await fetch(`../api/actions.php?action=getStatistics&${params.toString()}`, {
                     headers: { "Authorization": `Bearer ${TOKEN}` }
