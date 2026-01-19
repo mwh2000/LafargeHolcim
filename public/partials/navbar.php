@@ -1,4 +1,6 @@
 <?php
+
+$userData = json_decode($_COOKIE['user_data'], true);
 // navbar.php
 function renderNavbar($pageRoute = 'Dashboard', $notificationsPageURL = '/public/notifications.php')
 {

@@ -35,65 +35,80 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 <h1 class="text-2xl font-semibold text-gray-700 mb-6">Dashboard</h1>
 
                 <!-- ================= FILTERS ================= -->
-                <div class="bg-white p-5 rounded-lg shadow mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-lg shadow mb-6 space-y-4">
 
-                    <div>
-                        <label class="block text-sm text-gray-600 mb-1">From Date</label>
-                        <input type="date" id="from_date"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                    <!-- التواريخ -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">From Date</label>
+                            <input type="date" id="from_date"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">To Date</label>
+                            <input type="date" id="to_date"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="block text-sm text-gray-600 mb-1">To Date</label>
-                        <input type="date" id="to_date"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                    <!-- =بقية الفلاتر -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <select id="type_category" multiple
+                            class="multi-select w-full px-3 py-2 border rounded-md"></select>
+
+                        <select id="incident_classfication" multiple
+                            class="multi-select w-full px-4 py-3 border rounded-md">
+                            <option value="FA (First aid)">FA (First aid)</option>
+                            <option value="MI (Medical Injury)">MI (Medical Injury)</option>
+                            <option value="LTI (Lost Time Injury)">LTI (Lost Time Injury)</option>
+                            <option value="PD (Property Damage)">PD (Property Damage)</option>
+                            <option value="none">None</option>
+                        </select>
+
+                        <select id="incident" multiple
+                            class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
+                            <option value=""></option>
+                            <option value="Injuries">Injuries</option>
+                            <option value="Property">Property</option>
+                            <option value="Damage">Damage</option>
+                            <option value="Fire">Fire</option>
+                        </select>
+
+                        <select id="environment" multiple class="multi-select w-full px-4 py-3 border rounded-md">
+                            <option value="HK">HK</option>
+                            <option value="Water Pollution">Water Pollution</option>
+                            <option value="Dust emissions">Dust emissions</option>
+                            <option value="NCR">NCR</option>
+                        </select>
+
+                        <select id="group" multiple class="multi-select w-full px-4 py-2 border rounded-md">
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                            <option value="E">E</option>
+                            <option value="F">F</option>
+                            <option value="G">G</option>
+                            <option value="H">H</option>
+                            <option value="I">I</option>
+                            <option value="J">J</option>
+                            <option value="K">K</option>
+                            <option value="L">L</option>
+                            <option value="M">M</option>
+                        </select>
                     </div>
 
-                    <select id="type_category" multiple class="multi-select w-full px-3 py-2 border rounded-md">
-                        <!-- الخيارات سيتم تحميلها ديناميكياً -->
-                    </select>
-
-                    <select id="incident_classfication" multiple
-                        class="multi-select w-full px-4 py-3 border rounded-md">
-                        <option value="FA (First aid)">FA (First aid)</option>
-                        <option value="MI (Medical Injury)">MI (Medical Injury)</option>
-                        <option value="LTI (Lost Time Injury)">LTI (Lost Time Injury)</option>
-                        <option value="PD (Property Damage)">PD (Property Damage)</option>
-                        <option value="none">None</option>
-                    </select>
-
-                    <select id="environment" multiple class="multi-select w-full px-4 py-3 border rounded-md">
-                        <option value="HK">HK</option>
-                        <option value="Water Pollution">Water Pollution</option>
-                        <option value="Dust emissions">Dust emissions</option>
-                        <option value="NCR">NCR</option>
-                    </select>
-
-                    <select id="group" multiple class="multi-select w-full px-4 py-2 border rounded-md">
-                        <option value="A">A</option>
-                        <option value="B">B</option>
-                        <option value="C">C</option>
-                        <option value="D">D</option>
-                        <option value="E">E</option>
-                        <option value="F">F</option>
-                        <option value="G">G</option>
-                        <option value="H">H</option>
-                        <option value="I">I</option>
-                        <option value="J">J</option>
-                        <option value="K">K</option>
-                        <option value="L">L</option>
-                        <option value="M">M</option>
-                    </select>
-
-
-                    <div class="flex items-end">
+                    <!-- الزر -->
+                    <div class="flex justify-end">
                         <button id="applyFilters"
-                            class="w-full bg-[#0b6f76] text-white px-4 py-2 rounded-md text-sm hover:bg-opacity-90">
+                            class="bg-[#0b6f76] text-white px-6 py-2 rounded-md text-sm hover:bg-opacity-90">
                             Apply Filters
                         </button>
                     </div>
 
                 </div>
+
 
                 <!-- ================= STATS ================= -->
                 <div id="statsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"></div>
@@ -110,7 +125,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
         const IS_ADMIN = Number(USER_ROLE) === 1; // إذا 1 → Admin
 
         /* ================= INSTANCES TOMSELECT ================= */
-        let typeCategorySelect, incidentClassSelect, environmentSelect, groupSelect;
+        let typeCategorySelect, incidentClassSelect, incident, environmentSelect, groupSelect;
 
         /* ================= HELPERS ================= */
         function getSelectedValues(selectEl) {
@@ -148,7 +163,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 if (typeCategorySelect) typeCategorySelect.destroy();
                 typeCategorySelect = new TomSelect(select, {
                     plugins: ['remove_button'],
-                    placeholder: "Select Categories",
+                    placeholder: "Categories",
                     maxItems: null,
                 });
 
@@ -163,7 +178,15 @@ require_once __DIR__ . '/helpers/authCheck.php';
             if (incidentClassSelect) incidentClassSelect.destroy();
             incidentClassSelect = new TomSelect("#incident_classfication", {
                 plugins: ['remove_button'],
-                placeholder: "Select Incident Classification",
+                placeholder: "Incident Classification",
+                maxItems: null
+            });
+
+            // Incident
+            if (incident) incident.destroy();
+            incident = new TomSelect("#incident", {
+                plugins: ['remove_button'],
+                placeholder: "Incident",
                 maxItems: null
             });
 
@@ -171,7 +194,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
             if (environmentSelect) environmentSelect.destroy();
             environmentSelect = new TomSelect("#environment", {
                 plugins: ['remove_button'],
-                placeholder: "Select Environment",
+                placeholder: "Environment",
                 maxItems: null
             });
 
@@ -179,7 +202,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
             if (groupSelect) groupSelect.destroy();
             groupSelect = new TomSelect("#group", {
                 plugins: ['remove_button'],
-                placeholder: "Select Group",
+                placeholder: "Group",
                 maxItems: null
             });
         }
@@ -191,6 +214,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 const toDate = document.getElementById("to_date").value;
                 const typeCategory = getSelectedValues(document.getElementById("type_category"));
                 const incident_classfication = getSelectedValues(document.getElementById("incident_classfication"));
+                const incident = getSelectedValues(document.getElementById("incident"));
                 const environment = getSelectedValues(document.getElementById("environment"));
                 const group = getSelectedValues(document.getElementById("group"));
 
@@ -200,6 +224,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
                 typeCategory.forEach(val => params.append("type_category_id[]", val));
                 incident_classfication.forEach(val => params.append("incident_classfication[]", val));
+                incident.forEach(val => params.append("incident[]", val));
                 environment.forEach(val => params.append("environment[]", val));
                 group.forEach(val => params.append("group[]", val));
 

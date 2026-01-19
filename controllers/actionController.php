@@ -300,12 +300,14 @@ class ActionController
     {
         $query = "
         SELECT 
-            a.id, a.description, a.expiry_date, a.image, a.attachment, a.status, a.created_at,
+            a.id, a.description, a.action, a.expiry_date, a.image, a.attachment, a.status, a.created_at,
             t.name AS type_name,
-            u.name AS assigned_user_name
+            u.name AS assigned_user_name,
+            u2.name AS created_by_name
         FROM actions a
         LEFT JOIN types t ON a.type_id = t.id
         LEFT JOIN users u ON a.assigned_user_id = u.id
+        LEFT JOIN users u2 ON a.created_by = u2.id
         WHERE a.created_by = ?
     ";
 
@@ -358,12 +360,14 @@ class ActionController
     {
         $query = "
         SELECT 
-            a.id, a.description, a.expiry_date, a.image, a.attachment, a.status, a.created_at,
+            a.id, a.description, a.action, a.expiry_date, a.image, a.attachment, a.status, a.created_at,
             t.name AS type_name,
-            u.name AS assigned_user_name
+            u.name AS assigned_user_name,
+            u2.name AS created_by_name
         FROM actions a
         LEFT JOIN types t ON a.type_id = t.id
         LEFT JOIN users u ON a.assigned_user_id = u.id
+        LEFT JOIN users u2 ON a.created_by = u2.id
         WHERE a.assigned_user_id = ?
     ";
 
@@ -490,6 +494,17 @@ class ActionController
                 $params[$key] = $v;
             }
             $baseConditions[] = "a.incident_classfication IN (" . implode(',', $placeholders) . ")";
+        }
+
+        if (!empty($filters['incident'])) {
+            $values = (array) $filters['incident'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":incident_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $baseConditions[] = "a.incident IN (" . implode(',', $placeholders) . ")";
         }
 
         // Environment

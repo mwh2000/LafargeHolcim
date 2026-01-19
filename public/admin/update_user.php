@@ -210,7 +210,7 @@ require_once '../helpers/authCheck.php';
 
                 const managers = data.data?.users || [];
                 const list = document.getElementById("usersList");
-                list.innerHTML = "";
+                list.innerHTML = `<option value="">Select manager</option>`;
 
                 managers.forEach(user => {
                     const option = document.createElement("option");
@@ -238,7 +238,7 @@ require_once '../helpers/authCheck.php';
                 password: document.getElementById("Password").value.trim(),
                 department: document.getElementById("Department").value.trim(),
                 group: document.getElementById("group").value,
-                manager_id: document.getElementById("manager").value,
+                manager_id: document.getElementById("manager").value || null,
                 role_id: document.getElementById("role").value,
                 is_active: document.getElementById("status").value,
             };
@@ -246,7 +246,12 @@ require_once '../helpers/authCheck.php';
             // نحذف القيم الفاضية
             const payload = {};
             Object.entries(raw).forEach(([key, value]) => {
-                if (value !== '' && value !== null && value !== undefined) {
+                // نسمح لـ manager_id يكون null
+                if (
+                    value !== '' &&
+                    value !== undefined &&
+                    (key === 'manager_id' || value !== null)
+                ) {
                     payload[key] = value;
                 }
             });

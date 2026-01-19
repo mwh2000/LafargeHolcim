@@ -157,7 +157,7 @@ class UserController
     {
         $query = "
         SELECT 
-            u.id, u.name, u.email, u.phone, u.department, 
+            u.id, u.name, u.email, u.phone, u.department, u.`group`, 
             u.manager_id, m.name AS manager_name,
             u.manager_id, m.email AS manager_email,
             u.time_target, u.is_active, u.created_at,

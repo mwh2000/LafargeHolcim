@@ -37,7 +37,9 @@ require_once '../helpers/authCheck.php';
         <div class="flex-1 flex flex-col sm:ml-64 transition-all">
             <main class="flex-1 overflow-y-auto p-8 md:pl-12">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                    <h1 class="text-2xl font-semibold text-gray-700">New Report</h1>
+                    <h1 class="text-2xl font-semibold text-gray-700">New Report
+                        <?php echo $userData['group'] ? '- group ' . $userData['group'] : ''; ?>
+                    </h1>
                 </div>
 
                 <div class="bg-white p-6 rounded-lg shadow mb-6">

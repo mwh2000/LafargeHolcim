@@ -30,7 +30,7 @@ class AuthController
         }
 
         $stmt = $this->conn->prepare("
-            SELECT u.id, u.name, u.email, u.password, u.role_id, u.is_active, r.name AS role_name
+            SELECT u.id, u.name, u.email, u.password, u.role_id, u.`group`, u.is_active, r.name AS role_name
             FROM users u
             LEFT JOIN roles r ON u.role_id = r.id
             WHERE u.email = ? LIMIT 1
@@ -64,6 +64,14 @@ class AuthController
         setcookie('user_id', $user['id'], $expire, '/', '', false, true);
         setcookie('token', $tokenData['token'], $expire, '/', '', false, true);
         setcookie('user_type', $user['role_id'], $expire, '/', '', false, true);
+        // save all user data except password in cookie
+        setcookie('user_data', json_encode([
+            'id' => $user['id'],
+            'name' => $user['name'],
+            'email' => $user['email'],
+            'role_id' => $user['role_id'],
+            'group' => $user['group']
+        ]), $expire, '/', '', false, true);
 
 
         return $this->respond(true, 'Login successful', [

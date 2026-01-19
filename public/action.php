@@ -89,7 +89,7 @@ require_once 'helpers/authCheck.php';
                         <div class="md:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-slate-100">
                             <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                                 <div class="flex-1">
-                                    <h2 class="text-lg font-semibold text-slate-800">Detailed Description</h2>
+                                    <h2 id="action" class="text-lg font-semibold text-slate-800">Action</h2>
                                     <p id="description" class="mt-3 text-slate-600 leading-relaxed">
                                         This is the full description of the action. It can be multiple paragraphs long
                                         and contains all the context, instructions and important notes related to the
@@ -225,6 +225,7 @@ require_once 'helpers/authCheck.php';
                 // ✅ تعبئة البيانات داخل الصفحة
                 document.getElementById("category").textContent = action.category_name;
                 document.getElementById("type").textContent = action.type_name;
+                document.getElementById("action").textContent = action.action || 'No action name provided.';
                 document.getElementById("description").textContent = action.description;
                 document.getElementById("location").textContent = action.location;
                 document.getElementById("related_topics").textContent = action.related_topics;

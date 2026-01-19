@@ -134,7 +134,7 @@ require_once __DIR__ . '/../config/config.php';
   <div class="container">
     <img src="images/logo.png" alt="Logo" style="max-width:210px;" />
 
-    <h3 style="color: #0b6f76">Strong Leadear Ship Visibality</h3>
+    <h3 style="color: #0b6f76">Strong leadership visibility</h3>
 
     <form id="loginForm">
       <div class="input-field">
