@@ -53,7 +53,7 @@ require_once '../helpers/authCheck.php';
                         <option value="0">Inactive</option>
                     </select>
 
-                    <!-- <select id="groupFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    <select id="groupFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
                         <option value="">All Groups</option>
                         <option value="A">A</option>
                         <option value="B">B</option>
@@ -68,7 +68,7 @@ require_once '../helpers/authCheck.php';
                         <option value="K">K</option>
                         <option value="L">L</option>
                         <option value="M">M</option>
-                    </select> -->
+                    </select>
                 </div>
 
                 <!-- ✅ Users Table -->
@@ -110,6 +110,8 @@ require_once '../helpers/authCheck.php';
             if (search) params.append("search", search);
             if (status === "1") params.append("is_active", 1);
             if (status === "0") params.append("is_active", 0);
+            const group = document.getElementById('groupFilter').value;
+            if (group) params.append("group", group);
 
             const finalUrl = `${BASE_API}&${params.toString()}`;
 
@@ -209,6 +211,7 @@ require_once '../helpers/authCheck.php';
 
         document.getElementById('searchInput').addEventListener('input', debounce(fetchUsers, 400));
         document.getElementById('statusFilter').addEventListener('change', fetchUsers);
+        document.getElementById('groupFilter').addEventListener('change', fetchUsers);
         document.addEventListener("DOMContentLoaded", fetchUsers);
     </script>
 

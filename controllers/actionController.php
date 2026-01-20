@@ -132,12 +132,28 @@ class ActionController
         $fields = [];
         $values = [];
 
-        foreach (['assigned_user_id', 'expiry_date'] as $field) {
+        foreach ([
+            'assigned_user_id',
+            'start_date',
+            'expiry_date',
+            'type_id',
+            'location',
+            'related_topics',
+            'incident',
+            'visit_duration',
+            'environment',
+            'area_visited',
+            'description',
+            'action',
+            'priority',
+            'incident_classfication'
+        ] as $field) {
             if (isset($data[$field])) {
                 $fields[] = "$field = ?";
                 $values[] = $data[$field];
             }
         }
+
 
         // تحديث الملفات إن وجدت
         if (isset($files['image'])) {
@@ -228,12 +244,14 @@ class ActionController
     {
         $query = "
             SELECT 
-                a.id, a.status, a.description, a.expiry_date, a.image, a.attachment, a.created_at,
+                a.id, a.status, a.description, a.action, a.expiry_date, a.image, a.attachment, a.created_at,
                 t.name AS type_name,
                 u.name AS assigned_user_name
+                u2.name AS created_by_name
             FROM actions a
             LEFT JOIN types t ON a.type_id = t.id
             LEFT JOIN users u ON a.assigned_user_id = u.id
+            LEFT JOIN users u2 ON a.created_by = u2.id
             WHERE 1
         ";
         $params = [];

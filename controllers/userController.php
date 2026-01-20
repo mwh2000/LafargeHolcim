@@ -205,6 +205,12 @@ class UserController
             $params[] = (int) $filters['is_active'];
         }
 
+        // by group
+        if (!empty($filters['group'])) {
+            $query .= " AND u.`group` = ?";
+            $params[] = $filters['group'];
+        }
+
         // نضيف limit و offset مباشرة بالاستعلام بعد التأكد أنها أرقام صحيحة
         $limit = isset($filters['limit']) ? (int) $filters['limit'] : 200;
         $offset = isset($filters['offset']) ? (int) $filters['offset'] : 0;

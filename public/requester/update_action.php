@@ -288,11 +288,21 @@ require_once '../helpers/authCheck.php';
 
 
                     <script>
-                        const API_USERS = "../../api/requester/users.php?action=all";
-                        const API_TYPES = "../../api/requester/types.php";
-                        const API_CREATE = "../../api/requester/actions.php?action=create";
-                        const ID = "<?= $_COOKIE['user_id'] ?? '' ?>";
+
+                        const params = new URLSearchParams(window.location.search);
+                        const ACTION_ID = params.get("id");
                         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
+
+                        if (!ACTION_ID) {
+                            Swal.fire("Error", "Action ID not found in URL", "error");
+                        }
+
+                        const API_GET = "../../api/actions.php?action=getActionById&id=" + ACTION_ID;
+                        const API_UPDATE = "../../api/requester/actions.php?action=update&id=" + ACTION_ID;
+                        const API_TYPES = "../../api/requester/types.php";
+                        const API_USERS = "../../api/requester/users.php?action=all";
+
+                        let ORIGINAL_ASSIGNED_USER_ID = null;
 
                         const el = {
                             form: document.getElementById("createActionForm"),
@@ -306,16 +316,18 @@ require_once '../helpers/authCheck.php';
                             imagePreview: document.getElementById("imagePreview"),
                         };
 
+                        let userSelect = null;
+
+                        /* =========================
+                         * 🔹 Image preview
+                         * ========================= */
                         el.imageInput?.addEventListener("change", (e) => {
                             const file = e.target.files?.[0];
                             el.imagePreview.innerHTML = "";
-
                             if (!file) {
-                                el.imagePreview.innerHTML =
-                                    '<span class="text-xs text-gray-400">No image selected</span>';
+                                el.imagePreview.innerHTML = `<span class="text-xs text-gray-400">No image selected</span>`;
                                 return;
                             }
-
                             const img = document.createElement("img");
                             img.src = URL.createObjectURL(file);
                             img.className = "object-cover w-full h-full";
@@ -323,212 +335,151 @@ require_once '../helpers/authCheck.php';
                         });
 
                         /* =========================
-                         * 🔹 Users & Roles Logic
+                         * 🔹 Load Categories & Types
                          * ========================= */
-                        let userSelect;
-
-                        let filter_roles = [];
-
-                        const roleSources = {
-                            incidentClassification: [],
-                            cmm: [],
-                            incident: [],
-                            type: []
-                        };
-
-                        // دالة لدمج كل القيم وتحديث المستخدمين
-                        function updateFilterRoles() {
-                            filter_roles = [
-                                ...new Set(
-                                    Object.values(roleSources).flat()
-                                )
-                            ];
-                            loadUsers();
-                        }
-
-                        // دالة عامة للتعامل مع أي input وتعيين قيمه الخاصة
-                        function handleRolesChange(sourceKey, roles, value) {
-                            roleSources[sourceKey] = value ? roles : [];
-                            updateFilterRoles();
-                        }
-
-                        // ربط inputs مع handler الخاص بهم
-                        [
-                            ["incidentClassification", el.incidentClassification, [3, 4]],
-                            ["cmm", el.cmm, [3, 4]],
-                        ].forEach(([key, element, roles]) => {
-                            element?.addEventListener("change", function () {
-                                handleRolesChange(key, roles, this.value);
-                            });
-                        });
-
-                        // input آخر مستقل
-                        el.incident?.addEventListener("change", function () {
-                            handleRolesChange("incident", [2, 4], this.value);
-                        });
-
-                        // دالة للحصول على اسم optgroup لأي خيار محدد
-                        function getSelectedOptGroupName(selectEl) {
-                            const option = selectEl.selectedOptions[0]; // الخيار المحدد
-                            if (!option) return null;
-
-                            const optGroup = option.parentElement;
-                            if (optGroup && optGroup.tagName === "OPTGROUP") {
-                                return optGroup.label; // اسم الـ optgroup
-                            }
-
-                            return null; // إذا الخيار بدون optgroup
-                        }
-
-                        // التعامل مع type
-                        el.type.addEventListener("change", function () {
-                            const groupName = getSelectedOptGroupName(this);
-                            if (["NM", "VPC", "Hazard"].includes(groupName)) {
-                                handleRolesChange("type", [2, 4], true);
-                            } else if (["CVPC"].includes(groupName)) {
-                                handleRolesChange("type", [3, 4], true); // إذا تريد مسح القيم للبقية
-                            } else {
-                                handleRolesChange("type", [], false);
-                            }
-                        });
-
-                        async function loadUsers() {
-                            try {
-                                let url = API_USERS;
-
-                                const select = document.getElementById("assigned_user");
-                                if (userSelect) {
-                                    userSelect.destroy();
-                                    userSelect = null;
-                                }
-
-                                // نظف القائمة واضف خيار مؤقت
-                                select.innerHTML = `<option value="">Loading...</option>`;
-
-                                if (filter_roles.length > 0) {
-                                    url += `&role_id=${filter_roles.join(",")}`;
-                                }
-
-                                const res = await fetch(url, {
-                                    headers: { "Authorization": `Bearer ${TOKEN}` }
-                                });
-
-                                const data = await res.json();
-                                if (!data.success) throw new Error(data.message);
-
-                                const users = data.data?.users || [];
-
-                                select.innerHTML = `<option value="">Select user</option>`;
-
-                                users.forEach(user => {
-                                    const opt = document.createElement("option");
-                                    opt.value = user.id;
-                                    opt.textContent = `${user.name} (${user.email})`;
-                                    select.appendChild(opt);
-                                });
-
-                                if (userSelect) userSelect.destroy();
-
-                                userSelect = new TomSelect("#assigned_user", {
-                                    placeholder: "Search user...",
-                                    allowEmptyOption: true,
-                                    searchField: ["text"],
-                                });
-
-                            } catch (e) {
-                                console.error(e);
-                            }
-                        }
-                        /* =========================
-                     * 🔹 Categories & Types
-                     * ========================= */
                         async function loadCategoriesAndTypes() {
-                            try {
-                                const res = await fetch(API_TYPES, {
-                                    headers: { Authorization: `Bearer ${TOKEN}` }
-                                });
+                            const res = await fetch(API_TYPES, {
+                                headers: { Authorization: `Bearer ${TOKEN}` }
+                            });
+                            const { success, data } = await res.json();
+                            if (!success) throw new Error("Failed to load types");
 
-                                const { success, data, message } = await res.json();
-                                if (!success) throw new Error(message);
+                            el.type.innerHTML = `<option value="">Select type</option>`;
 
-                                const categories = data?.categories || [];
-                                el.type.innerHTML = `<option value="">Select type</option>`;
+                            data.categories.forEach(cat => {
+                                const og = document.createElement("optgroup");
+                                og.label = cat.name;
+                                cat.types.forEach(t => og.appendChild(new Option(t.name, t.id)));
+                                el.type.appendChild(og);
+                            });
+                        }
 
-                                categories.forEach(category => {
-                                    const optGroup = document.createElement("optgroup");
-                                    optGroup.label = category.name;
+                        /* =========================
+                         * 🔹 Load Users
+                         * ========================= */
+                        async function loadUsers() {
+                            const res = await fetch(API_USERS, {
+                                headers: { Authorization: `Bearer ${TOKEN}` }
+                            });
+                            const data = await res.json();
+                            if (!data.success) throw new Error("Failed to load users");
 
-                                    (category.types || []).forEach(type => {
-                                        optGroup.appendChild(
-                                            new Option(type.name, type.id)
-                                        );
-                                    });
+                            el.assignedUser.innerHTML = `<option value="">Select user</option>`;
+                            data.data.users.forEach(u => {
+                                el.assignedUser.appendChild(
+                                    new Option(`${u.name} (${u.email})`, u.id)
+                                );
+                            });
 
-                                    el.type.appendChild(optGroup);
-                                });
+                            if (userSelect && ORIGINAL_ASSIGNED_USER_ID) {
+                                userSelect.setValue(ORIGINAL_ASSIGNED_USER_ID);
+                            }
 
-                            } catch (err) {
-                                console.error("❌ Load categories error:", err);
+
+                            userSelect = new TomSelect("#assigned_user", {
+                                placeholder: "Search user...",
+                                allowEmptyOption: true,
+                            });
+                        }
+
+                        /* =========================
+                         * 🔹 Helper: toDateInput
+                         * ========================= */
+                        function toDateInput(value) {
+                            if (!value) return "";
+
+                            // إذا كان أصلاً YYYY-MM-DD
+                            if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                                return value;
+                            }
+
+                            const d = new Date(value);
+                            if (isNaN(d.getTime())) return "";
+
+                            return d.toISOString().split("T")[0];
+                        }
+
+
+                        /* =========================
+                         * 🔹 Load Action Data
+                         * ========================= */
+                        async function loadActionData() {
+                            const res = await fetch(API_GET, {
+                                headers: { Authorization: `Bearer ${TOKEN}` }
+                            });
+                            const { success, data } = await res.json();
+                            if (!success) throw new Error("Failed to load action");
+
+                            const a = data;
+
+                            ORIGINAL_ASSIGNED_USER_ID =
+                                a.assigned_user_id || a.assigned_user || null;
+
+                            document.getElementById("start_date").value = toDateInput(a.start_date);
+                            document.getElementById("visit_duration").value = a.visit_duration ?? "";
+                            document.getElementById("area_visited").value = a.area_visited ?? "";
+                            document.getElementById("environment").value = a.environment ?? "";
+                            document.getElementById("related_topics").value = a.related_topics ?? "";
+                            document.getElementById("location").value = a.location ?? "";
+                            document.getElementById("incident").value = a.incident ?? "";
+                            document.getElementById("description").value = a.description ?? "";
+                            document.getElementById("action").value = a.action ?? "";
+                            document.getElementById("priority").value = a.priority ?? "";
+                            document.getElementById("expiry_date").value = toDateInput(a.expiry_date);
+
+                            if (el.incidentClassification) {
+                                el.incidentClassification.value = a.incident_classfication ?? "";
+                            }
+
+                            // ✅ type
+                            el.type.value = a.type_id;
+
+                            // ✅ assigned user (TomSelect)
+                            userSelect.setValue(a.assigned_user_id);
+
+                            // ✅ image
+                            if (a.image_url) {
+                                el.imagePreview.innerHTML =
+                                    `<img src="${a.image_url}" class="object-cover w-full h-full">`;
                             }
                         }
+
                         /* =========================
-                     * 🔹 Submit Form
-                     * ========================= */
+                         * 🔹 Submit Update
+                         * ========================= */
                         el.form.addEventListener("submit", async (e) => {
                             e.preventDefault();
 
                             el.submitBtn.disabled = true;
-                            el.submitBtn.textContent = "Submitting...";
+                            el.submitBtn.textContent = "Updating...";
 
-                            const formData = new FormData();
-                            formData.append("type_id", document.getElementById("type").value);
-                            formData.append("location", document.getElementById("location").value);
-                            formData.append("related_topics", document.getElementById("related_topics").value);
+                            const formData = new FormData(el.form);
 
-                            const incidentClassificationEl =
-                                document.getElementById("incident_classfication");
+                            formData.set("assigned_user_id", el.assignedUser.value || ORIGINAL_ASSIGNED_USER_ID);
+                            formData.set("created_by", "<?= $_COOKIE['user_id'] ?? '' ?>");
+                            formData.set("id", ACTION_ID); // عشان ما يصير Missing ID
 
-                            if (incidentClassificationEl && incidentClassificationEl.value !== "") {
-                                formData.append("incident_classfication", incidentClassificationEl.value);
-                            }
-
-                            formData.append("incident", document.getElementById("incident").value);
-                            formData.append("visit_duration", document.getElementById("visit_duration").value);
-                            formData.append("environment", document.getElementById("environment").value);
-                            formData.append("area_visited", document.getElementById("area_visited").value);
-                            formData.append("description", document.getElementById("description").value);
-                            formData.append("action", document.getElementById("action").value);
-                            formData.append("priority", document.getElementById("priority").value);
-                            formData.append("assigned_user_id", document.getElementById("assigned_user").value);
-                            formData.append("start_date", document.getElementById("start_date").value);
-                            formData.append("expiry_date", document.getElementById("expiry_date").value);
-                            formData.append("image", document.getElementById("image").files[0] || "");
-                            formData.append("created_by", ID);
+                            // حوّل FormData إلى URLSearchParams
+                            const urlEncodedData = new URLSearchParams(formData).toString();
 
                             try {
-                                const res = await fetch(API_CREATE, {
-                                    method: "POST",
-                                    headers: { Authorization: `Bearer ${TOKEN}` },
-                                    body: formData
+                                const res = await fetch(API_UPDATE, {
+                                    method: "PUT",
+                                    headers: {
+                                        Authorization: `Bearer ${TOKEN}`,
+                                        "Content-Type": "application/x-www-form-urlencoded"
+                                    },
+                                    body: urlEncodedData
                                 });
 
                                 const data = await res.json();
                                 if (!data.success) throw new Error(data.message);
 
-                                Swal.fire({
-                                    icon: "success",
-                                    title: "Success",
-                                    text: "Action created successfully!",
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                });
-
-                                el.form.reset();
-                                el.assignedUser.tomselect.clear();
+                                Swal.fire("Success", "Action updated successfully", "success");
 
                             } catch (err) {
                                 Toastify({
-                                    text: err.message || "Something went wrong.",
+                                    text: err.message,
                                     duration: 3000,
                                     gravity: "top",
                                     position: "right",
@@ -536,18 +487,25 @@ require_once '../helpers/authCheck.php';
                                 }).showToast();
                             } finally {
                                 el.submitBtn.disabled = false;
-                                el.submitBtn.textContent = "Submit";
+                                el.submitBtn.textContent = "Update";
                             }
                         });
 
+
                         /* =========================
-                         * 🔹 Init
+                         * 🔹 Init (ORDER MATTERS)
                          * ========================= */
-                        document.addEventListener("DOMContentLoaded", () => {
-                            loadUsers();
-                            loadCategoriesAndTypes();
+                        document.addEventListener("DOMContentLoaded", async () => {
+                            try {
+                                await loadCategoriesAndTypes();
+                                await loadUsers();
+                                await loadActionData();
+                            } catch (e) {
+                                Swal.fire("Error", e.message, "error");
+                            }
                         });
                     </script>
+
 
                     <script>
                         // Image preview and attachment name display (keeps existing ids)

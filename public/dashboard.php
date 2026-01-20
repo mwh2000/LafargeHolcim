@@ -70,8 +70,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
                             <option value=""></option>
                             <option value="Injuries">Injuries</option>
-                            <option value="Property">Property</option>
-                            <option value="Damage">Damage</option>
+                            <option value="Property Damage">Property Damage</option>
                             <option value="Fire">Fire</option>
                         </select>
 

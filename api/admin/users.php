@@ -46,6 +46,7 @@ switch ($method) {
                 'search' => $queryParams['search'] ?? null,
                 'role_id' => $queryParams['role_id'] ?? null,
                 'is_active' => $queryParams['is_active'] ?? null,
+                'group' => $queryParams['group'] ?? null,
             ];
             $userController->getAll($filters);
         } elseif ($action === 'show' && isset($queryParams['id'])) {
