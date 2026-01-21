@@ -159,23 +159,28 @@ require_once __DIR__ . '/partials/navbar.php';
         // ✅ تحديد اليوم الحالي كافتراضي في حقل التاريخ
         const dateInput = document.getElementById('filter-date');
         const today = new Date().toISOString().split('T')[0];
-        dateInput.value = today;
 
         // ✅ دالة لجلب الإشعارات حسب التاريخ المحدد
-        function loadNotifications(selectedDate = today) {
-            fetch(`../api/notifications.php?action=get_notifications&day=${selectedDate}`)
+        function loadNotifications(selectedDate = null) {
+            let url = '../api/notifications.php?action=get_notifications';
+
+            if (selectedDate) {
+                url += `&day=${selectedDate}`;
+            }
+
+            fetch(url)
                 .then(res => res.json())
                 .then(data => {
                     const container = document.getElementById('notifications-container');
                     const badge = document.getElementById('notif-count');
-                    container.innerHTML = ''; // تفريغ القائمة قبل التحديث
+                    container.innerHTML = '';
 
                     if (data.success) {
                         const notifications = data.notifications;
                         badge.textContent = notifications.length;
 
                         if (notifications.length === 0) {
-                            container.innerHTML = `<p style="color:#888">No notifications found for ${selectedDate}.</p>`;
+                            container.innerHTML = `<p style="color:#888">No notifications found.</p>`;
                             return;
                         }
 
@@ -183,52 +188,29 @@ require_once __DIR__ . '/partials/navbar.php';
                             const card = document.createElement('div');
                             card.className = 'notif-card';
                             card.innerHTML = `
-                                <div class="notif-item" data-id="${notif.id}" data-url="${notif.url || '#'}">
-                                    <div class="notif-left">
-                                        <img src="${notif.image || 'images/logo.png'}" alt="icon" class="notif-img">
-                                    </div>
-                                    <div class="notif-right">
-                                        <div class="notif-body">
-                                            ${notif.title ? `<strong>${notif.title}</strong><br>` : ''}
-                                            ${notif.body || ''}
-                                            ${notif.is_opened == 0 ? '<span class="notif-dot"></span>' : ''}
-                                        </div>
-                                        <div class="notif-time">
-                                            ${new Date(notif.created_at).toLocaleString()}
-                                        </div>
-                                    </div>
+                        <div class="notif-item" data-id="${notif.id}" data-url="${notif.url || '#'}">
+                            <div class="notif-left">
+                                <img src="${notif.image || 'images/logo.png'}" class="notif-img">
+                            </div>
+                            <div class="notif-right">
+                                <div class="notif-body">
+                                    ${notif.title ? `<strong>${notif.title}</strong><br>` : ''}
+                                    ${notif.body || ''}
+                                    ${notif.is_opened == 0 ? '<span class="notif-dot"></span>' : ''}
                                 </div>
-                            `;
+                                <div class="notif-time">
+                                    ${new Date(notif.created_at).toLocaleString()}
+                                </div>
+                            </div>
+                        </div>
+                    `;
                             container.appendChild(card);
                         });
-
-                        // عند الضغط على الإشعار → تحديث حالته + الذهاب للرابط
-                        document.querySelectorAll('.notif-item').forEach(item => {
-                            item.addEventListener('click', function () {
-                                const notification_id = this.getAttribute('data-id');
-                                const targetUrl = this.getAttribute('data-url');
-
-                                fetch('../api/notifications.php?action=mark_as_opened', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ notification_id: notification_id })
-                                })
-                                    .then(res => res.json())
-                                    .then(result => {
-                                        window.location.href = targetUrl;
-                                    })
-                                    .catch(err => {
-                                        console.error('Error marking as opened:', err);
-                                        window.location.href = targetUrl;
-                                    });
-                            });
-                        });
-                    } else {
-                        alert(data.message || 'Unable to load notifications.');
                     }
                 })
-                .catch(error => console.error('Fetch error:', error));
+                .catch(err => console.error(err));
         }
+
 
         // ✅ تحميل الإشعارات لأول مرة
         loadNotifications();

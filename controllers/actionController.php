@@ -148,11 +148,21 @@ class ActionController
             'priority',
             'incident_classfication'
         ] as $field) {
-            if (isset($data[$field])) {
+
+            if (array_key_exists($field, $data)) {
+
+                $value = $data[$field];
+
+                // ✅ معالجة التواريخ الفارغة
+                if (in_array($field, ['start_date', 'expiry_date']) && $value === '') {
+                    $value = null;
+                }
+
                 $fields[] = "$field = ?";
-                $values[] = $data[$field];
+                $values[] = $value;
             }
         }
+
 
 
         // تحديث الملفات إن وجدت

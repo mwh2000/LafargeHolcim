@@ -57,14 +57,16 @@ require_once __DIR__ . '/helpers/authCheck.php';
                         <select id="type_category" multiple
                             class="multi-select w-full px-3 py-2 border rounded-md"></select>
 
-                        <select id="incident_classfication" multiple
-                            class="multi-select w-full px-4 py-3 border rounded-md">
-                            <option value="FA (First aid)">FA (First aid)</option>
-                            <option value="MI (Medical Injury)">MI (Medical Injury)</option>
-                            <option value="LTI (Lost Time Injury)">LTI (Lost Time Injury)</option>
-                            <option value="PD (Property Damage)">PD (Property Damage)</option>
-                            <option value="none">None</option>
-                        </select>
+                        <?php if (($_COOKIE['user_type'] ?? null) == 4): ?>
+                            <select id="incident_classfication" multiple
+                                class="multi-select w-full px-4 py-3 border rounded-md">
+                                <option value="FA (First aid)">FA (First aid)</option>
+                                <option value="MI (Medical Injury)">MI (Medical Injury)</option>
+                                <option value="LTI (Lost Time Injury)">LTI (Lost Time Injury)</option>
+                                <option value="PD (Property Damage)">PD (Property Damage)</option>
+                                <option value="none">None</option>
+                            </select>
+                        <?php endif; ?>
 
                         <select id="incident" multiple
                             class="w-full px-4 py-3 border border-gray-200 rounded-md bg-white focus:ring-1 focus:ring-[#0b6f76]">
@@ -162,7 +164,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 if (typeCategorySelect) typeCategorySelect.destroy();
                 typeCategorySelect = new TomSelect(select, {
                     plugins: ['remove_button'],
-                    placeholder: "Categories",
+                    placeholder: "Safety",
                     maxItems: null,
                 });
 
@@ -173,13 +175,17 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
         /* ================= INITIALIZE STATIC SELECTS ================= */
         function initStaticSelects() {
-            // Incident Classification
-            if (incidentClassSelect) incidentClassSelect.destroy();
-            incidentClassSelect = new TomSelect("#incident_classfication", {
-                plugins: ['remove_button'],
-                placeholder: "Incident Classification",
-                maxItems: null
-            });
+
+            // Incident Classification (مشروط)
+            const incidentClassEl = document.getElementById("incident_classfication");
+            if (incidentClassEl) {
+                if (incidentClassSelect) incidentClassSelect.destroy();
+                incidentClassSelect = new TomSelect(incidentClassEl, {
+                    plugins: ['remove_button'],
+                    placeholder: "Incident Classification",
+                    maxItems: null
+                });
+            }
 
             // Incident
             if (incident) incident.destroy();
@@ -206,13 +212,18 @@ require_once __DIR__ . '/helpers/authCheck.php';
             });
         }
 
+
         /* ================= LOAD STATISTICS ================= */
         async function loadStatistics() {
             try {
                 const fromDate = document.getElementById("from_date").value;
                 const toDate = document.getElementById("to_date").value;
                 const typeCategory = getSelectedValues(document.getElementById("type_category"));
-                const incident_classfication = getSelectedValues(document.getElementById("incident_classfication"));
+                const incidentClassEl = document.getElementById("incident_classfication");
+                const incident_classfication = incidentClassEl
+                    ? getSelectedValues(incidentClassEl)
+                    : [];
+
                 const incident = getSelectedValues(document.getElementById("incident"));
                 const environment = getSelectedValues(document.getElementById("environment"));
                 const group = getSelectedValues(document.getElementById("group"));

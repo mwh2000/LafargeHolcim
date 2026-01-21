@@ -19,6 +19,8 @@ require_once '../helpers/authCheck.php';
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
     <title>KCML / SLV | Edit User</title>
 
 </head>
@@ -199,6 +201,8 @@ require_once '../helpers/authCheck.php';
             }
         }
 
+        let managerSelect
+
         async function loadManagers() {
             try {
                 const response = await fetch(`${API_USERS}?action=all`, {
@@ -217,6 +221,14 @@ require_once '../helpers/authCheck.php';
                     option.value = user.id;
                     option.textContent = `${user.name} (${user.email})`;
                     list.appendChild(option);
+                });
+
+                if (managerSelect) managerSelect.destroy();
+
+                managerSelect = new TomSelect("#usersList", {
+                    placeholder: "Search manager...",
+                    allowEmptyOption: true,
+                    searchField: ["text"],
                 });
             } catch (error) {
                 console.error("Error loading managers:", error);

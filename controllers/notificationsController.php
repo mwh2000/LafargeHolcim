@@ -95,36 +95,41 @@ class NotificationController
     }
 
     // Optional: get user notifications
-    public function getUserNotifications($user_id, $is_opened = false, $day = null)
+    public function getUserNotifications($user_id, $is_opened = null, $day = null)
     {
-        // ✅ استخدم التوقيت المحلي (العراق)
+        // ✅ التوقيت المحلي
         date_default_timezone_set('Asia/Baghdad');
 
-        // ✅ إذا ما تم تمرير يوم، استخدم اليوم الحالي
-        if ($day === null) {
-            $day = date('Y-m-d');
-        }
+        $query = "
+        SELECT n.*, u.name AS sender_name
+        FROM notifications n
+        LEFT JOIN users u ON n.sender_id = u.id
+        WHERE n.user_id = ?
+    ";
 
-        $query = "SELECT n.*, u.name AS sender_name
-              FROM notifications n
-              LEFT JOIN users u ON n.sender_id = u.id
-              WHERE n.user_id = ?";
+        $params = [$user_id];
 
-        // ✅ فلترة حسب حالة الفتح
+        // ✅ فلترة حسب حالة الفتح (إذا انرسلت)
         if ($is_opened !== null) {
-            $query .= $is_opened ? " AND n.is_opened = 1" : " AND n.is_opened = 0";
+            $query .= " AND n.is_opened = ?";
+            $params[] = $is_opened ? 1 : 0;
         }
 
-        // ✅ فلترة حسب تاريخ اليوم (من الحقل DATETIME)
-        $query .= " AND DATE(n.created_at) = ?";
+        // ✅ فلترة حسب اليوم (إذا انرسل)
+        if ($day !== null) {
+            $query .= " AND DATE(n.created_at) = ?";
+            $params[] = $day;
+        }
 
-        $query .= " ORDER BY n.created_at DESC";
+        // ✅ الترتيب: غير المفتوحة أولاً ثم الأحدث
+        $query .= " ORDER BY n.is_opened ASC, n.created_at DESC";
 
         $stmt = $this->conn->prepare($query);
-        $stmt->execute([$user_id, $day]);
+        $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
 
 
 }
