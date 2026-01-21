@@ -246,7 +246,7 @@ class ActionController
             SELECT 
                 a.id, a.status, a.description, a.action, a.expiry_date, a.image, a.attachment, a.created_at,
                 t.name AS type_name,
-                u.name AS assigned_user_name
+                u.name AS assigned_user_name,
                 u2.name AS created_by_name
             FROM actions a
             LEFT JOIN types t ON a.type_id = t.id
