@@ -188,29 +188,49 @@ require_once __DIR__ . '/partials/navbar.php';
                             const card = document.createElement('div');
                             card.className = 'notif-card';
                             card.innerHTML = `
-                        <div class="notif-item" data-id="${notif.id}" data-url="${notif.url || '#'}">
-                            <div class="notif-left">
-                                <img src="${notif.image || 'images/logo.png'}" class="notif-img">
-                            </div>
-                            <div class="notif-right">
-                                <div class="notif-body">
-                                    ${notif.title ? `<strong>${notif.title}</strong><br>` : ''}
-                                    ${notif.body || ''}
-                                    ${notif.is_opened == 0 ? '<span class="notif-dot"></span>' : ''}
+                                <div class="notif-item" data-id="${notif.id}" data-url="${notif.url || '#'}">
+                                    <div class="notif-left">
+                                        <img src="${notif.image || 'images/logo.png'}" class="notif-img">
+                                    </div>
+                                    <div class="notif-right">
+                                        <div class="notif-body">
+                                            ${notif.title ? `<strong>${notif.title}</strong><br>` : ''}
+                                            ${notif.body || ''}
+                                            ${notif.is_opened == 0 ? '<span class="notif-dot"></span>' : ''}
+                                        </div>
+                                        <div class="notif-time">
+                                            ${new Date(notif.created_at).toLocaleString()}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="notif-time">
-                                    ${new Date(notif.created_at).toLocaleString()}
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                            `;
                             container.appendChild(card);
+                        });
+
+                        document.querySelectorAll('.notif-item').forEach(item => {
+                            item.addEventListener('click', function () {
+                                const notification_id = this.getAttribute('data-id');
+                                const targetUrl = this.getAttribute('data-url');
+
+                                fetch('../api/notifications.php?action=mark_as_opened', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ notification_id: notification_id })
+                                })
+                                    .then(res => res.json())
+                                    .then(result => {
+                                        window.location.href = targetUrl;
+                                    })
+                                    .catch(err => {
+                                        console.error('Error marking as opened:', err);
+                                        window.location.href = targetUrl;
+                                    });
+                            });
                         });
                     }
                 })
                 .catch(err => console.error(err));
         }
-
 
         // ✅ تحميل الإشعارات لأول مرة
         loadNotifications();

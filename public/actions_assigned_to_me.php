@@ -26,7 +26,7 @@ require_once 'helpers/authCheck.php';
 <body class="bg-gray-50">
 
     <!-- ✅ Layout -->
-    <?php renderNavbar('Actions', '/public/manager.php'); ?>
+    <?php renderNavbar('Actions', '/public/notifications.php'); ?>
     <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]">
         <?php renderSidebar('actions_assigned_to_me'); ?>
 

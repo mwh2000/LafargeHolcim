@@ -26,6 +26,21 @@ if ($action === 'get_notifications' && $_SERVER['REQUEST_METHOD'] === 'GET') {
         echo json_encode(['success' => false, 'message' => 'User not authenticated']);
     }
 }
+
+// getUserNotificationsCount
+if ($action === 'get_notifications_count' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    if (isset($_COOKIE['user_id'])) {
+        $user_id = $_COOKIE['user_id'];
+        $is_opened = $_GET['is_opened'] ?? null;
+        if ($is_opened !== null) {
+            $is_opened = $is_opened == '1' ? 1 : 0;
+        }
+        $count = $controller->getUserNotificationsCount($user_id, $is_opened);
+        echo json_encode(['success' => true, 'count' => $count]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'User not authenticated']);
+    }
+}
 // mark notification as opened
 if ($action === 'mark_as_opened' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);

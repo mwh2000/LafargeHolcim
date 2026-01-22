@@ -130,6 +130,20 @@ class NotificationController
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // getUserNotificationsCount
+    public function getUserNotificationsCount($user_id, $is_opened = null)
+    {
+        $query = "SELECT COUNT(*) FROM notifications WHERE user_id = ?";
+        $params = [$user_id];
 
+        if ($is_opened !== null) {
+            $query .= " AND is_opened = ?";
+            $params[] = $is_opened ? 1 : 0;
+        }
 
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
 }
