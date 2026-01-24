@@ -4,7 +4,7 @@ $userData = json_decode($_COOKIE['user_data'], true);
 // navbar.php
 function renderNavbar($pageRoute = 'Dashboard', $notificationsPageURL = '/public/notifications.php')
 {
-    global $config;
+    global $config, $userData;
     ?>
     <nav class="bg-white shadow-sm border-b border-gray-200 px-4 md:px-8 py-3 md:py-4 sticky top-0 z-30">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0">
@@ -25,7 +25,12 @@ function renderNavbar($pageRoute = 'Dashboard', $notificationsPageURL = '/public
                         <img src="<?= BASE_URL ?>/public/images/logo.png" alt="Logo"
                             class="w-7 h-7 md:w-8 md:h-8 object-contain">
                     </div>
-                    <span class="text-xs md:text-sm font-semibold text-gray-700 tracking-wide">KCML / SLV</span>
+                    <div class="col">
+                        <span class="text-xs md:text-sm font-semibold text-gray-700 tracking-wide">KCML / SLV</span>
+                        <span class="text-xs text-gray-400 block tracking-wide">
+                            <?php echo $userData['name'] ?>
+                        </span>
+                    </div>
                 </div>
                 <div class="hidden md:block text-sm text-gray-500">
                     <span><?php echo $pageRoute ?></span>
@@ -63,7 +68,7 @@ function renderNavbar($pageRoute = 'Dashboard', $notificationsPageURL = '/public
         });
 
         function loadNotificationsCount() {
-            fetch('../api/notifications.php?action=get_notifications_count&is_opened=0', {
+            fetch(BASE_URL + '/api/notifications.php?action=get_notifications_count&is_opened=0', {
                 method: 'GET',
                 credentials: 'include'
             })

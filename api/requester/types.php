@@ -16,7 +16,7 @@ try {
     // تهيئة الكنترولر والـ Middleware
     $auth = new AuthMiddleware();
     $decoded = $auth->verifyToken();
-    $auth->requireRoles($decoded, ['requester', 'safety']);
+    $auth->requireRoles($decoded, ['requester', 'safety', 'area_manager', 'manager', 'plant manager']);
 
     $controller = new TypesController($conn);
 

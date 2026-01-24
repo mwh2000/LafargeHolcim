@@ -22,7 +22,7 @@ require_once 'helpers/authCheck.php';
     <?php renderNavbar('Actions', '/public/notifications.php'); ?>
 
     <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]">
-        <?php renderSidebar('actions_assigned_to_me'); ?>
+        <?php renderSidebar('dashboard'); ?>
 
         <div class="flex-1 flex flex-col sm:ml-64 transition-all">
             <main class="flex-1 overflow-y-auto p-8 md:pl-12">
@@ -72,8 +72,17 @@ require_once 'helpers/authCheck.php';
         /* ================= BASE API ================= */
         function getBaseApi() {
             // الادمن يرى كل الأكشنات
-            if (IS_ADMIN) {
+            if (IS_ADMIN || USER_ROLE === '6') {
                 return '../api/actions.php?action=getAll';
+            }
+
+            if (USER_ROLE === '3') {
+                // المدير يرى أكشنات فريقه
+                return `../api/actions.php?action=getAll&manager_id=${USER_ID}`;
+            }
+            if (USER_ROLE === '5') {
+                // مسؤول السلامة يرى أكشنات القسم
+                return `../api/actions.php?action=getAll&super_manager_id=${USER_ID}`;
             }
 
             // المستخدم العادي يرى فقط المسند له

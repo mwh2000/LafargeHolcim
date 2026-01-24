@@ -19,7 +19,7 @@ $conn = $database->getConnection();
 
 $auth = new AuthMiddleware();
 $decoded = $auth->verifyToken();
-$auth->requireRoles($decoded, ['requester', 'safety']);
+$auth->requireRoles($decoded, ['requester', 'safety', 'area_manager', 'manager', 'plant manager']);
 
 $controller = new ActionController($conn);
 $notificationController = new NotificationController($conn);

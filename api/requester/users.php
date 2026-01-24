@@ -18,7 +18,7 @@ $jwtHandler = new JWTHandler($config['jwt_secret']);
 
 $auth = new AuthMiddleware();
 $decoded = $auth->verifyToken();
-$auth->requireRoles($decoded, ['requester', 'safety']);
+$auth->requireRoles($decoded, ['requester', 'safety', 'area_manager', 'manager', 'plant manager']);
 
 $userController = new UserController($conn, $jwtHandler);
 

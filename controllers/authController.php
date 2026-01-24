@@ -30,7 +30,7 @@ class AuthController
         }
 
         $stmt = $this->conn->prepare("
-            SELECT u.id, u.name, u.email, u.password, u.role_id, u.`group`, u.is_active, r.name AS role_name
+            SELECT u.id, u.name, u.email, u.password, u.role_id, u.`group`, u.is_active, u.department, r.name AS role_name
             FROM users u
             LEFT JOIN roles r ON u.role_id = r.id
             WHERE u.email = ? LIMIT 1
@@ -70,7 +70,8 @@ class AuthController
             'name' => $user['name'],
             'email' => $user['email'],
             'role_id' => $user['role_id'],
-            'group' => $user['group']
+            'group' => $user['group'],
+            'department' => $user['department']
         ]), $expire, '/', '', false, true);
 
 

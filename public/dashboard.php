@@ -123,7 +123,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
         const USER_ID = "<?= $_COOKIE['user_id'] ?? '' ?>";
         const USER_ROLE = "<?= $_COOKIE['user_type'] ?? '2' ?>"; // 1=Admin, 2=User
-        const IS_ADMIN = Number(USER_ROLE) === 1; // إذا 1 → Admin
+        const IS_ADMIN = Number(USER_ROLE) === 1 || Number(USER_ROLE) === 6; // إذا 1 → Admin
 
         /* ================= INSTANCES TOMSELECT ================= */
         let typeCategorySelect, incidentClassSelect, incident, environmentSelect, groupSelect;
@@ -242,7 +242,12 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 if (USER_ROLE === '3') {
                     // Manager → يشوف أكشنات فريقه
                     params.append("manager_id", USER_ID);
-                } else if (!IS_ADMIN) {
+                } else if (USER_ROLE === '5') {
+                    // Safety Officer → يشوف أكشنات القسم
+                    params.append("super_manager_id", USER_ID);
+                }
+
+                else if (!IS_ADMIN) {
                     // User عادي → يشوف أكشناته فقط
                     params.append("assigned_user_id", USER_ID);
                 }

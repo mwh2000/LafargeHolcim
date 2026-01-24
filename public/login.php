@@ -203,6 +203,8 @@ require_once __DIR__ . '/../config/config.php';
             else if (user.role_id == 2) window.location.href = "requester/create_action.php";
             else if (user.role_id == 3) window.location.href = "dashboard.php";
             else if (user.role_id == 4) window.location.href = "dashboard.php";
+            else if (user.role_id == 5) window.location.href = "dashboard.php";
+            else if (user.role_id == 6) window.location.href = "dashboard.php";
             else window.location.href = "login.php";
           }, 1200);
 

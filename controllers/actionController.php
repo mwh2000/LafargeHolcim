@@ -285,6 +285,27 @@ class ActionController
             $params[] = (int) $filters['assigned_user_id'];
         }
 
+        // ✅ فلترة حسب المدير (manager_id)
+        // المدير يشوف الأكشنات الخاصة بموظفيه المباشرين
+        if (!empty($filters['manager_id'])) {
+            $query .= " AND u.manager_id = ?";
+            $params[] = (int) $filters['manager_id'];
+        }
+
+        // ✅ فلترة حسب super_manager_id
+        // المدير الأعلى يشوف أكشنات موظفي المدراء اللي تحته
+        if (!empty($filters['super_manager_id'])) {
+            $query .= "
+                AND u.manager_id IN (
+                    SELECT id
+                    FROM users
+                    WHERE manager_id = ?
+                )
+            ";
+            $params[] = (int) $filters['super_manager_id'];
+        }
+
+
         // crated by
         if (!empty($filters['created_by'])) {
             $query .= " AND a.created_by = ?";
@@ -511,6 +532,19 @@ class ActionController
             $baseConditions[] = "u.manager_id = :manager_id";
             $params[':manager_id'] = (int) $filters['manager_id'];
         }
+
+        // ✅ فلترة حسب super_manager_id
+        if (!empty($filters['super_manager_id'])) {
+            $baseConditions[] = "
+                u.manager_id IN (
+                    SELECT id
+                    FROM users
+                    WHERE manager_id = :super_manager_id
+                )
+            ";
+            $params[':super_manager_id'] = (int) $filters['super_manager_id'];
+        }
+
 
         // Incident classification
         if (!empty($filters['incident_classfication'])) {
