@@ -28,7 +28,7 @@ function renderNavbar($pageRoute = 'Dashboard', $notificationsPageURL = '/public
                     <div class="col">
                         <span class="text-xs md:text-sm font-semibold text-gray-700 tracking-wide">KCML / SLV</span>
                         <span class="text-xs text-gray-400 block tracking-wide">
-                            <?php echo $userData['name'] ?>
+                            <?php echo $userData['name'] ?? '' ?>
                         </span>
                     </div>
                 </div>
