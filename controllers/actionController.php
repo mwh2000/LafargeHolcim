@@ -132,22 +132,24 @@ class ActionController
         $fields = [];
         $values = [];
 
-        foreach ([
-            'assigned_user_id',
-            'start_date',
-            'expiry_date',
-            'type_id',
-            'location',
-            'related_topics',
-            'incident',
-            'visit_duration',
-            'environment',
-            'area_visited',
-            'description',
-            'action',
-            'priority',
-            'incident_classfication'
-        ] as $field) {
+        foreach (
+            [
+                'assigned_user_id',
+                'start_date',
+                'expiry_date',
+                'type_id',
+                'location',
+                'related_topics',
+                'incident',
+                'visit_duration',
+                'environment',
+                'area_visited',
+                'description',
+                'action',
+                'priority',
+                'incident_classfication'
+            ] as $field
+        ) {
 
             if (array_key_exists($field, $data)) {
 
@@ -252,95 +254,147 @@ class ActionController
     /** ✅ Get all Actions (filters + search + pagination) */
     public function getAll(array $filters = [])
     {
-        $query = "
-            SELECT 
-                a.id, a.status, a.description, a.action, a.expiry_date, a.image, a.attachment, a.created_at,
-                t.name AS type_name,
-                u.name AS assigned_user_name,
-                u2.name AS created_by_name
-            FROM actions a
-            LEFT JOIN types t ON a.type_id = t.id
-            LEFT JOIN users u ON a.assigned_user_id = u.id
-            LEFT JOIN users u2 ON a.created_by = u2.id
-            WHERE 1
-        ";
+        /* =========================
+     * 1️⃣ تجهيز الفلاتر (نفس Statistics)
+     * ========================= */
+        $baseConditions = [];
         $params = [];
 
-        // 🔍 البحث بالعنوان
-        if (!empty($filters['search'])) {
-            $query .= " AND (a.title LIKE ? OR a.description LIKE ?)";
-            $search = '%' . $filters['search'] . '%';
-            $params = array_merge($params, [$search, $search]);
+        if (!empty($filters['from_date'])) {
+            $baseConditions[] = "a.created_at >= :from_date";
+            $params[':from_date'] = $filters['from_date'] . " 00:00:00";
         }
 
-        // فلترة حسب النوع
-        if (!empty($filters['type_id'])) {
-            $query .= " AND a.type_id = ?";
-            $params[] = (int) $filters['type_id'];
+        if (!empty($filters['to_date'])) {
+            $baseConditions[] = "a.created_at <= :to_date";
+            $params[':to_date'] = $filters['to_date'] . " 23:59:59";
         }
 
-        // فلترة حسب المستخدم المكلف
+        if (!empty($filters['type_category_id'])) {
+            $ids = (array) $filters['type_category_id'];
+            $placeholders = [];
+            foreach ($ids as $i => $id) {
+                $key = ":type_id_$i";
+                $placeholders[] = $key;
+                $params[$key] = (int)$id;
+            }
+            $baseConditions[] = "tc.id IN (" . implode(',', $placeholders) . ")";
+        }
+
         if (!empty($filters['assigned_user_id'])) {
-            $query .= " AND a.assigned_user_id = ?";
-            $params[] = (int) $filters['assigned_user_id'];
+            $ids = (array) $filters['assigned_user_id'];
+            $placeholders = [];
+            foreach ($ids as $i => $id) {
+                $key = ":assigned_user_$i";
+                $placeholders[] = $key;
+                $params[$key] = (int)$id;
+            }
+            $baseConditions[] = "a.assigned_user_id IN (" . implode(',', $placeholders) . ")";
         }
 
-        // ✅ فلترة حسب المدير (manager_id)
-        // المدير يشوف الأكشنات الخاصة بموظفيه المباشرين
         if (!empty($filters['manager_id'])) {
-            $query .= " AND u.manager_id = ?";
-            $params[] = (int) $filters['manager_id'];
+            $baseConditions[] = "u.manager_id = :manager_id";
+            $params[':manager_id'] = (int)$filters['manager_id'];
         }
 
-        // ✅ فلترة حسب super_manager_id
-        // المدير الأعلى يشوف أكشنات موظفي المدراء اللي تحته
         if (!empty($filters['super_manager_id'])) {
-            $query .= "
-                AND u.manager_id IN (
-                    SELECT id
-                    FROM users
-                    WHERE manager_id = ?
-                )
-            ";
-            $params[] = (int) $filters['super_manager_id'];
+            $baseConditions[] = "
+            u.manager_id IN (
+                SELECT id FROM users WHERE manager_id = :super_manager_id
+            )
+        ";
+            $params[':super_manager_id'] = (int)$filters['super_manager_id'];
         }
 
+        if (!empty($filters['incident_classfication'])) {
+            $values = (array)$filters['incident_classfication'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":incident_class_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $baseConditions[] = "a.incident_classfication IN (" . implode(',', $placeholders) . ")";
+        }
 
-        // crated by
-        if (!empty($filters['created_by'])) {
-            $query .= " AND a.created_by = ?";
-            $params[] = (int) $filters['created_by'];
+        if (!empty($filters['incident'])) {
+            $values = (array)$filters['incident'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":incident_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $baseConditions[] = "a.incident IN (" . implode(',', $placeholders) . ")";
+        }
+
+        if (!empty($filters['environment'])) {
+            $values = (array)$filters['environment'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":environment_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $baseConditions[] = "a.environment IN (" . implode(',', $placeholders) . ")";
+        }
+
+        if (!empty($filters['group'])) {
+            $values = (array)$filters['group'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":group_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $baseConditions[] = "a.`group` IN (" . implode(',', $placeholders) . ")";
         }
 
         if (isset($filters['status']) && $filters['status'] !== '') {
-
             if ($filters['status'] === 'overdue') {
-                $query .= " AND a.status = 'open' AND a.expiry_date < CURDATE()";
+                $baseConditions[] = "a.status = 'open' AND a.expiry_date < CURDATE()";
             } elseif ($filters['status'] === 'open') {
-                $query .= " AND a.status = 'open' AND a.expiry_date > CURDATE()";
+                $baseConditions[] = "a.status = 'open' AND a.expiry_date >= CURDATE()";
             } else {
-                $query .= " AND a.status = ?";
-                $params[] = $filters['status'];
+                $baseConditions[] = "a.status = :status";
+                $params[':status'] = $filters['status'];
             }
         }
 
-        // Pagination
-        $limit = isset($filters['limit']) ? (int) $filters['limit'] : 20;
-        $offset = isset($filters['offset']) ? (int) $filters['offset'] : 0;
+        $baseWhere = $baseConditions
+            ? " AND " . implode(" AND ", $baseConditions)
+            : "";
 
-        $query .= " ORDER BY a.created_at DESC LIMIT $limit OFFSET $offset";
+        /* =========================
+     * 2️⃣ Query الأكشنات
+     * ========================= */
+        $sql = "
+        SELECT 
+            a.id, a.status, a.description, a.action, a.expiry_date,
+            a.image, a.attachment, a.created_at,
+            t.name AS type_name,
+            u.name AS assigned_user_name,
+            u2.name AS created_by_name
+        FROM actions a
+        LEFT JOIN users u ON a.assigned_user_id = u.id
+        LEFT JOIN users u2 ON a.created_by = u2.id
+        LEFT JOIN types t ON a.type_id = t.id
+        LEFT JOIN type_categories tc ON t.category_id = tc.id
+        WHERE 1=1
+        $baseWhere
+        ORDER BY a.created_at DESC
+    ";
 
-        $stmt = $this->conn->prepare($query);
+        $stmt = $this->conn->prepare($sql);
         $stmt->execute($params);
         $actions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return $this->respond(true, 'Actions retrieved successfully', [
             'count' => count($actions),
-            'limit' => $limit,
-            'offset' => $offset,
             'actions' => $actions
         ]);
     }
+
 
     /**
      * ✅ تجيب الإجراءات التي أنشأها المستخدم (created_by)
@@ -384,7 +438,7 @@ class ActionController
         }
 
         // Pagination
-        $limit = isset($filters['limit']) ? (int) $filters['limit'] : 20;
+        $limit = isset($filters['limit']) ? (int) $filters['limit'] : 10000;
         $offset = isset($filters['offset']) ? (int) $filters['offset'] : 0;
 
         $query .= " ORDER BY a.created_at DESC LIMIT $limit OFFSET $offset";
@@ -407,77 +461,127 @@ class ActionController
      */
     public function getAssignedToMe(int $userId, array $filters = [])
     {
-        $query = "
+        /* =========================
+     * 1️⃣ تجهيز الفلاتر (نفس Statistics)
+     * ========================= */
+        $baseConditions = [];
+        $params = [];
+
+        // شرط ثابت: الأكشن مسند للمستخدم
+        $baseConditions[] = "a.assigned_user_id = :assigned_user_id";
+        $params[':assigned_user_id'] = $userId;
+
+        if (!empty($filters['from_date'])) {
+            $baseConditions[] = "a.created_at >= :from_date";
+            $params[':from_date'] = $filters['from_date'] . " 00:00:00";
+        }
+
+        if (!empty($filters['to_date'])) {
+            $baseConditions[] = "a.created_at <= :to_date";
+            $params[':to_date'] = $filters['to_date'] . " 23:59:59";
+        }
+
+        if (!empty($filters['type_category_id'])) {
+            $ids = (array)$filters['type_category_id'];
+            $placeholders = [];
+            foreach ($ids as $i => $id) {
+                $key = ":type_id_$i";
+                $placeholders[] = $key;
+                $params[$key] = (int)$id;
+            }
+            $baseConditions[] = "tc.id IN (" . implode(',', $placeholders) . ")";
+        }
+
+        if (!empty($filters['incident_classfication'])) {
+            $values = (array)$filters['incident_classfication'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":incident_class_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $baseConditions[] = "a.incident_classfication IN (" . implode(',', $placeholders) . ")";
+        }
+
+        if (!empty($filters['incident'])) {
+            $values = (array)$filters['incident'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":incident_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $baseConditions[] = "a.incident IN (" . implode(',', $placeholders) . ")";
+        }
+
+        if (!empty($filters['environment'])) {
+            $values = (array)$filters['environment'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":environment_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $baseConditions[] = "a.environment IN (" . implode(',', $placeholders) . ")";
+        }
+
+        if (!empty($filters['group'])) {
+            $values = (array)$filters['group'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":group_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $baseConditions[] = "a.`group` IN (" . implode(',', $placeholders) . ")";
+        }
+
+        if (isset($filters['status']) && $filters['status'] !== '') {
+            if ($filters['status'] === 'overdue') {
+                $baseConditions[] = "a.status = 'open' AND a.expiry_date < CURDATE()";
+            } elseif ($filters['status'] === 'open') {
+                $baseConditions[] = "a.status = 'open' AND a.expiry_date >= CURDATE()";
+            } else {
+                $baseConditions[] = "a.status = :status";
+                $params[':status'] = $filters['status'];
+            }
+        }
+
+        if (!empty($filters['search'])) {
+            $baseConditions[] = "a.description LIKE :search";
+            $params[':search'] = '%' . $filters['search'] . '%';
+        }
+
+        $baseWhere = $baseConditions
+            ? " AND " . implode(" AND ", $baseConditions)
+            : "";
+
+        /* =========================
+     * 2️⃣ Query الأكشنات
+     * ========================= */
+        $sql = "
         SELECT 
-            a.id, a.description, a.action, a.expiry_date, a.image, a.attachment, a.status, a.created_at,
+            a.id, a.description, a.action, a.expiry_date,
+            a.image, a.attachment, a.status, a.created_at,
             t.name AS type_name,
             u.name AS assigned_user_name,
             u2.name AS created_by_name
         FROM actions a
-        LEFT JOIN types t ON a.type_id = t.id
         LEFT JOIN users u ON a.assigned_user_id = u.id
         LEFT JOIN users u2 ON a.created_by = u2.id
-        WHERE a.assigned_user_id = ?
+        LEFT JOIN types t ON a.type_id = t.id
+        LEFT JOIN type_categories tc ON t.category_id = tc.id
+        WHERE 1=1
+        $baseWhere
+        ORDER BY a.created_at DESC
     ";
 
-        // أول قيمة لازم تكون userId
-        $params = [$userId];
-
-        // 🔍 البحث بالوصف فقط
-        if (!empty($filters['search'])) {
-            $query .= " AND (a.description LIKE ?)";
-            $search = '%' . $filters['search'] . '%';
-            $params[] = $search;
-        }
-
-        // فلترة حسب النوع
-        if (!empty($filters['type_id'])) {
-            $query .= " AND a.type_id = ?";
-            $params[] = (int) $filters['type_id'];
-        }
-
-        if (!empty($filters['created_at'])) {
-            $query .= " AND DATE(a.created_at) = ?";
-            $params[] = $filters['created_at'];
-        }
-
-        if (isset($filters['status']) && $filters['status'] !== '') {
-
-            if ($filters['status'] === 'overdue') {
-                $query .= " AND a.status = 'open' AND a.expiry_date < CURDATE()";
-            } elseif ($filters['status'] === 'open') {
-                $query .= " AND a.status = 'open' AND a.expiry_date > CURDATE()";
-            } else {
-                $query .= " AND a.status = ?";
-                $params[] = $filters['status'];
-            }
-        }
-
-        if (!empty($filters['from_date'])) {
-            $query .= " AND DATE(a.created_at) >= ?";
-            $params[] = $filters['from_date'];
-        }
-
-        if (!empty($filters['to_date'])) {
-            $query .= " AND DATE(a.created_at) <= ?";
-            $params[] = $filters['to_date'];
-        }
-
-
-        // Pagination
-        $limit = isset($filters['limit']) ? (int) $filters['limit'] : 20;
-        $offset = isset($filters['offset']) ? (int) $filters['offset'] : 0;
-
-        $query .= " ORDER BY a.created_at DESC LIMIT $limit OFFSET $offset";
-
-        $stmt = $this->conn->prepare($query);
+        $stmt = $this->conn->prepare($sql);
         $stmt->execute($params);
         $actions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return $this->respond(true, 'Assigned actions retrieved successfully', [
             'count' => count($actions),
-            'limit' => $limit,
-            'offset' => $offset,
             'actions' => $actions
         ]);
     }
@@ -732,5 +836,4 @@ class ActionController
         // يرجع المسار النسبي من جذر المشروع
         return $targetDir . '/' . $fileName;
     }
-
 }

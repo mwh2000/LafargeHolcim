@@ -136,16 +136,22 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
         function getActionsBaseUrl(status = '') {
             let base = '../public/actions.php';
-            if (!IS_ADMIN) base += '?assigned_to_me=1';
-            if (status) base += (base.includes('?') ? '&' : '?') + 'status=' + status;
-            return base;
+            const params = new URLSearchParams(buildFiltersQuery());
+
+            if (!IS_ADMIN) params.append('assigned_to_me', '1');
+            if (status) params.append('status', status);
+
+            return base + '?' + params.toString();
         }
+
 
         /* ================= LOAD TYPE CATEGORIES ================= */
         async function loadTypeCategories() {
             try {
                 const res = await fetch("../api/admin/type_categories.php", {
-                    headers: { "Authorization": `Bearer ${TOKEN}` }
+                    headers: {
+                        "Authorization": `Bearer ${TOKEN}`
+                    }
                 });
                 const data = await res.json();
                 if (!data.success) return;
@@ -212,6 +218,36 @@ require_once __DIR__ . '/helpers/authCheck.php';
             });
         }
 
+        function buildFiltersQuery() {
+            const params = new URLSearchParams();
+
+            const fromDate = document.getElementById("from_date").value;
+            const toDate = document.getElementById("to_date").value;
+
+            if (fromDate) params.append("from_date", fromDate);
+            if (toDate) params.append("to_date", toDate);
+
+            getSelectedValues(document.getElementById("type_category"))
+                .forEach(v => params.append("type_category_id[]", v));
+
+            const ic = document.getElementById("incident_classfication");
+            if (ic) {
+                getSelectedValues(ic)
+                    .forEach(v => params.append("incident_classfication[]", v));
+            }
+
+            getSelectedValues(document.getElementById("incident"))
+                .forEach(v => params.append("incident[]", v));
+
+            getSelectedValues(document.getElementById("environment"))
+                .forEach(v => params.append("environment[]", v));
+
+            getSelectedValues(document.getElementById("group"))
+                .forEach(v => params.append("group[]", v));
+
+            return params.toString();
+        }
+
 
         /* ================= LOAD STATISTICS ================= */
         async function loadStatistics() {
@@ -220,9 +256,8 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 const toDate = document.getElementById("to_date").value;
                 const typeCategory = getSelectedValues(document.getElementById("type_category"));
                 const incidentClassEl = document.getElementById("incident_classfication");
-                const incident_classfication = incidentClassEl
-                    ? getSelectedValues(incidentClassEl)
-                    : [];
+                const incident_classfication = incidentClassEl ?
+                    getSelectedValues(incidentClassEl) : [];
 
                 const incident = getSelectedValues(document.getElementById("incident"));
                 const environment = getSelectedValues(document.getElementById("environment"));
@@ -245,16 +280,16 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 } else if (USER_ROLE === '5') {
                     // Safety Officer → يشوف أكشنات القسم
                     params.append("super_manager_id", USER_ID);
-                }
-
-                else if (!IS_ADMIN) {
+                } else if (!IS_ADMIN) {
                     // User عادي → يشوف أكشناته فقط
                     params.append("assigned_user_id", USER_ID);
                 }
 
 
                 const response = await fetch(`../api/actions.php?action=getStatistics&${params.toString()}`, {
-                    headers: { "Authorization": `Bearer ${TOKEN}` }
+                    headers: {
+                        "Authorization": `Bearer ${TOKEN}`
+                    }
                 });
                 const result = await response.json();
                 if (!result.success) {
@@ -298,8 +333,8 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
         /* ================= EVENTS ================= */
         document.addEventListener("DOMContentLoaded", () => {
-            loadTypeCategories();   // خيارات ديناميكية
-            initStaticSelects();    // تهيئة الحقول الثابتة
+            loadTypeCategories(); // خيارات ديناميكية
+            initStaticSelects(); // تهيئة الحقول الثابتة
             loadStatistics();
 
             document.getElementById("applyFilters").addEventListener("click", loadStatistics);

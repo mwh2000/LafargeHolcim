@@ -212,7 +212,7 @@ class UserController
         }
 
         // نضيف limit و offset مباشرة بالاستعلام بعد التأكد أنها أرقام صحيحة
-        $limit = isset($filters['limit']) ? (int) $filters['limit'] : 200;
+        $limit = isset($filters['limit']) ? (int) $filters['limit'] : 1000;
         $offset = isset($filters['offset']) ? (int) $filters['offset'] : 0;
 
         // ما نستخدم placeholders هنا

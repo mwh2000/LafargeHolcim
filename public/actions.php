@@ -106,7 +106,6 @@ require_once 'helpers/authCheck.php';
             const params = new URLSearchParams(window.location.search);
             const baseApi = getBaseApi();
 
-            // للادمن: كل الأكشنات، للمستخدم العادي: فقط المسند له
             const finalUrl = baseApi + (params.toString() ? '&' + params.toString() : '');
 
             try {
@@ -162,7 +161,7 @@ require_once 'helpers/authCheck.php';
                     open: 'text-orange-500',
                     closed: 'text-green-600',
                     overdue: 'text-red-600'
-                }[status];
+                } [status];
 
                 tbody.innerHTML += `
                     <tr class="border-b">

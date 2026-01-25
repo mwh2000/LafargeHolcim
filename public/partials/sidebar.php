@@ -71,6 +71,16 @@ function renderSidebar($activePage = '')
           'href' => BASE_URL . '/public/requester/create_action.php',
           'icon' => '<path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />'
         ],
+        'actions_assigned_to_me' => [
+          'label' => 'Action Assigned to Me',
+          'href' => BASE_URL . '/public/actions_assigned_to_me.php',
+          'icon' => '<path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />'
+        ],
+        'actions_created_by_me' => [
+          'label' => 'Action Created by Me',
+          'href' => BASE_URL . '/public/actions_created_by_me.php',
+          'icon' => '<path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />'
+        ],
       ];
       break;
     // safety
@@ -112,8 +122,20 @@ function renderSidebar($activePage = '')
           'href' => BASE_URL . '/public/requester/create_action.php',
           'icon' => '<path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />'
         ],
+        'actions_assigned_to_me' => [
+          'label' => 'Action Assigned to Me',
+          'href' => BASE_URL . '/public/actions_assigned_to_me.php',
+          'icon' => '<path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />'
+        ],
+        'actions_created_by_me' => [
+          'label' => 'Action Created by Me',
+          'href' => BASE_URL . '/public/actions_created_by_me.php',
+          'icon' => '<path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />'
+        ],
       ];
       break;
+
+    // plant manager
     case 6:
       $links = [
         'dashboard' => [
@@ -132,7 +154,7 @@ function renderSidebar($activePage = '')
       $links = [];
       break;
   }
-  ?>
+?>
 
   <!-- Overlay للموبايل -->
   <div id="mobileSidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden"></div>
@@ -145,7 +167,7 @@ function renderSidebar($activePage = '')
         <?php foreach ($links as $key => $link):
           $isActive = $activePage === $key;
           $activeClasses = $isActive ? "text-[#0b6f76] bg-purple-50 font-medium" : "text-gray-700 hover:bg-gray-100";
-          ?>
+        ?>
           <a href="<?= $link['href'] ?>"
             class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors <?= $activeClasses ?>">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -180,5 +202,5 @@ function renderSidebar($activePage = '')
     }
   </script>
 
-  <?php
+<?php
 }
