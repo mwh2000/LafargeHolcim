@@ -165,10 +165,12 @@ require_once 'helpers/authCheck.php';
                            class="text-blue-600 hover:text-blue-900">
                             View
                         </a>
+                        ${action.status !== 'closed' ? `
                         <a href="requester/update_action.php?id=${action.id}"
                            class="text-orange-400 hover:text-blue-900">
                             Update
                         </a>
+                        ` : ''}
                     </td>
                 </tr>`;
             });
