@@ -18,8 +18,8 @@ class ActionController
     public function create(array $data, array $files = [])
     {
         /* =========================
-         * 1️⃣ Validation
-         * ========================= */
+     * 1️⃣ Validation
+     * ========================= */
         foreach (['assigned_user_id', 'expiry_date'] as $field) {
             if (empty($data[$field])) {
                 return $this->respond(false, "{$field} is required", null, ['field' => $field], 400);
@@ -27,26 +27,26 @@ class ActionController
         }
 
         /* =========================
-         * 2️⃣ Current User Group
-         * ========================= */
+     * 2️⃣ Current User Group
+     * ========================= */
         $stmt = $this->conn->prepare("
         SELECT `group`
         FROM users
         WHERE id = ?
         LIMIT 1
     ");
-        $stmt->execute([$_COOKIE['user_id']]);
+        $stmt->execute([$_COOKIE['user_id'] ?? null]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$user) {
             return $this->respond(false, "Unauthorized", null, null, 401);
         }
 
-        $userGroup = $user['group'] ?? null;
+        $userGroup = $user['group'];
 
         /* =========================
-         * 3️⃣ Normalize Optional Fields
-         * ========================= */
+     * 3️⃣ Normalize Optional Fields
+     * ========================= */
         $typeId = isset($data['type_id']) && $data['type_id'] !== ''
             ? (int) $data['type_id']
             : null;
@@ -56,14 +56,8 @@ class ActionController
             : null;
 
         /* =========================
-         * 4️⃣ Upload Files
-         * ========================= */
-        $imagePath = $this->uploadFile(
-            $files['image'] ?? null,
-            ['jpg', 'jpeg', 'png'],
-            'uploads/images'
-        );
-
+     * 4️⃣ Upload Attachment (PDF)
+     * ========================= */
         $attachmentPath = $this->uploadFile(
             $files['attachment'] ?? null,
             ['pdf'],
@@ -71,15 +65,15 @@ class ActionController
         );
 
         /* =========================
-         * 5️⃣ Insert Action
-         * ========================= */
+     * 5️⃣ Insert Action
+     * ========================= */
         $stmt = $this->conn->prepare("
         INSERT INTO actions (
             type_id, `group`, location, related_topics, incident_classfication, incident,
             visit_duration, environment, area_visited, description,
             action, priority, assigned_user_id, start_date, expiry_date,
-            image, attachment, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            attachment, created_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
         $stmt->execute([
@@ -98,25 +92,56 @@ class ActionController
             (int) $data['assigned_user_id'],
             $startDate,
             $data['expiry_date'],
-            $imagePath,
             $attachmentPath,
             $data['created_by']
         ]);
 
+        $actionId = (int) $this->conn->lastInsertId();
+
         /* =========================
-         * 6️⃣ Response
-         * ========================= */
-        return [
-            'success' => true,
-            'message' => 'Action created successfully',
-            'data' => [
-                'id' => $this->conn->lastInsertId(),
-                'assigned_user_id' => $data['assigned_user_id']
-            ]
-        ];
+     * 6️⃣ Upload Multiple Images
+     * ========================= */
+        if (!empty($files['images']) && is_array($files['images']['name'])) {
+
+            $imageStmt = $this->conn->prepare("
+            INSERT INTO action_images (action_id, image_path)
+            VALUES (?, ?)
+        ");
+
+            foreach ($files['images']['name'] as $index => $name) {
+
+                if ($files['images']['error'][$index] !== UPLOAD_ERR_OK) {
+                    continue;
+                }
+
+                $singleFile = [
+                    'name'     => $files['images']['name'][$index],
+                    'type'     => $files['images']['type'][$index],
+                    'tmp_name' => $files['images']['tmp_name'][$index],
+                    'error'    => $files['images']['error'][$index],
+                    'size'     => $files['images']['size'][$index],
+                ];
+
+                $imagePath = $this->uploadFile(
+                    $singleFile,
+                    ['jpg', 'jpeg', 'png'],
+                    'uploads/images'
+                );
+
+                if ($imagePath) {
+                    $imageStmt->execute([$actionId, $imagePath]);
+                }
+            }
+        }
+
+        /* =========================
+     * 7️⃣ Response
+     * ========================= */
+        return $this->respond(true, 'Action created successfully', [
+            'id' => $actionId,
+            'assigned_user_id' => $data['assigned_user_id']
+        ]);
     }
-
-
 
     /** ✅ Update Action */
     public function update(int $id, array $data, array $files = [])
@@ -226,21 +251,21 @@ class ActionController
     /** ✅ Get Action by ID */
     public function getById(int $id)
     {
+        // 1️⃣ جلب بيانات الأكشن الأساسية
         $stmt = $this->conn->prepare("
-            SELECT 
-                a.*, 
-                c.name AS category_name,
-                t.name AS type_name,
-                u.name AS assigned_user_name,
-                u2.name AS created_by_name
-            FROM actions a
-            LEFT JOIN types t ON a.type_id = t.id
-            LEFT JOIN type_categories c ON t.category_id = c.id
-            LEFT JOIN users u ON a.assigned_user_id = u.id
-            LEFT JOIN users u2 ON a.created_by = u2.id
-            WHERE a.id = ?
-        ");
-
+        SELECT 
+            a.*, 
+            c.name AS category_name,
+            t.name AS type_name,
+            u.name AS assigned_user_name,
+            u2.name AS created_by_name
+        FROM actions a
+        LEFT JOIN types t ON a.type_id = t.id
+        LEFT JOIN type_categories c ON t.category_id = c.id
+        LEFT JOIN users u ON a.assigned_user_id = u.id
+        LEFT JOIN users u2 ON a.created_by = u2.id
+        WHERE a.id = ?
+    ");
         $stmt->execute([$id]);
         $action = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -248,8 +273,22 @@ class ActionController
             return $this->respond(false, 'Action not found', null, ['code' => 404], 404);
         }
 
+        // 2️⃣ جلب كل الصور المرتبطة بالأكشن
+        $stmtImages = $this->conn->prepare("
+        SELECT image_path
+        FROM action_images
+        WHERE action_id = ?
+        ORDER BY id ASC
+    ");
+        $stmtImages->execute([$id]);
+        $images = $stmtImages->fetchAll(PDO::FETCH_COLUMN);
+
+        // 3️⃣ إضافة الصور للنتيجة
+        $action['images'] = $images; // مصفوفة تحتوي كل الصور
+
         return $this->respond(true, 'Action retrieved successfully', $action);
     }
+
 
     /** ✅ Get all Actions (filters + search + pagination) */
     public function getAll(array $filters = [])

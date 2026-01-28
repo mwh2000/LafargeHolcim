@@ -246,29 +246,28 @@ require_once '../helpers/authCheck.php';
                         </div> -->
 
                         <!-- Image Upload with preview -->
-                        <div class="col-span-1 sm:col-span-2 lg:col-span-3">
-                            <label for="image" class="text-sm text-green-700 mb-2 block">Image (optional)</label>
-                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                                <label
-                                    class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-dashed border-gray-200 rounded-md cursor-pointer hover:bg-gray-50">
-                                    <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor"
-                                        viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M3 7v4a1 1 0 001 1h3l2 3 3-4 4 5h3a1 1 0 001-1V7a4 4 0 00-4-4H7a4 4 0 00-4 4z">
-                                        </path>
-                                    </svg>
-                                    <span class="text-sm text-gray-600">Upload Image (jpg, png)</span>
-                                    <input id="image" name="image" type="file" accept=".jpg,.jpeg,.png"
-                                        class="hidden" />
-                                </label>
-
-                                <div id="imagePreview"
-                                    class="w-full sm:w-64 h-36 bg-gray-50 border border-gray-200 rounded-md flex items-center justify-center overflow-hidden">
-                                    <span class="text-xs text-gray-400">No image selected</span>
-                                </div>
-                            </div>
-                            <p class="mt-2 text-xs text-gray-500">Preferred size: up to 2MB. JPG, PNG supported.</p>
+                        <!-- Upload Button -->
+                        <div class="col-span-full">
+                            <label
+                                class="inline-flex items-center px-4 py-2 border border-dashed rounded-md cursor-pointer bg-white hover:bg-gray-50">
+                                <span class="text-sm">Upload Images</span>
+                                <input
+                                    id="images"
+                                    name="images[]"
+                                    type="file"
+                                    accept=".jpg,.jpeg,.png"
+                                    multiple
+                                    class="hidden">
+                            </label>
                         </div>
+
+                        <!-- Preview Row -->
+                        <div
+                            id="imagePreview"
+                            class="col-span-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-2
+                                max-h-64 overflow-y-auto p-2
+                                bg-gray-50 border border-gray-200 rounded-md"></div>
+
 
                         <!-- Submit -->
                         <div class="col-span-1 sm:col-span-2 lg:col-span-3 mt-2 flex justify-end">
@@ -305,21 +304,6 @@ require_once '../helpers/authCheck.php';
                             imagePreview: document.getElementById("imagePreview"),
                         };
 
-                        el.imageInput?.addEventListener("change", (e) => {
-                            const file = e.target.files?.[0];
-                            el.imagePreview.innerHTML = "";
-
-                            if (!file) {
-                                el.imagePreview.innerHTML =
-                                    '<span class="text-xs text-gray-400">No image selected</span>';
-                                return;
-                            }
-
-                            const img = document.createElement("img");
-                            img.src = URL.createObjectURL(file);
-                            img.className = "object-cover w-full h-full";
-                            el.imagePreview.appendChild(img);
-                        });
 
                         /* =========================
                          * 🔹 Users & Roles Logic
@@ -356,13 +340,13 @@ require_once '../helpers/authCheck.php';
                             ["incidentClassification", el.incidentClassification, [3, 4]],
                             ["cmm", el.cmm, [3, 4]],
                         ].forEach(([key, element, roles]) => {
-                            element?.addEventListener("change", function () {
+                            element?.addEventListener("change", function() {
                                 handleRolesChange(key, roles, this.value);
                             });
                         });
 
                         // input آخر مستقل
-                        el.incident?.addEventListener("change", function () {
+                        el.incident?.addEventListener("change", function() {
                             handleRolesChange("incident", [2, 4], this.value);
                         });
 
@@ -380,7 +364,7 @@ require_once '../helpers/authCheck.php';
                         }
 
                         // التعامل مع type
-                        el.type.addEventListener("change", function () {
+                        el.type.addEventListener("change", function() {
                             const groupName = getSelectedOptGroupName(this);
                             if (["NM", "VPC", "Hazard"].includes(groupName)) {
                                 handleRolesChange("type", [2, 4], true);
@@ -409,7 +393,9 @@ require_once '../helpers/authCheck.php';
                                 }
 
                                 const res = await fetch(url, {
-                                    headers: { "Authorization": `Bearer ${TOKEN}` }
+                                    headers: {
+                                        "Authorization": `Bearer ${TOKEN}`
+                                    }
                                 });
 
                                 const data = await res.json();
@@ -439,15 +425,21 @@ require_once '../helpers/authCheck.php';
                             }
                         }
                         /* =========================
-                     * 🔹 Categories & Types
-                     * ========================= */
+                         * 🔹 Categories & Types
+                         * ========================= */
                         async function loadCategoriesAndTypes() {
                             try {
                                 const res = await fetch(API_TYPES, {
-                                    headers: { Authorization: `Bearer ${TOKEN}` }
+                                    headers: {
+                                        Authorization: `Bearer ${TOKEN}`
+                                    }
                                 });
 
-                                const { success, data, message } = await res.json();
+                                const {
+                                    success,
+                                    data,
+                                    message
+                                } = await res.json();
                                 if (!success) throw new Error(message);
 
                                 const categories = data?.categories || [];
@@ -471,8 +463,8 @@ require_once '../helpers/authCheck.php';
                             }
                         }
                         /* =========================
-                     * 🔹 Submit Form
-                     * ========================= */
+                         * 🔹 Submit Form
+                         * ========================= */
                         el.form.addEventListener("submit", async (e) => {
                             e.preventDefault();
 
@@ -501,13 +493,19 @@ require_once '../helpers/authCheck.php';
                             formData.append("assigned_user_id", document.getElementById("assigned_user").value);
                             formData.append("start_date", document.getElementById("start_date").value);
                             formData.append("expiry_date", document.getElementById("expiry_date").value);
-                            formData.append("image", document.getElementById("image").files[0] || "");
+                            const imagesInput = document.getElementById("images");
+                            [...imagesInput.files].forEach(file => {
+                                formData.append("images[]", file);
+                            });
+
                             formData.append("created_by", ID);
 
                             try {
                                 const res = await fetch(API_CREATE, {
                                     method: "POST",
-                                    headers: { Authorization: `Bearer ${TOKEN}` },
+                                    headers: {
+                                        Authorization: `Bearer ${TOKEN}`
+                                    },
                                     body: formData
                                 });
 
@@ -549,34 +547,42 @@ require_once '../helpers/authCheck.php';
                     </script>
 
                     <script>
-                        // Image preview and attachment name display (keeps existing ids)
-                        (function () {
-                            const imgInput = document.getElementById('image');
-                            const imgPreview = document.getElementById('imagePreview');
-                            // const attachmentInput = document.getElementById('attachment');
-                            // const attachmentName = document.getElementById('attachmentName');
+                        const imagesInput = document.getElementById("images");
+                        const imagePreview = document.getElementById("imagePreview");
 
-                            imgInput?.addEventListener('change', (e) => {
-                                const file = e.target.files && e.target.files[0];
-                                imgPreview.innerHTML = '';
-                                if (!file) {
-                                    imgPreview.innerHTML = '<span class="text-xs text-gray-400">No image selected</span>';
-                                    return;
-                                }
-                                const url = URL.createObjectURL(file);
-                                const img = document.createElement('img');
-                                img.src = url;
-                                img.alt = file.name || 'Preview';
-                                img.className = 'object-cover w-full h-full';
-                                imgPreview.appendChild(img);
+                        imagesInput?.addEventListener("change", (e) => {
+                            imagePreview.innerHTML = "";
+
+                            const files = [...e.target.files];
+                            if (files.length === 0) {
+                                imagePreview.innerHTML =
+                                    '<span class="text-xs text-gray-400 col-span-full">No images selected</span>';
+                                return;
+                            }
+
+                            files.forEach((file, index) => {
+                                const wrapper = document.createElement("div");
+                                wrapper.className =
+                                    "relative w-full h-32 border rounded overflow-hidden bg-white";
+
+                                const img = document.createElement("img");
+                                img.src = URL.createObjectURL(file);
+                                img.className = "object-cover w-full h-full";
+
+                                // رقم الصورة (اختياري)
+                                const badge = document.createElement("span");
+                                badge.textContent = index + 1;
+                                badge.className =
+                                    "absolute top-1 left-1 bg-black bg-opacity-60 text-white text-xs px-2 py-0.5 rounded";
+
+                                wrapper.appendChild(img);
+                                wrapper.appendChild(badge);
+
+                                imagePreview.appendChild(wrapper);
                             });
-
-                            // attachmentInput?.addEventListener('change', (e) => {
-                            //     const file = e.target.files && e.target.files[0];
-                            //     attachmentName.textContent = file ? file.name : '';
-                            // });
-                        })();
+                        });
                     </script>
+
                 </div>
             </main>
         </div>

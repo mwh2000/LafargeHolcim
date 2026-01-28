@@ -40,30 +40,27 @@ try {
 
         case 'POST':
 
-            $data = $_POST;
+            $data  = $_POST;
             $files = $_FILES;
 
-            // 🔹 إنشاء الأكشن
             $res = $controller->create($data, $files);
 
-            // 🔹 إذا فشل الإنشاء → رجّع النتيجة ووقف
             if (!$res['success']) {
                 echo json_encode($res);
                 break;
             }
 
-            // 🔹 إرسال الإشعار فقط إذا نجح الإنشاء
             $notificationController->sendNotification(
                 "New Action Created",
                 $res['data']['title'] ?? 'A new action has been created',
-                [$res['data']['assigned_user_id']], // الشخص المسند إليه
+                [$res['data']['assigned_user_id']],
                 BASE_URL . '/public/action.php?id=' . $res['data']['id'],
                 $_SESSION['user_id'] ?? null
             );
 
-            // 🔹 الرد النهائي
             echo json_encode($res);
             break;
+
 
 
         case 'PUT':

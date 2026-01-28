@@ -27,17 +27,20 @@ require_once 'helpers/authCheck.php';
         <div class="flex-1 flex flex-col sm:ml-64 transition-all">
             <main class="flex-1 overflow-y-auto p-8 md:pl-12">
 
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                    <h1 class="text-2xl font-semibold text-gray-700">Actions</h1>
-
-                    <!-- Status Filter -->
+                <div class="flex gap-2">
                     <select id="statusFilter" class="border px-4 py-2 rounded-md text-sm">
                         <option value="">All Status</option>
                         <option value="open">Open</option>
                         <option value="closed">Closed</option>
                         <option value="overdue">Overdue</option>
                     </select>
+
+                    <button id="exportExcel"
+                        class="bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700">
+                        Download Excel
+                    </button>
                 </div>
+
 
                 <div class="bg-white shadow-md rounded-lg overflow-x-auto">
                     <table class="min-w-full text-sm text-left text-gray-600">
@@ -190,6 +193,17 @@ require_once 'helpers/authCheck.php';
             const status = getStatusFromUrl();
             document.getElementById('statusFilter').value = status;
             fetchActions();
+        });
+
+        document.getElementById('exportExcel').addEventListener('click', () => {
+            const params = new URLSearchParams(window.location.search);
+            const baseApi = getBaseApi();
+
+            const url = baseApi
+                .replace('getAll', 'exportExcel') +
+                (params.toString() ? '&' + params.toString() : '');
+
+            window.location.href = url;
         });
 
         /* ================= FILTER CHANGE ================= */

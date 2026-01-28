@@ -45,45 +45,19 @@ require_once 'helpers/authCheck.php';
                     <!-- Grid: left media, right details -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <!-- Left: media previews (image + PDF preview) -->
+                        <!-- Left: media previews (image + PDF preview) -->
+                        <!-- Left: media previews -->
                         <div class="md:col-span-1 space-y-4">
-                            <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-slate-100">
-                                <div class="h-56 w-full bg-slate-50 flex items-center justify-center">
-                                    <img id="action_image"
-                                        src="https://via.placeholder.com/800x450.png?text=Action+Image"
-                                        alt="Action image" class="object-cover">
-                                </div>
-                                <div class="p-3 border-t border-slate-100">
-                                    <p class="text-sm text-slate-600">Main image for the action.</p>
-                                    <div class="mt-3 flex gap-2">
-                                        <a id="download_image" download=""
-                                            class="flex-1 text-center px-3 py-2 bg-slate-100 text-sm rounded-md hover:bg-slate-200">Download</a>
-                                    </div>
-                                </div>
-                            </div>
+                            <h3 class="text-sm font-medium text-slate-800 mb-2">Action Images</h3>
 
-                            <!-- <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-slate-100">
-                                <div class="p-3">
-                                    <h3 class="text-sm font-medium text-slate-800 mb-2">Attachment (PDF)</h3>
-                                    <div
-                                        class="h-48 bg-slate-50 border rounded border-dashed border-slate-200 flex items-center justify-center">
-                                        <object data="/path/to/attachment.pdf" type="application/pdf"
-                                            class="w-full h-full">
-                                            <div class="p-4 text-center">
-                                                <iframe id="action_attachment" src="" width="100%"
-                                                    height="600px"></iframe>
-                                                <p class="text-sm text-slate-600">PDF preview not available.</p>
-                                            </div>
-                                        </object>
-                                    </div>
-                                    <div class="p-3 border-t border-slate-100">
-                                        <div class="mt-3 flex gap-2">
-                                            <a id="download_attachment" download=""
-                                                class="flex-1 text-center px-3 py-2 bg-slate-100 text-sm rounded-md hover:bg-slate-200">Download</a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div> -->
+                            <!-- Container Grid للصور -->
+                            <div id="action_image_container"
+                                class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                                <span class="text-xs text-gray-400 col-span-full">No images available</span>
+                            </div>
                         </div>
+
+
 
                         <!-- Right: details -->
                         <div class="md:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-slate-100">
@@ -264,19 +238,49 @@ require_once 'helpers/authCheck.php';
                     action.assigned_user_name ? action.assigned_user_name.charAt(0).toUpperCase() : "U";
 
                 // الصورة
-                const imgElement = document.getElementById("action_image");
-                if (action.image) {
-                    imgElement.src = `../${action.image}`;
+                // الصور
+                const imagesContainer = document.getElementById("action_image_container");
+                imagesContainer.innerHTML = "";
+
+                // إذا فيه صور
+                if (Array.isArray(action.images) && action.images.length > 0) {
+                    action.images.forEach((imgPath, index) => {
+                        const wrapper = document.createElement("div");
+                        wrapper.className = "relative w-full h-40 border rounded-md overflow-hidden bg-white shadow-sm flex flex-col";
+
+                        // الصورة
+                        const img = document.createElement("img");
+                        img.src = `../${imgPath}`;
+                        img.alt = `Action Image ${index + 1}`;
+                        img.className = "object-cover w-full h-32"; // ثابتة الطول لضبط Grid
+
+                        // badge للرقم
+                        const badge = document.createElement("span");
+                        badge.textContent = index + 1;
+                        badge.className =
+                            "absolute top-1 left-1 bg-black bg-opacity-60 text-white text-xs px-2 py-0.5 rounded";
+
+                        // زر تحميل
+                        const download = document.createElement("a");
+                        download.href = `../${imgPath}`;
+                        download.download = imgPath.split("/").pop();
+                        download.textContent = "Download";
+                        download.className =
+                            "text-center text-xs bg-slate-100 hover:bg-slate-200 px-1 py-0.5 mt-1";
+
+                        // إضافة الصورة + badge + زر للبوكس
+                        wrapper.appendChild(img);
+                        wrapper.appendChild(badge);
+                        wrapper.appendChild(download);
+
+                        imagesContainer.appendChild(wrapper);
+                    });
                 } else {
-                    imgElement.src = "../public/images/logo.png";
-                    imgElement.alt = "Default image";
+                    imagesContainer.innerHTML =
+                        '<span class="text-xs text-gray-400 col-span-full">No images available</span>';
                 }
 
-                const downloadImage = document.getElementById("download_image");
-                if (action.image) {
-                    downloadImage.href = `../${action.image}`;
-                    downloadImage.download = action.image.split('/').pop();
-                }
+
 
                 // المرفق PDF
                 // const pdfObject = document.getElementById("action_attachment");
@@ -333,7 +337,10 @@ require_once 'helpers/authCheck.php';
                                     "Authorization": `Bearer ${TOKEN}`,
                                     "Content-Type": "application/json"
                                 },
-                                body: JSON.stringify({ status: "closed", note: note })
+                                body: JSON.stringify({
+                                    status: "closed",
+                                    note: note
+                                })
                             });
 
                             const updateResult = await updateResponse.json();
