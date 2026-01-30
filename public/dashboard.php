@@ -280,9 +280,9 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
             const chartData = {
                 labels: [
-                    `Open (${percentages.open}%)`,
-                    `Closed (${percentages.closed}%)`,
-                    `Overdue (${percentages.overdue}%)`
+                    `Open ${stats.open_actions} (${percentages.open}%)`,
+                    `Closed ${stats.closed_actions} (${percentages.closed}%)`,
+                    `Overdue ${stats.override_actions} (${percentages.overdue}%)`
                 ],
                 datasets: [{
                     label: 'Actions',
