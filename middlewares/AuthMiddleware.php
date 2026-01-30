@@ -25,30 +25,43 @@ class AuthMiddleware
     public function verifyToken()
     {
         $headers = getallheaders();
+        $token = null;
 
-        // تحقق من وجود Authorization Header
-        if (!isset($headers['Authorization'])) {
+        // 1️⃣ من Authorization Header (fetch / API)
+        if (isset($headers['Authorization'])) {
+            $token = str_replace('Bearer ', '', $headers['Authorization']);
+        }
+
+        // 2️⃣ من Cookie (download / redirect)
+        if (!$token && isset($_COOKIE['token'])) {
+            $token = $_COOKIE['token'];
+        }
+
+        // ❌ لا يوجد توكن
+        if (!$token) {
             http_response_code(401);
-            echo json_encode(['success' => false, 'message' => 'Authorization header missing']);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Authorization token missing'
+            ]);
             exit;
         }
 
-        // استخراج التوكن من الهيدر
-        $authHeader = $headers['Authorization'];
-        $token = str_replace('Bearer ', '', $authHeader);
-
-        // تحقق من صلاحية التوكن
+        // ✅ تحقق من التوكن
         $decoded = $this->jwtHandler->decodeToken($token);
 
         if (!$decoded) {
             http_response_code(401);
-            echo json_encode(['success' => false, 'message' => 'Invalid or expired token']);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Invalid or expired token'
+            ]);
             exit;
         }
 
-        // إرجاع المستخدم المفكوك من التوكن
         return $decoded;
     }
+
 
     /**
      * يتحقق من أن المستخدم Admin أو Super Admin فقط
@@ -89,6 +102,11 @@ class AuthMiddleware
             exit;
         }
 
+        // add admin role automatically to allowed roles
+        if (strtolower($role) === 'admin') {
+            $allowedRoles[] = 'admin';
+        }
+
         // ✅ التحقق من أن الدور ضمن الأدوار المسموحة
         $normalizedRoles = array_map('strtolower', $allowedRoles);
         if (!in_array(strtolower($role), $normalizedRoles)) {
@@ -100,5 +118,4 @@ class AuthMiddleware
             exit;
         }
     }
-
 }

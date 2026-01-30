@@ -291,7 +291,7 @@ class ActionController
 
 
     /** ✅ Get all Actions (filters + search + pagination) */
-    public function getAll(array $filters = [])
+    public function getAll(array $filters = [], bool $export = false)
     {
         /* =========================
      * 1️⃣ تجهيز الفلاتر (نفس Statistics)
@@ -427,6 +427,10 @@ class ActionController
         $stmt = $this->conn->prepare($sql);
         $stmt->execute($params);
         $actions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($export) {
+            return $actions; // 👈 للـ Excel / CSV
+        }
 
         return $this->respond(true, 'Actions retrieved successfully', [
             'count' => count($actions),

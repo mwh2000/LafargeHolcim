@@ -287,7 +287,6 @@ require_once '../helpers/authCheck.php';
 
 
                     <script>
-
                         const params = new URLSearchParams(window.location.search);
                         const ACTION_ID = params.get("id");
                         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
@@ -338,9 +337,14 @@ require_once '../helpers/authCheck.php';
                          * ========================= */
                         async function loadCategoriesAndTypes() {
                             const res = await fetch(API_TYPES, {
-                                headers: { Authorization: `Bearer ${TOKEN}` }
+                                headers: {
+                                    Authorization: `Bearer ${TOKEN}`
+                                }
                             });
-                            const { success, data } = await res.json();
+                            const {
+                                success,
+                                data
+                            } = await res.json();
                             if (!success) throw new Error("Failed to load types");
 
                             el.type.innerHTML = `<option value="">Select type</option>`;
@@ -358,7 +362,9 @@ require_once '../helpers/authCheck.php';
                          * ========================= */
                         async function loadUsers() {
                             const res = await fetch(API_USERS, {
-                                headers: { Authorization: `Bearer ${TOKEN}` }
+                                headers: {
+                                    Authorization: `Bearer ${TOKEN}`
+                                }
                             });
                             const data = await res.json();
                             if (!data.success) throw new Error("Failed to load users");
@@ -404,9 +410,14 @@ require_once '../helpers/authCheck.php';
                          * ========================= */
                         async function loadActionData() {
                             const res = await fetch(API_GET, {
-                                headers: { Authorization: `Bearer ${TOKEN}` }
+                                headers: {
+                                    Authorization: `Bearer ${TOKEN}`
+                                }
                             });
-                            const { success, data } = await res.json();
+                            const {
+                                success,
+                                data
+                            } = await res.json();
                             if (!success) throw new Error("Failed to load action");
 
                             const a = data;
@@ -508,7 +519,7 @@ require_once '../helpers/authCheck.php';
 
                     <script>
                         // Image preview and attachment name display (keeps existing ids)
-                        (function () {
+                        (function() {
                             const imgInput = document.getElementById('image');
                             const imgPreview = document.getElementById('imagePreview');
                             // const attachmentInput = document.getElementById('attachment');

@@ -149,6 +149,12 @@ require_once 'helpers/authCheck.php';
                                             <span class="text-sm text-slate-500">created at</span>
                                         </div>
 
+                                        <label class="block text-xs text-slate-600 mt-4">Update due date</label>
+                                        <div class="mt-2 flex gap-2">
+
+                                            <button id="update_due"
+                                                class="px-3 py-2 bg-slate-800 text-white rounded-md text-sm">Update</button>
+                                        </div>
                                         <label class="block text-xs text-slate-600 mt-4">Change status</label>
                                         <div class="mt-2 flex gap-2">
 
@@ -280,6 +286,79 @@ require_once 'helpers/authCheck.php';
                         '<span class="text-xs text-gray-400 col-span-full">No images available</span>';
                 }
 
+                const updateDueBtn = document.getElementById("update_due");
+
+                // Check permissions first
+                if ((user_id === String(action.assigned_user_id) || "<?= $_COOKIE['user_type'] ?? '' ?>" === "0")) {
+                    updateDueBtn.disabled = false;
+                    updateDueBtn.classList.remove("opacity-50", "cursor-not-allowed");
+                } else {
+                    updateDueBtn.disabled = true;
+                    updateDueBtn.classList.add("opacity-50", "cursor-not-allowed");
+                }
+
+                updateDueBtn.addEventListener("click", async () => {
+                    const {
+                        value: newDate
+                    } = await Swal.fire({
+                        title: 'Update Due Date',
+                        input: 'date',
+                        inputLabel: 'Select new due date',
+                        inputValue: action.expiry_date, // التاريخ الحالي
+                        showCancelButton: true,
+                        confirmButtonText: 'Update',
+                        cancelButtonText: 'Cancel',
+                        inputValidator: (value) => {
+                            if (!value) {
+                                return 'Please select a date';
+                            }
+                        }
+                    });
+
+                    if (!newDate) return;
+
+                    const formData = new FormData();
+                    formData.set("expiry_date", newDate);
+                    formData.set("id", actionId); // مهم جدًا
+                    formData.set("created_by", "<?= $_COOKIE['user_id'] ?? '' ?>");
+
+                    const urlEncodedData = new URLSearchParams(formData).toString();
+
+                    try {
+                        const response = await fetch(
+                            `../api/requester/actions.php?action=update&id=${actionId}`, {
+                                method: "PUT",
+                                headers: {
+                                    Authorization: `Bearer ${TOKEN}`,
+                                    "Content-Type": "application/x-www-form-urlencoded"
+                                },
+                                body: urlEncodedData
+                            }
+                        );
+
+                        const result = await response.json();
+                        if (!result.success) throw new Error(result.message);
+
+                        // ✅ تحديث الواجهة
+                        document.getElementById("expiry_date").textContent = newDate;
+                        action.expiry_date = newDate;
+
+                        Swal.fire("Updated!", "Due date updated successfully.", "success");
+                        // refresh the page or update the UI accordingly after success swal finishes
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } catch (error) {
+                        console.error(error);
+                        Swal.fire(
+                            'Error',
+                            error.message || 'Unable to update due date',
+                            'error'
+                        );
+                    }
+                });
+
+
 
 
                 // المرفق PDF
@@ -305,7 +384,7 @@ require_once 'helpers/authCheck.php';
 
                     // السماح بالتغيير فقط إذا:
                     // المستخدم هو المكلّف و الحالة ليست "closed" أو "overdue"
-                    if (user_id == action.assigned_user_id && action.status !== "closed" && !isOverdue) {
+                    if ((user_id === String(action.assigned_user_id) || "<?= $_COOKIE['user_type'] ?? '' ?>" === "0") && action.status !== "closed" && !isOverdue) {
                         closeBtn.disabled = false;
                         closeBtn.classList.remove("opacity-50", "cursor-not-allowed");
                     } else {

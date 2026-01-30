@@ -218,7 +218,7 @@ require_once '../helpers/authCheck.php';
                                 <option value="H">H</option>
                                 <option value="M">M</option>
                                 <option value="L">L</option>
-                                <option value="Major">Major</option>
+                                <option value="HH">HH</option>
                             </select>
                         </div>
 

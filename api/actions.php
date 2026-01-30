@@ -9,6 +9,11 @@ require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../controllers/actionController.php';
 require_once __DIR__ . '/../middlewares/AuthMiddleware.php';
 
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+
 // ✅ تحميل إعدادات المشروع
 $config = require __DIR__ . '/../config/config.php';
 
@@ -32,6 +37,42 @@ try {
                 $_GET ?? [],
                 $_POST ?? []
             );
+
+            if ($action === 'exportExcel') {
+
+                $data = $controller->getAll($filters, true); // 👈 نفس getAll
+
+                header('Content-Type: text/csv; charset=utf-8');
+                header('Content-Disposition: attachment; filename="actions.csv"');
+
+                $output = fopen('php://output', 'w');
+
+                fputcsv($output, [
+                    'Action',
+                    'Created By',
+                    'Assigned To',
+                    'Group',
+                    'Start Date',
+                    'Due Date',
+                    'Status'
+                ]);
+
+                foreach ($data as $row) {
+                    fputcsv($output, [
+                        $row['action'],
+                        $row['created_by_name'],
+                        $row['assigned_user_name'],
+                        $row['group'],
+                        $row['start_date'],
+                        $row['expiry_date'],
+                        $row['status'],
+                    ]);
+                }
+
+                fclose($output);
+                exit;
+            }
+
 
             // ✅ جلب إجراء محدد بالـ ID
             if (isset($_GET['id'])) {

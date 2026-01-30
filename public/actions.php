@@ -14,6 +14,8 @@ require_once 'helpers/authCheck.php';
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <title>LafargeHolcim | Actions</title>
 </head>
 
@@ -177,18 +179,79 @@ require_once 'helpers/authCheck.php';
                         <td class="px-6 py-4">${action.group}</td>
                         <td class="px-6 py-4">${action.start_date || '-'}</td>
                         <td class="px-6 py-4">${action.expiry_date}</td>
-                        <td class="px-6 py-4 font-semibold ${statusColor}">
-                            ${status.toUpperCase()}
-                        </td>
-                        <td class="px-6 py-4 text-right">
+                        <td class="px-6 py-4 font-semibold ${statusColor}">${status.toUpperCase()}</td>
+                        <td class="px-6 py-4 text-right flex flex-row justify-end space-x-2">
                             <a href="action.php?id=${action.id}"
-                               class="text-blue-600 hover:underline">
-                               View
+                            class="text-blue-600 hover:underline">
+                            View
                             </a>
+                            ${IS_ADMIN ? `
+                            <a href="requester/update_action.php?id=${action.id}"
+                            class="text-yellow-600 hover:underline">
+                            Update
+                            </a>
+                            <button 
+                                onclick="confirmDelete(${action.id})"
+                                class="text-red-600 hover:underline">
+                                Delete
+                            </button>
+                        ` : ``}
                         </td>
-                    </tr>`;
+                    </tr>
+                `;
+
+
             });
         }
+
+        async function confirmDelete(actionId) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to undo this action!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const response = await fetch('../api/requester/actions.php?id=' + actionId, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${TOKEN}`,
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                        });
+
+                        const result = await response.json();
+
+                        if (!result.success) {
+                            throw new Error(result.message || 'Delete failed');
+                        }
+
+                        Swal.fire(
+                            'Deleted!',
+                            'The action has been deleted.',
+                            'success'
+                        );
+
+                        // إعادة تحميل الجدول
+                        fetchActions();
+
+                    } catch (error) {
+                        Swal.fire(
+                            'Error!',
+                            error.message,
+                            'error'
+                        );
+                    }
+                }
+            });
+        }
+
 
         /* ================= INIT ================= */
         document.addEventListener("DOMContentLoaded", () => {
@@ -199,13 +262,20 @@ require_once 'helpers/authCheck.php';
 
         document.getElementById('exportExcel').addEventListener('click', () => {
             const params = new URLSearchParams(window.location.search);
-            const baseApi = getBaseApi();
 
-            const url = baseApi
-                .replace('getAll', 'exportExcel') +
-                (params.toString() ? '&' + params.toString() : '');
+            // احذف أي action قديم
+            params.delete('action');
+
+            // أضف exportExcel
+            params.set('action', 'exportExcel');
+
+            // حافظ على باقي الصلاحيات (manager_id, user_id, ...)
+            const base = getBaseApi().split('?')[0];
+
+            const url = base + '?' + params.toString();
 
             window.location.href = url;
+
         });
 
         /* ================= FILTER CHANGE ================= */
