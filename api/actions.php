@@ -44,6 +44,7 @@ try {
 
                 header('Content-Type: text/csv; charset=utf-8');
                 header('Content-Disposition: attachment; filename="actions.csv"');
+                echo "\xEF\xBB\xBF";
 
                 $output = fopen('php://output', 'w');
 
