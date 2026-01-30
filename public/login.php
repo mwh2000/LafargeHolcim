@@ -1,6 +1,15 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
 
+if (
+  !empty($_COOKIE['user_id']) &&
+  !empty($_COOKIE['token']) &&
+  !empty($_COOKIE['user_type'])
+) {
+  // تحويل مباشر للـ dashboard
+  header("Location: dashboard.php");
+  exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -171,9 +180,14 @@ require_once __DIR__ . '/../config/config.php';
       try {
         const res = await fetch("../api/admin/auth.php?action=login", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json"
+          },
           credentials: 'include',
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({
+            email,
+            password
+          }),
         });
 
         const data = await res.json();
@@ -186,8 +200,13 @@ require_once __DIR__ . '/../config/config.php';
           // حفظ بالـ session عبر API مخصص
           await fetch("set_session.php", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user, token }),
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              user,
+              token
+            }),
           });
 
           Swal.fire({

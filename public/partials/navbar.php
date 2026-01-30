@@ -5,9 +5,9 @@ $userData = json_decode($_COOKIE['user_data'], true);
 function renderNavbar($pageRoute = 'Dashboard', $notificationsPageURL = '/public/notifications.php')
 {
     global $config, $userData;
-    ?>
+?>
     <nav class="bg-white shadow-sm border-b border-gray-200 px-4 md:px-8 py-3 md:py-4 sticky top-0 z-30">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0">
+        <div class="flex items-center justify-between gap-2 md:gap-0">
 
             <!-- Left Section -->
             <div class="flex items-center space-x-3 md:space-x-5">
@@ -69,9 +69,9 @@ function renderNavbar($pageRoute = 'Dashboard', $notificationsPageURL = '/public
 
         function loadNotificationsCount() {
             fetch(BASE_URL + '/api/notifications.php?action=get_notifications_count&is_opened=0', {
-                method: 'GET',
-                credentials: 'include'
-            })
+                    method: 'GET',
+                    credentials: 'include'
+                })
                 .then(response => response.json())
                 .then(data => {
                     const badge = document.getElementById('notifications_count');
@@ -89,6 +89,6 @@ function renderNavbar($pageRoute = 'Dashboard', $notificationsPageURL = '/public
         // تحميل العداد عند فتح الصفحة
         document.addEventListener('DOMContentLoaded', loadNotificationsCount);
     </script>
-    <?php
+<?php
 }
 ?>
