@@ -18,6 +18,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <title>KCML / SLV | Dashboard</title>
 </head>
@@ -110,6 +111,19 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
                 </div>
 
+                <!-- ================= CHART ================= -->
+                <div class="bg-white rounded-lg shadow p-6 mb-6">
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4">
+                        Actions Status Overview
+                    </h2>
+
+                    <div class="flex justify-center">
+                        <div class="w-72 h-72">
+                            <canvas id="actionsStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
 
                 <!-- ================= STATS ================= -->
                 <div id="statsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"></div>
@@ -124,6 +138,8 @@ require_once __DIR__ . '/helpers/authCheck.php';
         const USER_ID = "<?= $_COOKIE['user_id'] ?? '' ?>";
         const USER_ROLE = "<?= $_COOKIE['user_type'] ?? '2' ?>"; // 1=Admin, 2=User
         const IS_ADMIN = Number(USER_ROLE) === 1 || Number(USER_ROLE) === 6; // إذا 1 → Admin
+
+        let actionsStatusChart = null;
 
         /* ================= INSTANCES TOMSELECT ================= */
         let typeCategorySelect, incidentClassSelect, incident, environmentSelect, groupSelect;
@@ -248,6 +264,80 @@ require_once __DIR__ . '/helpers/authCheck.php';
             return params.toString();
         }
 
+        function renderStatusChart(stats) {
+            const ctx = document.getElementById('actionsStatusChart');
+
+            const total =
+                stats.open_actions +
+                stats.closed_actions +
+                stats.override_actions;
+
+            const percentages = {
+                open: total ? Math.round((stats.open_actions / total) * 100) : 0,
+                closed: total ? Math.round((stats.closed_actions / total) * 100) : 0,
+                overdue: total ? Math.round((stats.override_actions / total) * 100) : 0
+            };
+
+            const chartData = {
+                labels: [
+                    `Open (${percentages.open}%)`,
+                    `Closed (${percentages.closed}%)`,
+                    `Overdue (${percentages.overdue}%)`
+                ],
+                datasets: [{
+                    label: 'Actions',
+                    data: [
+                        stats.open_actions,
+                        stats.closed_actions,
+                        stats.override_actions
+                    ],
+                    backgroundColor: [
+                        'rgb(251, 146, 60)', // orange
+                        'rgb(34, 197, 94)', // green
+                        'rgb(239, 68, 68)' // red
+                    ],
+                    hoverOffset: 6
+                }]
+            };
+
+            if (actionsStatusChart) {
+                actionsStatusChart.data = chartData;
+                actionsStatusChart.update();
+                return;
+            }
+
+            actionsStatusChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                boxWidth: 14
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const percent = total ?
+                                        Math.round((value / total) * 100) :
+                                        0;
+                                    return `${context.label}: ${value} (${percent}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+
 
         /* ================= LOAD STATISTICS ================= */
         async function loadStatistics() {
@@ -298,6 +388,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 }
 
                 const d = result.data;
+                renderStatusChart(d);
 
                 /* ================= CARDS ================= */
                 document.getElementById("statsContainer").innerHTML = `
@@ -310,13 +401,13 @@ require_once __DIR__ . '/helpers/authCheck.php';
             <div onclick="location.href='${getActionsBaseUrl('open')}'"
                  class="cursor-pointer bg-white shadow-md rounded-lg p-5 hover:ring">
                 <p class="text-sm text-gray-500">Open</p>
-                <p class="mt-2 text-2xl font-semibold text-orange-400">${d.open_actions}</p>
+                <p class="mt-2 text-2xl font-semibold text-green-500">${d.open_actions}</p>
             </div>
 
             <div onclick="location.href='${getActionsBaseUrl('closed')}'"
                  class="cursor-pointer bg-white shadow-md rounded-lg p-5 hover:ring">
                 <p class="text-sm text-gray-500">Closed</p>
-                <p class="mt-2 text-2xl font-semibold text-green-500">${d.closed_actions}</p>
+                <p class="mt-2 text-2xl font-semibold text-orange-400">${d.closed_actions}</p>
             </div>
 
             <div onclick="location.href='${getActionsBaseUrl('overdue')}'"
