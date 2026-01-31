@@ -1,16 +1,13 @@
 <?php
 header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../core/Database.php';
 require_once __DIR__ . '/../../core/JWTHandler.php';
 require_once __DIR__ . '/../../controllers/authController.php';
+require_once __DIR__ . '/../../public/helpers/sendJson.php';
 
 $config = require __DIR__ . '/../../config/config.php';
-
 $database = new Database($config['db']);
 $conn = $database->getConnection();
 $jwtHandler = new JWTHandler($config['jwt_secret']);
@@ -20,24 +17,29 @@ $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? null;
 $input = json_decode(file_get_contents("php://input"), true) ?? [];
 
-switch ($method) {
-    case 'POST':
+try {
+    if ($method === 'POST') {
         if ($action === 'login') {
-            $authController->login($input);
+            $res = $authController->login($input); // ✅ respond() يطبع ويخرج
+            sendJson($res); // ✅ نرسلها بشكل JSON
         } elseif ($action === 'logout') {
-            $authController->logout();
+            $res = $authController->logout();
+            sendJson($res);
         } else {
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Invalid POST action']);
+            sendJson(['success' => false, 'message' => 'Invalid POST action']);
         }
-        break;
-
-    case 'OPTIONS':
+    } elseif ($method === 'OPTIONS') {
         http_response_code(200);
-        break;
-
-    default:
+    } else {
         http_response_code(405);
-        echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);
-        break;
+        sendJson(['success' => false, 'message' => 'Method Not Allowed']);
+    }
+} catch (Exception $e) {
+    http_response_code(500);
+    sendJson([
+        'success' => false,
+        'message' => 'Server Error',
+        'error' => $e->getMessage()
+    ]);
 }

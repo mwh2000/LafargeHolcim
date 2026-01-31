@@ -193,22 +193,6 @@ if (
         const data = await res.json();
 
         if (data.success) {
-          // حفظ بيانات المستخدم في session عبر AJAX آخر (أو باستخدام localStorage)
-          const user = data.data.user;
-          const token = data.data.token;
-
-          // حفظ بالـ session عبر API مخصص
-          await fetch("set_session.php", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              user,
-              token
-            }),
-          });
-
           Swal.fire({
             icon: "success",
             title: "تم تسجيل الدخول",
@@ -218,20 +202,15 @@ if (
           });
 
           setTimeout(() => {
-            if (user.role_id == 1) window.location.href = "dashboard.php";
-            else if (user.role_id == 2) window.location.href = "requester/create_action.php";
-            else if (user.role_id == 3) window.location.href = "dashboard.php";
-            else if (user.role_id == 4) window.location.href = "dashboard.php";
-            else if (user.role_id == 5) window.location.href = "dashboard.php";
-            else if (user.role_id == 6) window.location.href = "dashboard.php";
-            else window.location.href = "login.php";
+            if (data.data.user.role_id == 1) window.location.href = "dashboard.php";
+            else if (data.data.user.role_id == 2) window.location.href = "requester/create_action.php";
+            else window.location.href = "dashboard.php";
           }, 1200);
-
         } else {
           Swal.fire({
             icon: "error",
             title: "فشل تسجيل الدخول",
-            text: data.message || "تحقق من البريد الإلكتروني أو كلمة المرور"
+            text: data.message
           });
         }
 

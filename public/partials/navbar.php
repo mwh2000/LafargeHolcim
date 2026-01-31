@@ -67,27 +67,31 @@ function renderNavbar($pageRoute = 'Dashboard', $notificationsPageURL = '/public
             window.location.href = '<?= BASE_URL . $notificationsPageURL ?>';
         });
 
-        function loadNotificationsCount() {
-            fetch(BASE_URL + '/api/notifications.php?action=get_notifications_count&is_opened=0', {
+        // notifications count from /api/notifications.php?action=get_notifications_count&is_opened=0 once page loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('<?= BASE_URL ?>/api/notifications.php?action=get_notifications_count&is_opened=0', {
                     method: 'GET',
-                    credentials: 'include'
+                    credentials: 'include' // to include cookies
                 })
                 .then(response => response.json())
                 .then(data => {
-                    const badge = document.getElementById('notifications_count');
-
-                    if (data.success && data.count > 0) {
-                        badge.innerText = data.count;
-                        badge.style.display = 'inline-block';
+                    if (data.success) {
+                        const count = data.count;
+                        const countElement = document.getElementById('notifications_count');
+                        if (count > 0) {
+                            countElement.textContent = count;
+                            countElement.style.display = 'inline-flex';
+                        } else {
+                            countElement.style.display = 'none';
+                        }
                     } else {
-                        badge.style.display = 'none';
+                        console.error('Failed to fetch notifications count:', data.message);
                     }
                 })
-                .catch(err => console.error(err));
-        }
-
-        // تحميل العداد عند فتح الصفحة
-        document.addEventListener('DOMContentLoaded', loadNotificationsCount);
+                .catch(error => {
+                    console.error('Error fetching notifications count:', error);
+                });
+        });
     </script>
 <?php
 }

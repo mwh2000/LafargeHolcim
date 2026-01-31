@@ -8,16 +8,12 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../controllers/actionController.php';
 require_once __DIR__ . '/../middlewares/AuthMiddleware.php';
-
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
-// ✅ تحميل إعدادات المشروع
 $config = require __DIR__ . '/../config/config.php';
-
-// ✅ إنشاء الاتصال بقاعدة البيانات
 $database = new Database($config['db']);
 $conn = $database->getConnection();
 
@@ -28,26 +24,29 @@ $user_id = $_GET['user_id'] ?? null;
 parse_str($_SERVER['QUERY_STRING'] ?? '', $queryParams);
 $input = json_decode(file_get_contents("php://input"), true) ?? [];
 
+function sendJson($res)
+{
+    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 try {
+    $auth = new AuthMiddleware();
+    $decoded = $auth->verifyToken();
+
+    $filters = array_merge($_GET ?? [], $_POST ?? []);
+    $res = null;
+
     switch ($method) {
         case 'GET':
-            $auth = new AuthMiddleware();
-            $decoded = $auth->verifyToken();
-            $filters = array_merge(
-                $_GET ?? [],
-                $_POST ?? []
-            );
 
             if ($action === 'exportExcel') {
-
-                $data = $controller->getAll($filters, true); // 👈 نفس getAll
+                $data = $controller->getAll($filters, true); // 👈 دالة ترجع array
 
                 header('Content-Type: text/csv; charset=utf-8');
                 header('Content-Disposition: attachment; filename="actions.csv"');
                 echo "\xEF\xBB\xBF";
-
                 $output = fopen('php://output', 'w');
-
                 fputcsv($output, [
                     'Action',
                     'Created By',
@@ -57,7 +56,6 @@ try {
                     'Due Date',
                     'Status'
                 ]);
-
                 foreach ($data as $row) {
                     fputcsv($output, [
                         $row['action'],
@@ -69,63 +67,40 @@ try {
                         $row['status'],
                     ]);
                 }
-
                 fclose($output);
                 exit;
             }
 
-
-            // ✅ جلب إجراء محدد بالـ ID
             if (isset($_GET['id'])) {
-                $controller->getById((int) $_GET['id']);
-                break;
+                $res = $controller->getById((int) $_GET['id']);
+            } elseif ($action === 'assigned_to_me') {
+                $res = $controller->getAssignedToMe($user_id, $filters);
+            } elseif ($action === 'created_by_me') {
+                $res = $controller->getAllByME($user_id, $filters);
+            } elseif ($action === 'getStatistics') {
+                $res = $controller->getStatistics($filters);
+            } else {
+                $res = $controller->getAll($filters);
             }
-
-            // ✅ جلب الإجراءات المسندة للمستخدم
-            if ($action === 'assigned_to_me') {
-                $controller->getAssignedToMe($user_id, $filters);
-                break;
-            }
-
-            // ✅ جلب الإجراءات التي أنشأها المستخدم
-            if ($action === 'created_by_me') {
-                $controller->getAllByME($user_id, []);
-                break;
-            }
-
-            if ($action === 'getStatistics') {
-                // $auth->requireRoles($decoded, ['admin']);
-                $filters = $_GET ?? [];
-
-                $controller->getStatistics($filters);
-                break;
-            }
-
-            // ✅ الافتراضي: كل الإجراءات
-            $controller->getAll($filters);
+            sendJson($res);
             break;
 
         case 'PUT':
-            $auth = new AuthMiddleware();
-            $decoded = $auth->verifyToken();
-
-            if ($action === 'update_status') {
-                if (isset($_GET['id'])) {
-                    $controller->updateStatus($_GET['id'], 'closed', $input['note'] ?? '');
-                }
-                break;
+            if ($action === 'update_status' && isset($_GET['id'])) {
+                $res = $controller->updateStatus($_GET['id'], 'closed', $input['note'] ?? '');
+                sendJson($res);
             }
+            break;
 
         default:
             http_response_code(405);
-            echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);
-            break;
+            sendJson(['success' => false, 'message' => 'Method Not Allowed']);
     }
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode([
+    sendJson([
         'success' => false,
         'message' => 'Server Error',
-        'error' => $e->getMessage()
+        'error'   => $e->getMessage()
     ]);
 }

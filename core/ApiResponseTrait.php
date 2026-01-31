@@ -1,4 +1,5 @@
 <?php
+
 /**
  * 🔹 Trait: ApiResponseTrait
  * يوفر استجابة موحدة لكل الـ APIs في النظام.
@@ -14,14 +15,15 @@ trait ApiResponseTrait
         $data = null,
         $errors = null,
         int $statusCode = 200
-    ): void {
+    ): array {
+
         http_response_code($statusCode);
-        echo json_encode([
+
+        return [
             'success' => $success,
             'message' => $message,
             'data' => $data,
             'errors' => $errors
-        ], JSON_UNESCAPED_UNICODE);
-        exit;
+        ];
     }
 }

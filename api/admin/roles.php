@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../core/Database.php';
 require_once __DIR__ . '/../../core/ApiResponseTrait.php';
 require_once __DIR__ . '/../../controllers/rolesController.php';
 require_once __DIR__ . '/../../middlewares/AuthMiddleware.php';
+require_once __DIR__ . '/../../public/helpers/sendJson.php';
 
 $config = require __DIR__ . '/../../config/config.php';
 
@@ -24,24 +25,26 @@ try {
     $method = $_SERVER['REQUEST_METHOD'];
 
     switch ($method) {
+
         /** ✅ Get all (with search & pagination) */
         case 'GET':
             $filters = [
                 'search' => $_GET['search'] ?? null,
             ];
-            $controller->getAll($filters);
 
+            $res = $controller->getAll($filters); // ✅ يجب أن ترجع array
+            sendJson($res); // ✅ نرسلها بشكل JSON
             break;
 
         /** ❌ Unsupported method */
         default:
             http_response_code(405);
-            echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);
+            sendJson(['success' => false, 'message' => 'Method Not Allowed']);
             break;
     }
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode([
+    sendJson([
         'success' => false,
         'message' => 'Server Error',
         'error' => $e->getMessage()

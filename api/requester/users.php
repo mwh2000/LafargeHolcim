@@ -27,35 +27,51 @@ $action = $_GET['action'] ?? null;
 parse_str($_SERVER['QUERY_STRING'] ?? '', $queryParams);
 $input = json_decode(file_get_contents("php://input"), true) ?? [];
 
-// ✅ Decode JWT
-$decoded = $auth->verifyToken();
+/**
+ * ✨ Helper لطباعة JSON مرة واحدة
+ */
+function sendJson($res)
+{
+    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
-switch ($method) {
-    // 🔸 Get All / Get One
-    case 'GET':
-        if ($action === 'all') {
-            $filters = [
-                'search' => $queryParams['search'] ?? null,
-                'role_id' => $queryParams['role_id'] ?? null,
-                'is_active' => $queryParams['is_active'] ?? null,
-            ];
-            $userController->getAll($filters);
-        } elseif ($action === 'show' && isset($queryParams['id'])) {
-            $userController->getById((int) $queryParams['id']);
-        } else {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Invalid GET action']);
-        }
-        break;
+try {
+    $res = null;
 
-    // 🔸 Preflight (CORS)
-    case 'OPTIONS':
-        http_response_code(200);
-        break;
+    switch ($method) {
+        case 'GET':
+            if ($action === 'all') {
+                $filters = [
+                    'search' => $queryParams['search'] ?? null,
+                    'role_id' => $queryParams['role_id'] ?? null,
+                    'is_active' => $queryParams['is_active'] ?? null,
+                ];
+                $res = $userController->getAll($filters);
+            } elseif ($action === 'show' && isset($queryParams['id'])) {
+                $res = $userController->getById((int) $queryParams['id']);
+            } else {
+                http_response_code(400);
+                $res = ['success' => false, 'message' => 'Invalid GET action'];
+            }
+            break;
 
-    // ❌ Unsupported
-    default:
-        http_response_code(405);
-        echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);
-        break;
+        case 'OPTIONS': // CORS preflight
+            http_response_code(200);
+            exit;
+
+        default:
+            http_response_code(405);
+            $res = ['success' => false, 'message' => 'Method Not Allowed'];
+            break;
+    }
+
+    sendJson($res);
+} catch (Exception $e) {
+    http_response_code(500);
+    sendJson([
+        'success' => false,
+        'message' => 'Server Error',
+        'error' => $e->getMessage()
+    ]);
 }

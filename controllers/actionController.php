@@ -139,6 +139,7 @@ class ActionController
      * ========================= */
         return $this->respond(true, 'Action created successfully', [
             'id' => $actionId,
+            'action' => $data['action'],
             'assigned_user_id' => $data['assigned_user_id']
         ]);
     }

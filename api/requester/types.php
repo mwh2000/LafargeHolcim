@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
+
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../core/Database.php';
 require_once __DIR__ . '/../../core/ApiResponseTrait.php';
@@ -8,46 +9,57 @@ require_once __DIR__ . '/../../middlewares/AuthMiddleware.php';
 
 $config = require __DIR__ . '/../../config/config.php';
 
+/**
+ * ✨ Helper لطباعة JSON مرة واحدة
+ */
+function sendJson($res)
+{
+    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 try {
-    // الاتصال بقاعدة البيانات
+    // ✅ الاتصال بقاعدة البيانات
     $db = new Database($config['db']);
     $conn = $db->getConnection();
 
-    // تهيئة الكنترولر والـ Middleware
+    // ✅ تهيئة الكنترولر و الـ Middleware
     $auth = new AuthMiddleware();
     $decoded = $auth->verifyToken();
     $auth->requireRoles($decoded, ['requester', 'safety', 'area_manager', 'manager', 'plant manager']);
 
     $controller = new TypesController($conn);
 
-    // تحديد نوع الطلب
+    // ✅ نوع الطلب
     $method = $_SERVER['REQUEST_METHOD'];
+    $res = null;
 
     switch ($method) {
-        /** ✅ Get all (with search & pagination) */
         case 'GET':
             if (isset($_GET['id'])) {
-                $controller->getById((int) $_GET['id']);
+                $res = $controller->getById((int) $_GET['id']);
             } else {
                 $filters = [
                     'search' => $_GET['search'] ?? null,
-                    'limit' => $_GET['limit'] ?? null,
+                    'limit'  => $_GET['limit'] ?? null,
                     'offset' => $_GET['offset'] ?? null
                 ];
-                $controller->getAll($filters);
+                $res = $controller->getAll($filters);
             }
             break;
-        /** ❌ Unsupported method */
+
         default:
             http_response_code(405);
-            echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);
+            $res = ['success' => false, 'message' => 'Method Not Allowed'];
             break;
     }
+
+    sendJson($res);
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode([
+    sendJson([
         'success' => false,
         'message' => 'Server Error',
-        'error' => $e->getMessage()
+        'error'   => $e->getMessage()
     ]);
 }

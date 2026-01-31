@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../core/Database.php';
 require_once __DIR__ . '/../../core/ApiResponseTrait.php';
 require_once __DIR__ . '/../../controllers/typesController.php';
 require_once __DIR__ . '/../../middlewares/AuthMiddleware.php';
+require_once __DIR__ . '/../../public/helpers/sendJson.php';
 
 $config = require __DIR__ . '/../../config/config.php';
 
@@ -15,65 +16,67 @@ try {
 
     // تهيئة الكنترولر والـ Middleware
     $auth = new AuthMiddleware();
-    $decoded = $auth->verifyToken(); // يتحقق من التوكن
-    $auth->requireAdmin($decoded);   // يسمح فقط للـ Admin / Super Admin
+    $decoded = $auth->verifyToken();
+    $auth->requireAdmin($decoded);
 
     $controller = new TypesController($conn);
 
     // تحديد نوع الطلب
     $method = $_SERVER['REQUEST_METHOD'];
+    $id = $_GET['id'] ?? null;
+    $input = json_decode(file_get_contents('php://input'), true) ?? [];
 
     switch ($method) {
-        /** ✅ Get all (with search & pagination) */
+        /** ✅ Get all / Get by ID */
         case 'GET':
-            if (isset($_GET['id'])) {
-                $controller->getById((int) $_GET['id']);
+            if ($id) {
+                $res = $controller->getById((int) $id); // يجب أن ترجع array
             } else {
                 $filters = [
                     'search' => $_GET['search'] ?? null,
                     'limit' => $_GET['limit'] ?? null,
                     'offset' => $_GET['offset'] ?? null
                 ];
-                $controller->getAll($filters);
+                $res = $controller->getAll($filters);
             }
+            sendJson($res);
             break;
 
-        /** ✅ Create new category */
+        /** ✅ Create new type */
         case 'POST':
-            $data = json_decode(file_get_contents('php://input'), true);
-            $controller->create($data);
+            $res = $controller->create($input);
+            sendJson($res);
             break;
 
-        /** ✅ Update category */
+        /** ✅ Update type */
         case 'PUT':
-            $data = json_decode(file_get_contents('php://input'), true);
-            if (empty($_GET['id'])) {
+            if (!$id) {
                 http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'Missing id parameter']);
-                exit;
+                sendJson(['success' => false, 'message' => 'Missing id parameter']);
             }
-            $controller->update((int) $_GET['id'], $data);
+            $res = $controller->update((int) $id, $input);
+            sendJson($res);
             break;
 
-        /** ✅ Delete category */
+        /** ✅ Delete type */
         case 'DELETE':
-            if (empty($_GET['id'])) {
+            if (!$id) {
                 http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'Missing id parameter']);
-                exit;
+                sendJson(['success' => false, 'message' => 'Missing id parameter']);
             }
-            $controller->delete((int) $_GET['id']);
+            $res = $controller->delete((int) $id);
+            sendJson($res);
             break;
 
         /** ❌ Unsupported method */
         default:
             http_response_code(405);
-            echo json_encode(['success' => false, 'message' => 'Method Not Allowed']);
+            sendJson(['success' => false, 'message' => 'Method Not Allowed']);
             break;
     }
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode([
+    sendJson([
         'success' => false,
         'message' => 'Server Error',
         'error' => $e->getMessage()

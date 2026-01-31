@@ -86,7 +86,6 @@ class AuthController
                 'role_name' => $user['role_name']
             ]
         ]);
-
     }
 
     /**

@@ -133,8 +133,8 @@ class NotificationController
     // getUserNotificationsCount
     public function getUserNotificationsCount($user_id, $is_opened = null)
     {
-        $query = "SELECT COUNT(*) FROM notifications WHERE user_id = ?";
-        $params = [$user_id];
+        $query = "SELECT COUNT(*) as count FROM notifications WHERE user_id = ?";
+        $params = [(int)$user_id];
 
         if ($is_opened !== null) {
             $query .= " AND is_opened = ?";
@@ -144,6 +144,7 @@ class NotificationController
         $stmt = $this->conn->prepare($query);
         $stmt->execute($params);
 
-        return (int) $stmt->fetchColumn();
+        $count = $stmt->fetchColumn();
+        return $count !== false ? (int)$count : 0;
     }
 }
