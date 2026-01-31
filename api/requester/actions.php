@@ -10,7 +10,8 @@ require_once __DIR__ . '/../../controllers/actionController.php';
 require_once __DIR__ . '/../../controllers/notificationsController.php';
 require_once __DIR__ . '/../../controllers/emailController.php';
 require_once __DIR__ . '/../../middlewares/AuthMiddleware.php';
-require_once __DIR__ . '/../../services/ActionService.php';
+require_once __DIR__ . '/../../services/actionService.php';
+require_once __DIR__ . '/../../public/helpers/sendJson.php';
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
@@ -34,11 +35,7 @@ $input = json_decode(file_get_contents("php://input"), true) ?? [];
 /**
  * ✨ Helper لطباعة JSON مرة واحدة
  */
-function sendJson($res)
-{
-    echo json_encode($res, JSON_UNESCAPED_UNICODE);
-    exit;
-}
+
 
 try {
     $res = null;
