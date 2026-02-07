@@ -410,7 +410,7 @@ class ActionController
      * ========================= */
         $sql = "
         SELECT 
-            a.id, a.status, a.description, a.action, a.`group`, a.start_date, a.expiry_date,
+            a.id, a.status, a.description, a.action, a.`group`, a.start_date, a.expiry_date, visit_duration, description, priority,
             a.image, a.attachment, a.created_at,
             t.name AS type_name,
             u.name AS assigned_user_name,

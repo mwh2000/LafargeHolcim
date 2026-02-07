@@ -52,6 +52,9 @@ require_once 'helpers/authCheck.php';
                                 <th class="px-6 py-3">Created by</th>
                                 <th class="px-6 py-3">Assigned to</th>
                                 <th class="px-6 py-3">Group</th>
+                                <th class="px-6 py-3">Visit duration</th>
+                                <th class="px-6 py-3">Description</th>
+                                <th class="px-6 py-3">Priority</th>
                                 <th class="px-6 py-3">Start Date</th>
                                 <th class="px-6 py-3">Due Date</th>
                                 <th class="px-6 py-3">Status</th>
@@ -177,6 +180,9 @@ require_once 'helpers/authCheck.php';
                         <td class="px-6 py-4">${action.created_by_name}</td>
                         <td class="px-6 py-4">${action.assigned_user_name}</td>
                         <td class="px-6 py-4">${action.group}</td>
+                        <td class="px-6 py-4">${action.visit_duration || '-'}</td>
+                        <td class="px-6 py-4">${action.description || '-'}</td>
+                        <td class="px-6 py-4">${action.priority || '-'}</td>
                         <td class="px-6 py-4">${action.start_date || '-'}</td>
                         <td class="px-6 py-4">${action.expiry_date}</td>
                         <td class="px-6 py-4 font-semibold ${statusColor}">${status.toUpperCase()}</td>
