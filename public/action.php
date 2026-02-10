@@ -163,6 +163,15 @@ require_once 'helpers/authCheck.php';
                                                 closed</button>
                                         </div>
 
+                                        <label class="block text-xs text-slate-600 mt-4">Edit action</label>
+                                        <div class="mt-2 flex gap-2">
+                                            <button id="edit_action"
+                                                class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm">
+                                                Edit
+                                            </button>
+                                        </div>
+
+
                                     </div>
                                 </aside>
                             </div>
@@ -179,6 +188,10 @@ require_once 'helpers/authCheck.php';
             const user_id = "<?= $_COOKIE['user_id'] ?? '' ?>";
             const params = new URLSearchParams(window.location.search);
             const actionId = params.get("id");
+            const USER_ROLE = "<?= $_COOKIE['user_type'] ?? '2' ?>";
+            const IS_ADMIN = Number(USER_ROLE) === 1;
+            const IS_REQUESTER = Number(USER_ROLE) === 2;
+
 
             if (!actionId) {
                 Swal.fire("Error", "No Action ID provided in URL", "error");
@@ -201,6 +214,24 @@ require_once 'helpers/authCheck.php';
                 }
 
                 const action = result.data;
+
+                // ✅ Edit button (admin only)
+                const editBtn = document.getElementById("edit_action");
+
+                if (editBtn) {
+                    if (IS_ADMIN || (IS_REQUESTER && String(action.created_by) === user_id)) {
+                        editBtn.disabled = false;
+                        editBtn.classList.remove("opacity-50", "cursor-not-allowed");
+
+                        editBtn.addEventListener("click", () => {
+                            window.location.href = `requester/update_action.php?id=${action.id}`;
+                        });
+                    } else {
+                        editBtn.disabled = true;
+                        editBtn.classList.add("opacity-50", "cursor-not-allowed");
+                    }
+                }
+
 
                 // ✅ تعبئة البيانات داخل الصفحة
                 document.getElementById("category").textContent = action.category_name;

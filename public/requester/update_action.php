@@ -21,7 +21,6 @@ require_once '../helpers/authCheck.php';
     <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
-    <script src="/action.js"></script>
 
     <title>KCML / SLV | New Report</title>
 </head>
