@@ -219,17 +219,17 @@ require_once 'helpers/authCheck.php';
                 const editBtn = document.getElementById("edit_action");
 
                 if (editBtn) {
-                    if (IS_ADMIN || (IS_REQUESTER && String(action.created_by) === user_id)) {
-                        editBtn.disabled = false;
-                        editBtn.classList.remove("opacity-50", "cursor-not-allowed");
+                    // if (IS_ADMIN || (IS_REQUESTER && String(action.created_by) === user_id)) {
+                    editBtn.disabled = false;
+                    editBtn.classList.remove("opacity-50", "cursor-not-allowed");
 
-                        editBtn.addEventListener("click", () => {
-                            window.location.href = `requester/update_action.php?id=${action.id}`;
-                        });
-                    } else {
-                        editBtn.disabled = true;
-                        editBtn.classList.add("opacity-50", "cursor-not-allowed");
-                    }
+                    editBtn.addEventListener("click", () => {
+                        window.location.href = `requester/update_action.php?id=${action.id}`;
+                    });
+                    // } else {
+                    //     editBtn.disabled = true;
+                    //     editBtn.classList.add("opacity-50", "cursor-not-allowed");
+                    // }
                 }
 
 
