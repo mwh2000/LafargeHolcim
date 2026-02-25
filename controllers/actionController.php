@@ -686,13 +686,16 @@ class ActionController
 
         // ✅ فلترة حسب super_manager_id
         if (!empty($filters['super_manager_id'])) {
-            $baseConditions[] = "
-                u.manager_id IN (
-                    SELECT id
-                    FROM users
-                    WHERE manager_id = :super_manager_id
-                )
-            ";
+            // $baseConditions[] = "
+            //     u.manager_id IN (
+            //         SELECT id
+            //         FROM users
+            //         WHERE manager_id = :super_manager_id
+            //     )
+            // ";
+            // $params[':super_manager_id'] = (int) $filters['super_manager_id'];
+
+            $baseConditions[] = "u.manager_id = :super_manager_id";
             $params[':super_manager_id'] = (int) $filters['super_manager_id'];
         }
 

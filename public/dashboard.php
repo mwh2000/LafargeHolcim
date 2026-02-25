@@ -369,7 +369,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                     params.append("manager_id", USER_ID);
                 } else if (USER_ROLE === '5') {
                     // Safety Officer → يشوف أكشنات القسم
-                    params.append("manager_id", USER_ID);
+                    params.append("super_manager_id", USER_ID);
                 } else if (!IS_ADMIN) {
                     // User عادي → يشوف أكشناته فقط
                     params.append("assigned_user_id", USER_ID);
