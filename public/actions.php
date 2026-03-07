@@ -50,8 +50,9 @@ require_once 'helpers/authCheck.php';
                             <tr>
                                 <th class="px-6 py-3">Action</th>
                                 <th class="px-6 py-3">Created by</th>
+                                <th class="px-6 py-3">By Group</th>
                                 <th class="px-6 py-3">Assigned to</th>
-                                <th class="px-6 py-3">Group</th>
+                                <th class="px-6 py-3">To Group</th>
                                 <th class="px-6 py-3">Visit duration</th>
                                 <th class="px-6 py-3">Description</th>
                                 <th class="px-6 py-3">Priority</th>
@@ -178,8 +179,9 @@ require_once 'helpers/authCheck.php';
                     <tr class="border-b">
                         <td class="px-6 py-4">${action.action}</td>
                         <td class="px-6 py-4">${action.created_by_name}</td>
-                        <td class="px-6 py-4">${action.assigned_user_name}</td>
                         <td class="px-6 py-4">${action.group}</td>
+                        <td class="px-6 py-4">${action.assigned_user_name}</td>
+                        <td class="px-6 py-4">${action.assigned_user_group || '-'}</td>
                         <td class="px-6 py-4">${action.visit_duration || '-'}</td>
                         <td class="px-6 py-4">${action.description || '-'}</td>
                         <td class="px-6 py-4">${action.priority || '-'}</td>

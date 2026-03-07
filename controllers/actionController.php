@@ -417,6 +417,7 @@ class ActionController
             a.image, a.attachment, a.created_at,
             t.name AS type_name,
             u.name AS assigned_user_name,
+            u.`group` AS assigned_user_group,
             u2.name AS created_by_name
         FROM actions a
         LEFT JOIN users u ON a.assigned_user_id = u.id
