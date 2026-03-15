@@ -75,7 +75,11 @@ function renderSidebar($activePage = '')
           'href' => BASE_URL . '/public/requester/create_action.php',
           'icon' => '<path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />'
         ],
-
+        'energy_insulation' => [
+          'label' => 'Energy Insulation',
+          'href' => BASE_URL . '/public/requester/add_energy_license.php',
+          'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944v17.056c-3.33 0-6.355-1.127-8.618-3.04M12 20c3.33 0 6.355-1.127 8.618-3.04" />'
+        ],
       ];
       break;
     // area manager
@@ -167,6 +171,11 @@ function renderSidebar($activePage = '')
           'label' => 'New Report',
           'href' => BASE_URL . '/public/requester/create_action.php',
           'icon' => '<path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />'
+        ],
+        'energy_insulation' => [
+          'label' => 'Energy Insulation',
+          'href' => BASE_URL . '/public/requester/add_energy_license.php',
+          'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944v17.056c-3.33 0-6.355-1.127-8.618-3.04M12 20c3.33 0 6.355-1.127 8.618-3.04" />'
         ],
       ];
       break;
