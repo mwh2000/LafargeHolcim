@@ -50,6 +50,11 @@ function renderSidebar($activePage = '')
           'href' => BASE_URL . '/public/admin/energy_types.php',
           'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />'
         ],
+        'energy_insulation' => [
+          'label' => 'Energy Insulation',
+          'href' => BASE_URL . '/public/requester/add_energy_license.php',
+          'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944v17.056c-3.33 0-6.355-1.127-8.618-3.04M12 20c3.33 0 6.355-1.127 8.618-3.04" />'
+        ],
       ];
       break;
     // requester
