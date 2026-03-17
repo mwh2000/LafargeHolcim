@@ -10,7 +10,7 @@ return function (PDO $pdo) {
             `reason` varchar(255) DEFAULT NULL,
             `license_expiry` varchar(255) DEFAULT NULL,
             `execution_exceeds_shift_time` int DEFAULT NULL,
-            `model_no` int DEFAULT NULL,
+            `exact_location` int DEFAULT NULL,
             `created_by` bigint UNSIGNED DEFAULT NULL,
             `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
             `area_manager_id` bigint UNSIGNED DEFAULT NULL,

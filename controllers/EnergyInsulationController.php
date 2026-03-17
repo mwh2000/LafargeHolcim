@@ -21,7 +21,7 @@ class EnergyInsulationController
                 INSERT INTO energy_insulation_license (
                     equipment_name, equipment_no, date, reason, license_expiry, 
                     execution_exceeds_shift_time, work_permit, equipment_section_id, 
-                    created_by, status, model_no
+                    created_by, status, exact_location
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
 
@@ -36,7 +36,7 @@ class EnergyInsulationController
                 $data['equipment_section_id'] ?? null,
                 $data['created_by'] ?? null,
                 'pending',
-                $data['model_no'] ?? null
+                $data['exact_location'] ?? null
             ]);
 
             $licenseId = $this->conn->lastInsertId();
