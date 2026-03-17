@@ -50,10 +50,16 @@ function renderSidebar($activePage = '')
           'href' => BASE_URL . '/public/admin/energy_types.php',
           'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />'
         ],
-        'energy_insulation' => [
-          'label' => 'Energy Insulation',
-          'href' => BASE_URL . '/public/requester/add_energy_license.php',
-          'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944v17.056c-3.33 0-6.355-1.127-8.618-3.04M12 20c3.33 0 6.355-1.127 8.618-3.04" />'
+        'permit' => [
+          'label' => 'Permit',
+          'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h.01M9 16h.01M9 8h.01M13 12h3M13 16h3M13 8h3m-7 11h10a2 2 0 002-2V7a2 2 0 00-2-2H9a2 2 0 00-2 2v10a2 2 0 002 2z" />',
+          'type' => 'group',
+          'sub_links' => [
+            'energy_insulation' => [
+              'label' => 'Energy Insulation',
+              'href' => BASE_URL . '/public/requester/add_energy_license.php',
+            ],
+          ]
         ],
       ];
       break;
@@ -80,10 +86,16 @@ function renderSidebar($activePage = '')
           'href' => BASE_URL . '/public/requester/create_action.php',
           'icon' => '<path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />'
         ],
-        'energy_insulation' => [
-          'label' => 'Energy Insulation',
-          'href' => BASE_URL . '/public/requester/add_energy_license.php',
-          'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944a11.955 11.955 0 01-8.618 3.04M12 2.944v17.056c-3.33 0-6.355-1.127-8.618-3.04M12 20c3.33 0 6.355-1.127 8.618-3.04" />'
+        'permit' => [
+          'label' => 'Permit',
+          'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h.01M9 16h.01M9 8h.01M13 12h3M13 16h3M13 8h3m-7 11h10a2 2 0 002-2V7a2 2 0 00-2-2H9a2 2 0 00-2 2v10a2 2 0 002 2z" />',
+          'type' => 'group',
+          'sub_links' => [
+            'energy_insulation' => [
+              'label' => 'Energy Insulation',
+              'href' => BASE_URL . '/public/requester/add_energy_license.php',
+            ],
+          ]
         ],
       ];
       break;
@@ -199,18 +211,62 @@ function renderSidebar($activePage = '')
     <div class="p-6">
       <div class="space-y-2">
         <?php foreach ($links as $key => $link):
-          $isActive = $activePage === $key;
-          $activeClasses = $isActive ? "text-[#0b6f76] bg-purple-50 font-medium" : "text-gray-700 hover:bg-gray-100";
-        ?>
-          <a href="<?= $link['href'] ?>"
-            class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors <?= $activeClasses ?>">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <?= $link['icon'] ?>
-            </svg>
-            <span>
+          if (isset($link['type']) && $link['type'] === 'header'): ?>
+            <div class="px-4 pt-4 pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2 border-t border-gray-100">
               <?= $link['label'] ?>
-            </span>
-          </a>
+            </div>
+          <?php continue;
+          endif;
+
+          if (isset($link['type']) && $link['type'] === 'group'):
+            $hasActiveSub = false;
+            foreach ($link['sub_links'] as $subKey => $subLink) {
+              if ($activePage === $subKey) {
+                $hasActiveSub = true;
+                break;
+              }
+            }
+          ?>
+            <div class="sidebar-group">
+              <button type="button"
+                class="group-toggle w-full flex items-center justify-between px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                data-group="<?= $key ?>">
+                <div class="flex items-center space-x-3">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <?= $link['icon'] ?>
+                  </svg>
+                  <span><?= $link['label'] ?></span>
+                </div>
+                <svg class="w-4 h-4 transform transition-transform duration-200 <?= $hasActiveSub ? 'rotate-180' : '' ?>"
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <div class="group-content space-y-1 mt-1 <?= $hasActiveSub ? '' : 'hidden' ?>" id="group-<?= $key ?>">
+                <?php foreach ($link['sub_links'] as $subKey => $subLink):
+                  $isSubActive = $activePage === $subKey;
+                ?>
+                  <a href="<?= $subLink['href'] ?>"
+                    class="flex items-center space-x-3 pl-12 pr-4 py-2 rounded-lg text-sm transition-colors <?= $isSubActive ? 'text-[#0b6f76] bg-purple-50 font-medium' : 'text-gray-600 hover:bg-gray-50' ?>">
+                    <span><?= $subLink['label'] ?></span>
+                  </a>
+                <?php endforeach; ?>
+              </div>
+            </div>
+          <?php else:
+            $isActive = $activePage === $key;
+            $activeClasses = $isActive ? "text-[#0b6f76] bg-purple-50 font-medium" : "text-gray-700 hover:bg-gray-100";
+          ?>
+            <a href="<?= $link['href'] ?>"
+              class="sidebar-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors <?= $activeClasses ?>">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <?= $link['icon'] ?>
+              </svg>
+              <span>
+                <?= $link['label'] ?>
+              </span>
+            </a>
+          <?php endif; ?>
         <?php endforeach; ?>
       </div>
     </div>
@@ -234,6 +290,18 @@ function renderSidebar($activePage = '')
         overlay.classList.add('hidden');
       });
     }
+
+    // Toggle Groups
+    document.querySelectorAll('.group-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const groupKey = btn.getAttribute('data-group');
+        const content = document.getElementById(`group-${groupKey}`);
+        const arrow = btn.querySelector('svg:last-child');
+
+        content.classList.toggle('hidden');
+        arrow.classList.toggle('rotate-180');
+      });
+    });
   </script>
 
 <?php

@@ -15,6 +15,11 @@ $sections = $sectionStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $energyStmt = $pdo->query("SELECT id, name FROM energy_types ORDER BY name");
 $energyTypes = $energyStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get user data from cookie
+$userData = json_decode($_COOKIE['user_data'] ?? '{}', true);
+$userName = $userData['name'] ?? 'N/A';
+$userDepartment = $userData['department'] ?? 'N/A';
 ?>
 
 <!DOCTYPE html>
@@ -105,6 +110,14 @@ $energyTypes = $energyStmt->fetchAll(PDO::FETCH_ASSOC);
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">رقم الموديل (Model No)</label>
                                     <input type="text" name="model_no" class="w-full px-4 py-2 border rounded-md focus:ring-[#0b6f76]">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">اسم الطالب للعزل</label>
+                                    <input type="text" value="<?= htmlspecialchars($userName) ?>" readonly class="w-full px-4 py-2 border rounded-md bg-gray-100 cursor-not-allowed">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">القسم الطالب للعزل</label>
+                                    <input type="text" value="<?= htmlspecialchars($userDepartment) ?>" readonly class="w-full px-4 py-2 border rounded-md bg-gray-100 cursor-not-allowed">
                                 </div>
                             </div>
                         </div>
