@@ -89,7 +89,7 @@ class EnergyInsulationController
 
     public function getEquipmentsBySection(int $sectionId)
     {
-        $stmt = $this->conn->prepare("SELECT id, name FROM equipments WHERE section_id = ?");
+        $stmt = $this->conn->prepare("SELECT id, name, image FROM equipments WHERE section_id = ?");
         $stmt->execute([$sectionId]);
         $equipments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return $this->respond(true, 'Equipments retrieved successfully', $equipments);

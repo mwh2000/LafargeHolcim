@@ -48,6 +48,16 @@ if (!$equipmentId) {
                         </select>
                     </div>
 
+                    <div id="current_image_container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Current Image</label>
+                        <img id="current_image_preview" src="" alt="Equipment Image" class="w-32 h-32 object-cover rounded-md border mb-2">
+                    </div>
+
+                    <div>
+                        <label for="image" class="block text-sm font-medium text-gray-700">Update Image</label>
+                        <input type="file" id="image" name="image" accept="image/*" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-[#0b6f76] focus:border-[#0b6f76]">
+                    </div>
+
                     <div class="flex justify-end space-x-3 mt-6">
                         <a href="equipments.php" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Cancel</a>
                         <button type="submit" class="px-4 py-2 bg-[#0b6f76] text-white rounded-md hover:bg-opacity-90 transition">Update Equipment</button>
@@ -99,6 +109,13 @@ if (!$equipmentId) {
                 if (data.success) {
                     document.getElementById('name').value = data.data.name;
                     document.getElementById('section_id').value = data.data.section_id;
+                    
+                    if (data.data.image) {
+                        const container = document.getElementById('current_image_container');
+                        const img = document.getElementById('current_image_preview');
+                        img.src = '../../public/' + data.data.image;
+                        container.classList.remove('hidden');
+                    }
                 } else {
                     Swal.fire('Error', 'Failed to load equipment details', 'error').then(() => {
                         window.location.href = 'equipments.php';
@@ -119,20 +136,28 @@ if (!$equipmentId) {
 
             const name = document.getElementById('name').value.trim();
             const section_id = document.getElementById('section_id').value;
+            const imageFile = document.getElementById('image').files[0];
 
             if (!name || !section_id) {
                 Swal.fire('Error', 'Please fill all required fields', 'error');
                 return;
             }
 
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('section_id', section_id);
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+
             try {
+                // We use POST with action=update because PHP doesn't support multipart/form-data for PUT
                 const response = await fetch(`${API_URL}&id=${EQUIPMENT_ID}`, {
-                    method: 'PUT',
+                    method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
                         'Authorization': `Bearer ${TOKEN}`
                     },
-                    body: JSON.stringify({ name, section_id })
+                    body: formData
                 });
 
                 const data = await response.json();

@@ -40,6 +40,11 @@ require_once '../helpers/authCheck.php';
                         </select>
                     </div>
 
+                    <div>
+                        <label for="image" class="block text-sm font-medium text-gray-700">Equipment Image</label>
+                        <input type="file" id="image" name="image" accept="image/*" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-[#0b6f76] focus:border-[#0b6f76]">
+                    </div>
+
                     <div class="flex justify-end space-x-3 mt-6">
                         <a href="equipments.php" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Cancel</a>
                         <button type="submit" class="px-4 py-2 bg-[#0b6f76] text-white rounded-md hover:bg-opacity-90 transition">Save Equipment</button>
@@ -81,20 +86,27 @@ require_once '../helpers/authCheck.php';
 
             const name = document.getElementById('name').value.trim();
             const section_id = document.getElementById('section_id').value;
+            const imageFile = document.getElementById('image').files[0];
 
             if (!name || !section_id) {
                 Swal.fire('Error', 'Please fill all required fields', 'error');
                 return;
             }
 
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('section_id', section_id);
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
                         'Authorization': `Bearer ${TOKEN}`
                     },
-                    body: JSON.stringify({ name, section_id })
+                    body: formData
                 });
 
                 const data = await response.json();

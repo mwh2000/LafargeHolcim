@@ -245,7 +245,7 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                     const equipmentChecked = currentContent.querySelectorAll('.eq-checkbox:checked');
                     if (equipmentChecked.length === 0) return false;
                     
-                    // Also check if checked equipments have a number
+                    // Check if checked equipments have a number (Optional now, but we keep the check if we use hidden input)
                     for (let cb of equipmentChecked) {
                         const eqId = cb.value;
                         const eqNoInput = document.querySelector(`input[name="equipment_nos[${eqId}]"]`);
@@ -346,12 +346,30 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                         }
                         data.data.forEach(eq => {
                             const div = document.createElement('div');
-                            div.className = 'flex items-center gap-4 p-3 border rounded-md';
+                            div.className = 'flex items-center gap-4 p-3 border rounded-md bg-white hover:bg-gray-50 transition-colors cursor-pointer';
+                            
+                            const imageHtml = eq.image 
+                                ? `<img src="../../public/${eq.image}" class="w-20 h-20 object-cover rounded border shadow-sm" alt="${eq.name}">` 
+                                : `<div class="w-20 h-20 bg-gray-100 rounded border flex items-center justify-center text-xs text-gray-400">No Image</div>`;
+
                             div.innerHTML = `
-                                <input type="checkbox" name="equipment_ids[]" value="${eq.id}" class="eq-checkbox">
-                                <span class="flex-1 text-sm">${eq.name}</span>
-                                <input type="text" name="equipment_nos[${eq.id}]" placeholder="رقم المعدة" class="flex-1 px-3 py-1 border rounded text-sm">
+                                <input type="checkbox" name="equipment_ids[]" value="${eq.id}" class="eq-checkbox h-5 w-5 text-[#0b6f76]">
+                                <div class="flex-1">
+                                    <span class="text-sm font-semibold text-gray-800">${eq.name}</span>
+                                </div>
+                                ${imageHtml}
+                                <input type="hidden" name="equipment_nos[${eq.id}]" value="${eq.name}">
                             `;
+                            
+                            // Make the whole div clickable to toggle checkbox
+                            div.addEventListener('click', (e) => {
+                                if (e.target.tagName !== 'INPUT') {
+                                    const cb = div.querySelector('.eq-checkbox');
+                                    cb.checked = !cb.checked;
+                                    updateButtonStates();
+                                }
+                            });
+
                             container.appendChild(div);
                         });
                         lastSectionId = sectionId;

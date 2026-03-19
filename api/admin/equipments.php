@@ -31,7 +31,14 @@ try {
         // 🔸 Create
         case 'POST':
             if ($action === 'create') {
-                $res = $equipmentController->create($input);
+                $data = $_POST;
+                $data['image_file'] = $_FILES['image'] ?? null;
+                $res = $equipmentController->create($data);
+                sendJson($res);
+            } elseif ($action === 'update' && isset($queryParams['id'])) {
+                $data = $_POST;
+                $data['image_file'] = $_FILES['image'] ?? null;
+                $res = $equipmentController->update((int) $queryParams['id'], $data);
                 sendJson($res);
             } else {
                 http_response_code(400);
@@ -57,7 +64,7 @@ try {
             }
             break;
 
-        // 🔸 Update
+        // 🔸 Update (Legacy or if No File)
         case 'PUT':
             if ($action === 'update' && isset($queryParams['id'])) {
                 $res = $equipmentController->update((int) $queryParams['id'], $input);
