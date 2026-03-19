@@ -80,7 +80,7 @@ class EnergyInsulationController
             // Send Notification and Email to Area Manager
             if ($this->notificationController && !empty($data['area_manager_id'])) {
                 $title = "رخصة عزل طاقة جديدة - New Energy Insulation License";
-                $body = "تم إنشاء رخصة عزل طاقة جديدة للمعدة: " . ($data['equipment_name'] ?? 'N/A') . ". يرجى مراجعتها وتعيين مسؤول العزل.";
+                $body = "تم إنشاء رخصة عزل طاقة جديدة للمعدة: " . ($data['equipment_name'] ?? 'N/A');
                 $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
                 
                 $this->notificationController->sendNotification($title, $body, [$data['area_manager_id']], $url, $data['created_by']);
