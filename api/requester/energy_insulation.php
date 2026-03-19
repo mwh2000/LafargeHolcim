@@ -4,6 +4,8 @@ header("Content-Type: application/json; charset=UTF-8");
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../core/Database.php';
 require_once __DIR__ . '/../../controllers/EnergyInsulationController.php';
+require_once __DIR__ . '/../../controllers/notificationsController.php';
+require_once __DIR__ . '/../../controllers/emailController.php';
 require_once __DIR__ . '/../../middlewares/AuthMiddleware.php';
 require_once __DIR__ . '/../../public/helpers/sendJson.php';
 
@@ -16,7 +18,9 @@ $decoded = $auth->verifyToken();
 // Only requester, area_manager, etc. can access
 $auth->requireRoles($decoded, ['requester', 'safety', 'area_manager', 'manager', 'plant manager']);
 
-$controller = new EnergyInsulationController($conn);
+$notificationController = new NotificationController($conn);
+$emailController = new EmailController($conn);
+$controller = new EnergyInsulationController($conn, $notificationController, $emailController);
 
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? null;
@@ -31,13 +35,23 @@ try {
             } elseif ($action === 'getEquipmentsBySection') {
                 $sectionId = (int) ($_GET['section_id'] ?? 0);
                 $res = $controller->getEquipmentsBySection($sectionId);
+            } elseif ($action === 'show' && isset($_GET['id'])) {
+                $res = $controller->getLicenseById((int)$_GET['id']);
+            } elseif ($action === 'getIsolationOfficers') {
+                $res = $controller->getIsolationOfficers();
             }
             break;
 
         case 'POST':
             $input = json_decode(file_get_contents("php://input"), true) ?? [];
-            $input['created_by'] = $decoded->id;
-            $res = $controller->createLicense($input);
+            if ($action === 'updateIsolationOfficer') {
+                $res = $controller->updateIsolationOfficer((int)$input['license_id'], (int)$input['officer_id']);
+            } elseif ($action === 'reject') {
+                $res = $controller->rejectLicense((int)$input['license_id'], $input['reason'] ?? '');
+            } else {
+                $input['created_by'] = $decoded->id;
+                $res = $controller->createLicense($input);
+            }
             break;
 
         default:

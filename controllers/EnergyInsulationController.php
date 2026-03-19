@@ -6,10 +6,14 @@ class EnergyInsulationController
     use ApiResponseTrait;
 
     private $conn;
+    private $notificationController;
+    private $emailController;
 
-    public function __construct(PDO $conn)
+    public function __construct(PDO $conn, $notificationController = null, $emailController = null)
     {
         $this->conn = $conn;
+        $this->notificationController = $notificationController;
+        $this->emailController = $emailController;
     }
 
     public function createLicense(array $data)
@@ -72,6 +76,20 @@ class EnergyInsulationController
             }
 
             $this->conn->commit();
+
+            // Send Notification and Email to Area Manager
+            if ($this->notificationController && !empty($data['area_manager_id'])) {
+                $title = "رخصة عزل طاقة جديدة - New Energy Insulation License";
+                $body = "تم إنشاء رخصة عزل طاقة جديدة للمعدة: " . ($data['equipment_name'] ?? 'N/A') . ". يرجى مراجعتها وتعيين مسؤول العزل.";
+                $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
+                
+                $this->notificationController->sendNotification($title, $body, [$data['area_manager_id']], $url, $data['created_by']);
+                
+                if ($this->emailController) {
+                    $this->emailController->sendEmail($title, $body, [$data['area_manager_id']]);
+                }
+            }
+
             return $this->respond(true, 'Energy Insulation License created successfully', ['id' => $licenseId]);
         } catch (Exception $e) {
             $this->conn->rollBack();
@@ -93,5 +111,90 @@ class EnergyInsulationController
         $stmt->execute([$sectionId]);
         $equipments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return $this->respond(true, 'Equipments retrieved successfully', $equipments);
+    }
+
+    public function getLicenseById(int $id)
+    {
+        $stmt = $this->conn->prepare("
+            SELECT l.*, u.name AS requester_name, am.name AS area_manager_name, io.name AS isolation_officer_name, es.name AS section_name
+            FROM energy_insulation_license l
+            LEFT JOIN users u ON l.created_by = u.id
+            LEFT JOIN users am ON l.area_manager_id = am.id
+            LEFT JOIN users io ON l.isolation_officer_id = io.id
+            LEFT JOIN equipment_sections es ON l.equipment_section_id = es.id
+            WHERE l.id = ?
+        ");
+        $stmt->execute([$id]);
+        $license = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$license) {
+            return $this->respond(false, 'License not found', null, ['code' => 404], 404);
+        }
+
+        // Get Energy Types
+        $energyStmt = $this->conn->prepare("
+            SELECT et.id, et.name 
+            FROM energy_insulation_energy_types liet
+            JOIN energy_types et ON liet.energy_type_id = et.id
+            WHERE liet.license_id = ?
+        ");
+        $energyStmt->execute([$id]);
+        $license['energy_types'] = $energyStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Get Equipments
+        $equipStmt = $this->conn->prepare("
+            SELECT e.id, e.name, e.image, lie.equipment_no
+            FROM energy_insulation_equipments lie
+            JOIN equipments e ON lie.equipment_id = e.id
+            WHERE lie.license_id = ?
+        ");
+        $equipStmt->execute([$id]);
+        $license['equipments'] = $equipStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Get Staff
+        $staffStmt = $this->conn->prepare("
+            SELECT u.id, u.name
+            FROM energy_insulation_staff lis
+            JOIN users u ON lis.user_id = u.id
+            WHERE lis.license_id = ?
+        ");
+        $staffStmt->execute([$id]);
+        $license['staff'] = $staffStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return $this->respond(true, 'License retrieved successfully', $license);
+    }
+
+    public function getIsolationOfficers()
+    {
+        $stmt = $this->conn->prepare("SELECT id, name FROM users WHERE role_id = 8 AND is_active = 1");
+        $stmt->execute();
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $this->respond(true, 'Isolation officers retrieved successfully', $users);
+    }
+
+    public function updateIsolationOfficer(int $licenseId, int $officerId)
+    {
+        $stmt = $this->conn->prepare("UPDATE energy_insulation_license SET isolation_officer_id = ?, status = 'approved_by_am' WHERE id = ?");
+        $success = $stmt->execute([$officerId, $licenseId]);
+
+        if ($success) {
+            return $this->respond(true, 'Isolation officer assigned successfully');
+        }
+        return $this->respond(false, 'Failed to assign isolation officer', null, ['code' => 500], 500);
+    }
+
+    public function rejectLicense(int $licenseId, string $reason)
+    {
+        if (empty($reason)) {
+            return $this->respond(false, 'Rejection reason is required', null, ['code' => 400], 400);
+        }
+
+        $stmt = $this->conn->prepare("UPDATE energy_insulation_license SET reject_reason = ?, status = 'rejected' WHERE id = ?");
+        $success = $stmt->execute([$reason, $licenseId]);
+
+        if ($success) {
+            return $this->respond(true, 'License rejected successfully');
+        }
+        return $this->respond(false, 'Failed to reject license', null, ['code' => 500], 500);
     }
 }
