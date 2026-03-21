@@ -47,7 +47,7 @@ try {
             if ($action === 'updateIsolationOfficer') {
                 $res = $controller->updateIsolationOfficer((int)$input['license_id'], (int)$input['officer_id']);
             } elseif ($action === 'reject') {
-                $res = $controller->rejectLicense((int)$input['license_id'], $input['reason'] ?? '');
+                $res = $controller->rejectLicense((int)$input['license_id'], $input['reason'] ?? '', $decoded->id);
             } else {
                 $input['created_by'] = $decoded->id;
                 $res = $controller->createLicense($input);

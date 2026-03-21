@@ -182,16 +182,37 @@ class EnergyInsulationController
         return $this->respond(false, 'Failed to assign isolation officer', null, ['code' => 500], 500);
     }
 
-    public function rejectLicense(int $licenseId, string $reason)
+    public function rejectLicense(int $licenseId, string $reason, int $rejectedBy)
     {
         if (empty($reason)) {
             return $this->respond(false, 'Rejection reason is required', null, ['code' => 400], 400);
+        }
+
+        // Fetch license info to notify the requester
+        $stmt = $this->conn->prepare("SELECT created_by, equipment_name FROM energy_insulation_license WHERE id = ?");
+        $stmt->execute([$licenseId]);
+        $license = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$license) {
+            return $this->respond(false, 'License not found', null, ['code' => 404], 404);
         }
 
         $stmt = $this->conn->prepare("UPDATE energy_insulation_license SET reject_reason = ?, status = 'rejected' WHERE id = ?");
         $success = $stmt->execute([$reason, $licenseId]);
 
         if ($success) {
+            // Send Notification and Email to Requester
+            if ($this->notificationController) {
+                $title = "رخصة عزل طاقة مرفوضة - Energy Insulation License Rejected";
+                $body = "تم رفض رخصة عزل الطاقة للمعدة: " . ($license['equipment_name'] ?? 'N/A') . ". السبب: " . $reason;
+                $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
+                
+                $this->notificationController->sendNotification($title, $body, [$license['created_by']], $url, $rejectedBy);
+                
+                if ($this->emailController) {
+                    $this->emailController->sendEmail($title, $body, [$license['created_by']]);
+                }
+            }
             return $this->respond(true, 'License rejected successfully');
         }
         return $this->respond(false, 'Failed to reject license', null, ['code' => 500], 500);
