@@ -171,15 +171,68 @@ class EnergyInsulationController
         return $this->respond(true, 'Isolation officers retrieved successfully', $users);
     }
 
-    public function updateIsolationOfficer(int $licenseId, int $officerId)
+    public function updateIsolationOfficer(int $licenseId, int $officerId, int $updatedBy)
     {
+        // Fetch license info for notification
+        $stmt = $this->conn->prepare("SELECT equipment_name FROM energy_insulation_license WHERE id = ?");
+        $stmt->execute([$licenseId]);
+        $license = $stmt->fetch(PDO::FETCH_ASSOC);
+
         $stmt = $this->conn->prepare("UPDATE energy_insulation_license SET isolation_officer_id = ?, status = 'approved_by_am' WHERE id = ?");
         $success = $stmt->execute([$officerId, $licenseId]);
 
         if ($success) {
+            // Send Notification and Email to Isolation Officer
+            if ($this->notificationController) {
+                $title = "رخصة عزل طاقة بانتظار مراجعتك - Energy Insulation License Pending Review";
+                $body = "تم تعيينك كمسؤول عزل للرخصة الخاصة بالمعدة: " . ($license['equipment_name'] ?? 'N/A');
+                $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
+                
+                $this->notificationController->sendNotification($title, $body, [$officerId], $url, $updatedBy);
+                
+                if ($this->emailController) {
+                    $this->emailController->sendEmail($title, $body, [$officerId]);
+                }
+            }
             return $this->respond(true, 'Isolation officer assigned successfully');
         }
         return $this->respond(false, 'Failed to assign isolation officer', null, ['code' => 500], 500);
+    }
+
+    public function getShiftLeaders()
+    {
+        $stmt = $this->conn->prepare("SELECT id, name FROM users WHERE role_id = 7 AND is_active = 1");
+        $stmt->execute();
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $this->respond(true, 'Shift leaders retrieved successfully', $users);
+    }
+
+    public function confirmByIsolationOfficer(int $licenseId, int $shiftLeaderId, int $updatedBy)
+    {
+        // Fetch license info for notification
+        $stmt = $this->conn->prepare("SELECT equipment_name FROM energy_insulation_license WHERE id = ?");
+        $stmt->execute([$licenseId]);
+        $license = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $stmt = $this->conn->prepare("UPDATE energy_insulation_license SET shift_leader_id = ?, status = 'reviewed_by_io' WHERE id = ?");
+        $success = $stmt->execute([$shiftLeaderId, $licenseId]);
+
+        if ($success) {
+            // Send Notification and Email to Shift Leader
+            if ($this->notificationController) {
+                $title = "رخصة عزل طاقة بانتظار تأكيدك - Energy Insulation License Pending Confirmation";
+                $body = "تمت مراجعة رخصة عزل الطاقة للمعدة: " . ($license['equipment_name'] ?? 'N/A') . " من قبل مسؤول العزل وهي بانتظار تأكيدك.";
+                $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
+                
+                $this->notificationController->sendNotification($title, $body, [$shiftLeaderId], $url, $updatedBy);
+                
+                if ($this->emailController) {
+                    $this->emailController->sendEmail($title, $body, [$shiftLeaderId]);
+                }
+            }
+            return $this->respond(true, 'License confirmed by isolation officer successfully');
+        }
+        return $this->respond(false, 'Failed to confirm license', null, ['code' => 500], 500);
     }
 
     public function rejectLicense(int $licenseId, string $reason, int $rejectedBy)

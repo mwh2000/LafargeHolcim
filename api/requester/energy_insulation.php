@@ -16,7 +16,7 @@ $conn = $database->getConnection();
 $auth = new AuthMiddleware();
 $decoded = $auth->verifyToken();
 // Only requester, area_manager, etc. can access
-$auth->requireRoles($decoded, ['requester', 'safety', 'area_manager', 'manager', 'plant manager']);
+$auth->requireRoles($decoded, ['requester', 'safety', 'area_manager', 'manager', 'shift leader', 'مسؤل العزل']);
 
 $notificationController = new NotificationController($conn);
 $emailController = new EmailController($conn);
@@ -39,13 +39,17 @@ try {
                 $res = $controller->getLicenseById((int)$_GET['id']);
             } elseif ($action === 'getIsolationOfficers') {
                 $res = $controller->getIsolationOfficers();
+            } elseif ($action === 'getShiftLeaders') {
+                $res = $controller->getShiftLeaders();
             }
             break;
 
         case 'POST':
             $input = json_decode(file_get_contents("php://input"), true) ?? [];
             if ($action === 'updateIsolationOfficer') {
-                $res = $controller->updateIsolationOfficer((int)$input['license_id'], (int)$input['officer_id']);
+                $res = $controller->updateIsolationOfficer((int)$input['license_id'], (int)$input['officer_id'], $decoded->id);
+            } elseif ($action === 'confirmByIsolationOfficer') {
+                $res = $controller->confirmByIsolationOfficer((int)$input['license_id'], (int)$input['shift_leader_id'], $decoded->id);
             } elseif ($action === 'reject') {
                 $res = $controller->rejectLicense((int)$input['license_id'], $input['reason'] ?? '', $decoded->id);
             } else {

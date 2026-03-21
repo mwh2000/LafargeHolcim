@@ -74,7 +74,7 @@ $userRole = $userData['role_id'] ?? 0;
                         </div>
 
                         <!-- Staff Card -->
-                        <div class="bg-white p-6 rounded-lg shadow-md">
+                        <div id="staff-card" class="bg-white p-6 rounded-lg shadow-md">
                             <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">طاقم العمل</h2>
                             <div id="val-staff" class="flex flex-wrap gap-2 justify-start" dir="rtl"></div>
                         </div>
@@ -102,7 +102,21 @@ $userRole = $userData['role_id'] ?? 0;
                         
                         <div id="approval-card" class="hidden bg-green-50 p-6 rounded-lg shadow-md border border-green-200">
                             <h2 class="text-lg font-bold text-green-800 mb-2 text-right" dir="rtl">تفاصيل الاعتماد</h2>
-di                            <p class="text-green-700 text-right" dir="rtl">مسؤول العزل المعين: <span id="val-io" class="font-bold"></span></p>
+                            <p class="text-green-700 text-right" dir="rtl">مسؤول العزل المعين: <span id="val-io" class="font-bold"></span></p>
+                        </div>
+
+                        <!-- IO Review Section -->
+                        <div id="io-review-section" class="hidden bg-blue-50 p-6 rounded-lg shadow-md border border-blue-200">
+                            <h2 class="text-lg font-bold text-blue-800 mb-4 text-right" dir="rtl">مراجعة رخصة العزل</h2>
+                            <p class="text-sm text-blue-600 mb-4 text-right" dir="rtl">يرجى مراجعة المعدات وأنواع الطاقة واختيار shift leader للتأكيد.</p>
+                            
+                            <div class="space-y-4 text-right" dir="rtl">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">اختيار shift leader</label>
+                                    <select id="shift_leader_selection" class="w-full"></select>
+                                </div>
+                                <button id="ioConfirmBtn" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">تأكيد المراجعة والتحويل للمرحلة التالية</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -116,7 +130,7 @@ di                            <p class="text-green-700 text-right" dir="rtl">م�
         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
         const API_BASE = "../../api/requester/energy_insulation.php";
 
-        let officerSelect;
+        let officerSelect, shiftLeaderSelect;
 
         document.addEventListener('DOMContentLoaded', async () => {
             await loadLicenseData();
@@ -137,6 +151,19 @@ di                            <p class="text-green-700 text-right" dir="rtl">م�
                     if (data.status === 'pending' && data.area_manager_id == CURRENT_USER_ID) {
                         document.getElementById('am-approval-section').classList.remove('hidden');
                         initOfficerSelect();
+                    }
+
+                    // Show IO actions if approved_by_am and user is the assigned IO
+                    if (data.status === 'approved_by_am' && data.isolation_officer_id == CURRENT_USER_ID) {
+                        document.getElementById('io-review-section').classList.remove('hidden');
+                        
+                        // User wants to see ONLY equipments and energy types
+                        document.querySelector('[id="val-no"]').closest('.bg-white').classList.add('hidden'); // Hide Basic Info
+                        document.getElementById('rejection-card').classList.add('hidden');
+                        document.getElementById('approval-card').classList.add('hidden');
+                        document.getElementById('staff-card').classList.add('hidden');
+                        
+                        initShiftLeaderSelect();
                     }
 
                     if (data.status === 'rejected') {
@@ -258,6 +285,52 @@ di                            <p class="text-green-700 text-right" dir="rtl">م�
                 console.error('Failed to load officers');
             }
         }
+
+        async function initShiftLeaderSelect() {
+            shiftLeaderSelect = new TomSelect('#shift_leader_selection', {
+                persist: false,
+                create: false,
+                placeholder: 'اختر shift leader...'
+            });
+
+            try {
+                const res = await fetch(`${API_BASE}?action=getShiftLeaders`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                const result = await res.json();
+                if (result.success) {
+                    result.data.forEach(user => {
+                        shiftLeaderSelect.addOption({ value: user.id, text: user.name });
+                    });
+                    shiftLeaderSelect.refreshOptions(false);
+                }
+            } catch (e) {
+                console.error('Failed to load shift leaders');
+            }
+        }
+
+        // IO Confirm Button Logic
+        document.getElementById('ioConfirmBtn').addEventListener('click', async () => {
+            const slId = shiftLeaderSelect.getValue();
+            if (!slId) {
+                Swal.fire('تنبيه', 'يرجى اختيار المستخدم التالي أولاً', 'warning');
+                return;
+            }
+
+            const result = await Swal.fire({
+                title: 'تأكيد المراجعة',
+                text: 'هل أنت متأكد من تأكيد المراجعة وتحويل الرخصة للمرحلة التالية؟',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'نعم، تأكيد',
+                cancelButtonText: 'إلغاء',
+                confirmButtonColor: '#0b6f76'
+            });
+
+            if (result.isConfirmed) {
+                submitAction('confirmByIsolationOfficer', { license_id: LICENSE_ID, shift_leader_id: slId });
+            }
+        });
 
         // Approve Button Logic
         document.getElementById('approveBtn').addEventListener('click', async () => {
