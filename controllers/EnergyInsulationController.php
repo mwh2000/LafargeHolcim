@@ -235,6 +235,39 @@ class EnergyInsulationController
         return $this->respond(false, 'Failed to confirm license', null, ['code' => 500], 500);
     }
 
+    public function confirmByShiftLeader(int $licenseId, int $updatedBy)
+    {
+        // Fetch license info for notifications
+        $stmt = $this->conn->prepare("SELECT created_by, area_manager_id, equipment_name FROM energy_insulation_license WHERE id = ?");
+        $stmt->execute([$licenseId]);
+        $license = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$license) {
+            return $this->respond(false, 'License not found', null, ['code' => 404], 404);
+        }
+
+        $stmt = $this->conn->prepare("UPDATE energy_insulation_license SET status = 'completed' WHERE id = ?");
+        $success = $stmt->execute([$licenseId]);
+
+        if ($success) {
+            // Send Notification and Email to Area Manager and Requester
+            if ($this->notificationController) {
+                $title = "رخصة عزل طاقة مكتملة - Energy Insulation License Completed";
+                $body = "تم إكمال إجراءات رخصة عزل الطاقة للمعدة: " . ($license['equipment_name'] ?? 'N/A');
+                $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
+                
+                $recipients = [$license['created_by'], $license['area_manager_id']];
+                $this->notificationController->sendNotification($title, $body, $recipients, $url, $updatedBy);
+                
+                if ($this->emailController) {
+                    $this->emailController->sendEmail($title, $body, $recipients);
+                }
+            }
+            return $this->respond(true, 'License completed successfully');
+        }
+        return $this->respond(false, 'Failed to complete license', null, ['code' => 500], 500);
+    }
+
     public function rejectLicense(int $licenseId, string $reason, int $rejectedBy)
     {
         if (empty($reason)) {

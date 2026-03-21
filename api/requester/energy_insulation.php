@@ -50,6 +50,8 @@ try {
                 $res = $controller->updateIsolationOfficer((int)$input['license_id'], (int)$input['officer_id'], $decoded->id);
             } elseif ($action === 'confirmByIsolationOfficer') {
                 $res = $controller->confirmByIsolationOfficer((int)$input['license_id'], (int)$input['shift_leader_id'], $decoded->id);
+            } elseif ($action === 'confirmByShiftLeader') {
+                $res = $controller->confirmByShiftLeader((int)$input['license_id'], $decoded->id);
             } elseif ($action === 'reject') {
                 $res = $controller->rejectLicense((int)$input['license_id'], $input['reason'] ?? '', $decoded->id);
             } else {

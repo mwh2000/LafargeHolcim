@@ -118,6 +118,16 @@ $userRole = $userData['role_id'] ?? 0;
                                 <button id="ioConfirmBtn" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">تأكيد المراجعة والتحويل للمرحلة التالية</button>
                             </div>
                         </div>
+
+                        <!-- Shift Leader Review Section -->
+                        <div id="sl-review-section" class="hidden bg-purple-50 p-6 rounded-lg shadow-md border border-purple-200">
+                            <h2 class="text-lg font-bold text-purple-800 mb-4 text-right" dir="rtl">التأكيد النهائي (Shift Leader)</h2>
+                            <p class="text-sm text-purple-600 mb-4 text-right" dir="rtl">يرجى مراجعة المعدات وأنواع الطاقة لإتمام إجراءات الرخصة.</p>
+                            
+                            <div class="space-y-4 text-right" dir="rtl">
+                                <button id="slConfirmBtn" class="w-full bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700 transition">تأكيد نهائي وإكمال الرخصة</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </main>
@@ -164,6 +174,17 @@ $userRole = $userData['role_id'] ?? 0;
                         document.getElementById('staff-card').classList.add('hidden');
                         
                         initShiftLeaderSelect();
+                    }
+
+                    // Show SL actions if reviewed_by_io and user is the assigned SL
+                    if (data.status === 'reviewed_by_io' && data.shift_leader_id == CURRENT_USER_ID) {
+                        document.getElementById('sl-review-section').classList.remove('hidden');
+                        
+                        // User wants to see ONLY equipments and energy types
+                        document.querySelector('[id="val-no"]').closest('.bg-white').classList.add('hidden'); // Hide Basic Info
+                        document.getElementById('rejection-card').classList.add('hidden');
+                        document.getElementById('approval-card').classList.add('hidden');
+                        document.getElementById('staff-card').classList.add('hidden');
                     }
 
                     if (data.status === 'rejected') {
@@ -329,6 +350,23 @@ $userRole = $userData['role_id'] ?? 0;
 
             if (result.isConfirmed) {
                 submitAction('confirmByIsolationOfficer', { license_id: LICENSE_ID, shift_leader_id: slId });
+            }
+        });
+
+        // SL Confirm Button Logic
+        document.getElementById('slConfirmBtn').addEventListener('click', async () => {
+            const result = await Swal.fire({
+                title: 'تأكيد نهائي',
+                text: 'هل أنت متأكد من إتمام إجراءات رخصة عزل الطاقة؟',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'نعم، إتمام',
+                cancelButtonText: 'إلغاء',
+                confirmButtonColor: '#7c3aed'
+            });
+
+            if (result.isConfirmed) {
+                submitAction('confirmByShiftLeader', { license_id: LICENSE_ID });
             }
         });
 
