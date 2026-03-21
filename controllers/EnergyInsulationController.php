@@ -63,9 +63,9 @@ class EnergyInsulationController
 
             // Insert Staff
             if (!empty($data['staff'])) {
-                $staffStmt = $this->conn->prepare("INSERT INTO energy_insulation_staff (license_id, user_id) VALUES (?, ?)");
-                foreach ($data['staff'] as $userId) {
-                    $staffStmt->execute([$licenseId, $userId]);
+                $staffStmt = $this->conn->prepare("INSERT INTO energy_insulation_staff (license_id, name) VALUES (?, ?)");
+                foreach ($data['staff'] as $staffName) {
+                    $staffStmt->execute([$licenseId, $staffName]);
                 }
             }
 
@@ -153,10 +153,9 @@ class EnergyInsulationController
 
         // Get Staff
         $staffStmt = $this->conn->prepare("
-            SELECT u.id, u.name
-            FROM energy_insulation_staff lis
-            JOIN users u ON lis.user_id = u.id
-            WHERE lis.license_id = ?
+            SELECT name
+            FROM energy_insulation_staff
+            WHERE license_id = ?
         ");
         $staffStmt->execute([$id]);
         $license['staff'] = $staffStmt->fetchAll(PDO::FETCH_ASSOC);

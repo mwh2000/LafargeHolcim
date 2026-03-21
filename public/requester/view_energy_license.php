@@ -36,8 +36,8 @@ $userRole = $userData['role_id'] ?? 0;
             <main class="flex-1 overflow-y-auto p-8 md:pl-12">
                 <div class="max-w-4xl mx-auto">
                     <div class="flex justify-between items-center mb-6">
-                        <h1 class="text-2xl font-semibold text-gray-700">تفاصيل رخصة عزل الطاقة</h1>
                         <span id="license-status" class="px-3 py-1 rounded-full text-sm font-medium"></span>
+                        <h1 class="text-2xl font-semibold text-gray-700">تفاصيل رخصة عزل الطاقة</h1>
                     </div>
 
                     <div id="loading" class="text-center py-10">
@@ -47,8 +47,8 @@ $userRole = $userData['role_id'] ?? 0;
                     <div id="content" class="hidden space-y-6">
                         <!-- Basic Info Card -->
                         <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-[#0b6f76]">
-                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2">معلومات عامة</h2>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm">
+                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">معلومات عامة</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">
                                 <div><span class="text-gray-500">رقم الرخصة:</span> <span id="val-no" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">التاريخ:</span> <span id="val-date" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">الموقع:</span> <span id="val-location" class="font-medium"></span></div>
@@ -63,20 +63,26 @@ $userRole = $userData['role_id'] ?? 0;
 
                         <!-- Energy Types Card -->
                         <div class="bg-white p-6 rounded-lg shadow-md">
-                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2">أنواع الطاقة المعزولة</h2>
-                            <div id="val-energy-types" class="flex flex-wrap gap-2"></div>
+                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">أنواع الطاقة المعزولة</h2>
+                            <div id="val-energy-types" class="flex flex-wrap gap-2 justify-start" dir="rtl"></div>
                         </div>
 
                         <!-- Equipments Card -->
                         <div class="bg-white p-6 rounded-lg shadow-md">
-                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2">المعدات المعنية</h2>
-                            <div id="val-equipments" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">المعدات المعنية</h2>
+                            <div id="val-equipments" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-start" dir="rtl"></div>
+                        </div>
+
+                        <!-- Staff Card -->
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">طاقم العمل</h2>
+                            <div id="val-staff" class="flex flex-wrap gap-2 justify-start" dir="rtl"></div>
                         </div>
 
                         <!-- Approval Section (For AM) -->
                         <div id="am-approval-section" class="hidden bg-yellow-50 p-6 rounded-lg shadow-md border border-yellow-200">
-                            <h2 class="text-lg font-bold text-yellow-800 mb-4">إجراءات مسؤول المنطقة</h2>
-                            <div class="space-y-4">
+                            <h2 class="text-lg font-bold text-yellow-800 mb-4 text-right" dir="rtl">إجراءات مسؤول المنطقة</h2>
+                            <div class="space-y-4 text-right" dir="rtl">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">تعيين مسؤول العزل (Isolation Officer)</label>
                                     <select id="officer_selection" class="w-full"></select>
@@ -90,13 +96,13 @@ $userRole = $userData['role_id'] ?? 0;
 
                         <!-- Status Details (If rejected or approved) -->
                         <div id="rejection-card" class="hidden bg-red-50 p-6 rounded-lg shadow-md border border-red-200">
-                            <h2 class="text-lg font-bold text-red-800 mb-2">سبب الرفض</h2>
-                            <p id="val-reject-reason" class="text-red-700 italic"></p>
+                            <h2 class="text-lg font-bold text-red-800 mb-2 text-right" dir="rtl">سبب الرفض</h2>
+                            <p id="val-reject-reason" class="text-red-700 italic text-right" dir="rtl"></p>
                         </div>
                         
                         <div id="approval-card" class="hidden bg-green-50 p-6 rounded-lg shadow-md border border-green-200">
-                            <h2 class="text-lg font-bold text-green-800 mb-2">تفاصيل الاعتماد</h2>
-                            <p class="text-green-700">مسؤول العزل المعين: <span id="val-io" class="font-bold"></span></p>
+                            <h2 class="text-lg font-bold text-green-800 mb-2 text-right" dir="rtl">تفاصيل الاعتماد</h2>
+di                            <p class="text-green-700 text-right" dir="rtl">مسؤول العزل المعين: <span id="val-io" class="font-bold"></span></p>
                         </div>
                     </div>
                 </div>
@@ -195,6 +201,19 @@ $userRole = $userData['role_id'] ?? 0;
                 `;
                 eqContainer.appendChild(div);
             });
+
+            // Staff
+            const staffContainer = document.getElementById('val-staff');
+            if (data.staff && data.staff.length > 0) {
+                data.staff.forEach(member => {
+                    const span = document.createElement('span');
+                    span.className = 'px-4 py-2 bg-blue-50 border border-blue-100 rounded-md text-sm text-blue-800 font-medium';
+                    span.textContent = member.name;
+                    staffContainer.appendChild(span);
+                });
+            } else {
+                staffContainer.innerHTML = '<p class="text-gray-400 italic text-sm">لا يوجد طاقم عمل مسجل</p>';
+            }
         }
 
         function getStatusText(status) {

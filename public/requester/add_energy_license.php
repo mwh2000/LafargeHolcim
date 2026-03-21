@@ -82,19 +82,19 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">إنشاء رخصة</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">رقم الرخصة</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">رقم الرخصة</label>
                                     <input type="text" name="equipment_no" value="<?= $nextLicenseNo ?>" readonly required class="w-full px-4 py-2 border rounded-md bg-gray-100 cursor-not-allowed focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">التاريخ</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">التاريخ</label>
                                     <input type="datetime-local" name="date" required class="w-full px-4 py-2 border rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">الموقع الدقيق</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">الموقع الدقيق</label>
                                     <input type="text" name="exact_location" required class="w-full px-4 py-2 border rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">قسم المعدات</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">قسم المعدات</label>
                                     <select name="equipment_section_id" id="equipment_section_id" required class="w-full px-4 py-2 border rounded-md focus:ring-[#0b6f76]">
                                         <option value="">اختر القسم</option>
                                         <?php foreach ($sections as $section): ?>
@@ -103,7 +103,7 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">السبب</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">السبب</label>
                                     <select name="reason" required class="w-full px-4 py-2 border rounded-md focus:ring-[#0b6f76]">
                                         <option value="صيانة وقائية">صيانة وقائية</option>
                                         <option value="طارئة">طارئة</option>
@@ -111,14 +111,14 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">تاريخ انتهاء الرخصة</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">تاريخ انتهاء الرخصة</label>
                                     <select name="license_expiry" required class="w-full px-4 py-2 border rounded-md focus:ring-[#0b6f76]">
                                         <option value="">اختر</option>
                                         <option selected value="بعد 12 ساعة">بعد 12 ساعة</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">تصريح العمل</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">تصريح العمل</label>
                                     <select name="work_permit" required class="w-full px-4 py-2 border rounded-md focus:ring-[#0b6f76]">
                                         <option value="عزل بسيط">عزل بسيط</option>
                                         <option value="عزل مركب">عزل مركب</option>
@@ -127,7 +127,7 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">اسم المعدة</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">اسم المعدة</label>
                                     <input type="text" name="equipment_name" required class="w-full px-4 py-2 border rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 
@@ -136,11 +136,11 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                                     <label for="exceeds" class="text-sm font-medium text-gray-700">التنفيذ يتجاوز وقت المناوبة</label>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">اسم الطالب للعزل</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">اسم الطالب للعزل</label>
                                     <input type="text" value="<?= htmlspecialchars($userName) ?>" readonly class="w-full px-4 py-2 border rounded-md bg-gray-100 cursor-not-allowed">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">القسم الطالب للعزل</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">القسم الطالب للعزل</label>
                                     <input type="text" value="<?= htmlspecialchars($userDepartment) ?>" readonly class="w-full px-4 py-2 border rounded-md bg-gray-100 cursor-not-allowed">
                                 </div>
                             </div>
@@ -170,10 +170,23 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                         <!-- Step 4: Crew Selection -->
                         <div class="step-content" data-step="4">
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">طاقم العمل</h2>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">اختر أعضاء الفريق</label>
-                                <select id="staff_selection" name="staff[]" multiple class="w-full"></select>
+                            <div id="staff-container" class="space-y-3">
+                                <label class="block text-sm font-medium text-green-700 mb-2">أسماء طاقم العمل</label>
+                                <div class="staff-entry flex gap-2">
+                                    <input type="text" name="staff_names[]" placeholder="ادخل الاسم هنا" class="flex-1 px-4 py-2 border rounded-md focus:ring-[#0b6f76] staff-name-input">
+                                    <button type="button" class="remove-staff px-3 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors hidden">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
+                            <button type="button" id="addStaffBtn" class="mt-4 flex items-center gap-2 text-sm text-[#0b6f76] font-medium hover:underline">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                                </svg>
+                                إضافة اسم آخر
+                            </button>
                         </div>
 
                         <!-- Step 5: Safety Officer Selection -->
@@ -186,7 +199,7 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                         <div class="step-content" data-step="6">
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">مسؤول المنطقة</h2>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">اختر مسؤول المنطقة</label>
+                                <label class="block text-sm font-medium text-green-700 mb-2">اختر مسؤول المنطقة</label>
                                 <select id="manager_selection" name="area_manager_id" class="w-full"></select>
                             </div>
                         </div>
@@ -216,19 +229,60 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
             const indicators = document.querySelectorAll('.step-indicator');
             const contents = document.querySelectorAll('.step-content');
 
-            // Initialize TomSelect for Staff and Manager
-            let staffSelect = new TomSelect('#staff_selection', { 
-                persist: false, 
-                create: false, 
-                placeholder: 'اختر المستخدمين...',
-                onChange: () => updateButtonStates()
-            });
+            // Initialize TomSelect for Manager
             let managerSelect = new TomSelect('#manager_selection', { 
                 persist: false, 
                 create: false, 
                 placeholder: 'اختر المسؤول...',
                 onChange: () => updateButtonStates()
             });
+
+            // Staff dynamic inputs logic
+            const staffContainer = document.getElementById('staff-container');
+            const addStaffBtn = document.getElementById('addStaffBtn');
+
+            addStaffBtn.addEventListener('click', () => {
+                const newEntry = document.createElement('div');
+                newEntry.className = 'staff-entry flex gap-2 animate-slide-in';
+                newEntry.innerHTML = `
+                    <input type="text" name="staff_names[]" placeholder="ادخل الاسم هنا" class="flex-1 px-4 py-2 border rounded-md focus:ring-[#0b6f76] staff-name-input">
+                    <button type="button" class="remove-staff px-3 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                `;
+                staffContainer.appendChild(newEntry);
+                updateStaffRemoveButtons();
+                updateButtonStates();
+            });
+
+            staffContainer.addEventListener('click', (e) => {
+                if (e.target.closest('.remove-staff')) {
+                    const entry = e.target.closest('.staff-entry');
+                    entry.remove();
+                    updateStaffRemoveButtons();
+                    updateButtonStates();
+                }
+            });
+
+            staffContainer.addEventListener('input', (e) => {
+                if (e.target.classList.contains('staff-name-input')) {
+                    updateButtonStates();
+                }
+            });
+
+            function updateStaffRemoveButtons() {
+                const entries = staffContainer.querySelectorAll('.staff-entry');
+                entries.forEach((entry, index) => {
+                    const removeBtn = entry.querySelector('.remove-staff');
+                    if (entries.length === 1) {
+                        removeBtn.classList.add('hidden');
+                    } else {
+                        removeBtn.classList.remove('hidden');
+                    }
+                });
+            }
 
             function checkStepValidity(step) {
                 const currentContent = document.querySelector(`.step-content[data-step="${step}"]`);
@@ -252,7 +306,10 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                         if (!eqNoInput || !eqNoInput.value.trim()) return false;
                     }
                 } else if (step === 4) {
-                    if (staffSelect.getValue().length === 0) return false;
+                    const names = Array.from(document.querySelectorAll('.staff-name-input'))
+                                       .map(input => input.value.trim())
+                                       .filter(val => val !== '');
+                    if (names.length === 0) return false;
                 } else if (step === 6) {
                     if (!managerSelect.getValue()) return false;
                 }
@@ -380,7 +437,7 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
             }
 
             async function loadEligibleUsers() {
-                if (staffSelect.options.length > 0) return; // Already loaded
+                if (managerSelect.options.length > 0) return; // Already loaded
 
                 try {
                     const res = await fetch('../../api/requester/energy_insulation.php?action=getEligibleUsers', {
@@ -389,10 +446,8 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                     const data = await res.json();
                     if (data.success) {
                         data.data.forEach(user => {
-                            staffSelect.addOption({ value: user.id, text: user.name });
                             managerSelect.addOption({ value: user.id, text: user.name });
                         });
-                        staffSelect.refreshOptions(false);
                         managerSelect.refreshOptions(false);
                     }
                 } catch (e) {
@@ -416,7 +471,9 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                     execution_exceeds_shift_time: formData.get('execution_exceeds_shift_time') ? 1 : 0,
                     energy_types: [],
                     equipments: [],
-                    staff: staffSelect.getValue(),
+                    staff: Array.from(document.querySelectorAll('.staff-name-input'))
+                                .map(input => input.value.trim())
+                                .filter(val => val !== ''),
                     area_manager_id: managerSelect.getValue()
                 };
 
