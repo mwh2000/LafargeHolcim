@@ -221,7 +221,7 @@ class EnergyInsulationController
             // Send Notification and Email to Shift Leader
             if ($this->notificationController) {
                 $title = "رخصة عزل طاقة بانتظار تأكيدك - Energy Insulation License Pending Confirmation";
-                $body = "تمت مراجعة رخصة عزل الطاقة للمعدة: " . ($license['equipment_name'] ?? 'N/A') . " من قبل مسؤول العزل وهي بانتظار تأكيدك.";
+                $body = "تم عزل جميع المعدات  عزل الطاقه المطلوبة  من قبل مسوول العزل وهي بإنتظار تأكيدك على الرخصة";
                 $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
                 
                 $this->notificationController->sendNotification($title, $body, [$shiftLeaderId], $url, $updatedBy);
@@ -246,7 +246,7 @@ class EnergyInsulationController
             return $this->respond(false, 'License not found', null, ['code' => 404], 404);
         }
 
-        $stmt = $this->conn->prepare("UPDATE energy_insulation_license SET status = 'completed' WHERE id = ?");
+        $stmt = $this->conn->prepare("UPDATE energy_insulation_license SET status = 'completed', end_at = NOW() WHERE id = ?");
         $success = $stmt->execute([$licenseId]);
 
         if ($success) {

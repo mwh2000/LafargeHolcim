@@ -25,10 +25,13 @@ $userDepartment = $userData['department'] ?? 'N/A';
 $lastNoStmt = $pdo->query("SELECT equipment_no FROM energy_insulation_license ORDER BY id DESC LIMIT 1");
 $lastNo = $lastNoStmt->fetchColumn();
 $nextNoValue = 1;
-if ($lastNo && is_numeric($lastNo)) {
-    $nextNoValue = (int)$lastNo + 1;
+
+if ($lastNo) {
+    if (preg_match('/(\d+)$/', $lastNo, $matches)) {
+        $nextNoValue = (int)$matches[1] + 1;
+    }
 }
-$nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
+$nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 ?>
 
 <!DOCTYPE html>
@@ -87,15 +90,15 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">التاريخ</label>
-                                    <input type="datetime-local" name="date" required class="w-full px-4 py-2 border rounded-md focus:ring-[#0b6f76]">
+                                    <input type="datetime-local" name="date" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">الموقع الدقيق</label>
-                                    <input type="text" name="exact_location" required class="w-full px-4 py-2 border rounded-md focus:ring-[#0b6f76]">
+                                    <input type="text" name="exact_location" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-green-700 mb-1">قسم المعدات</label>
-                                    <select name="equipment_section_id" id="equipment_section_id" required class="w-full px-4 py-2 border rounded-md focus:ring-[#0b6f76]">
+                                    <label class="block text-sm font-medium text-green-700 mb-1">القسم</label>
+                                    <select name="equipment_section_id" id="equipment_section_id" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                         <option value="">اختر القسم</option>
                                         <?php foreach ($sections as $section): ?>
                                             <option value="<?= $section['id'] ?>"><?= $section['name'] ?></option>
@@ -104,7 +107,7 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">السبب</label>
-                                    <select name="reason" required class="w-full px-4 py-2 border rounded-md focus:ring-[#0b6f76]">
+                                    <select name="reason" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                         <option value="صيانة وقائية">صيانة وقائية</option>
                                         <option value="طارئة">طارئة</option>
                                         <option value="اطفاء مبرمج SD">اطفاء مبرمج SD</option>
@@ -112,14 +115,14 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">تاريخ انتهاء الرخصة</label>
-                                    <select name="license_expiry" required class="w-full px-4 py-2 border rounded-md focus:ring-[#0b6f76]">
+                                    <select name="license_expiry" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                         <option value="">اختر</option>
-                                        <option selected value="بعد 12 ساعة">بعد 12 ساعة</option>
+                                        <option selected value="بعد 12 ساعة اجباريا">بعد 12 ساعة اجباريا</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">تصريح العمل</label>
-                                    <select name="work_permit" required class="w-full px-4 py-2 border rounded-md focus:ring-[#0b6f76]">
+                                    <select name="work_permit" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                         <option value="عزل بسيط">عزل بسيط</option>
                                         <option value="عزل مركب">عزل مركب</option>
                                         <option value="عزل عن بعد">عزل عن بعد</option>
@@ -128,7 +131,7 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">اسم المعدة</label>
-                                    <input type="text" name="equipment_name" required class="w-full px-4 py-2 border rounded-md focus:ring-[#0b6f76]">
+                                    <input type="text" name="equipment_name" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 
                                 <div class="flex items-center mt-6">
@@ -192,7 +195,9 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                         <!-- Step 5: Safety Officer Selection -->
                         <div class="step-content" data-step="5">
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">السلامة</h2>
-                            <p>تمت المراجعة من قبل قسم السلامة.</p>
+                            <p>تمت المراجعة من قبل قسم السلامة
+                                <span>✔️</span>
+                            </p>
                         </div>
 
                         <!-- Step 6: Area Manager Selection -->
@@ -461,7 +466,7 @@ $nextLicenseNo = str_pad($nextNoValue, 3, '0', STR_PAD_LEFT);
                 const formData = new FormData(form);
                 const data = {
                     equipment_name: formData.get('equipment_name'),
-                    equipment_no: <?= $nextLicenseNo ?>,
+                    equipment_no: '<?= $nextLicenseNo ?>',
                     equipment_section_id: formData.get('equipment_section_id'),
                     date: formData.get('date'),
                     reason: formData.get('reason'),

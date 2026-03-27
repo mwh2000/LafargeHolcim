@@ -58,6 +58,7 @@ $userRole = $userData['role_id'] ?? 0;
                                 <div><span class="text-gray-500">تصريح العمل:</span> <span id="val-permit" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">طالب العزل:</span> <span id="val-requester" class="font-medium font-bold text-blue-600"></span></div>
                                 <div><span class="text-gray-500">مسؤول المنطقة:</span> <span id="val-am" class="font-medium"></span></div>
+                                <div id="end-at-container" class="hidden"><span class="text-gray-500">تاريخ الانتهاء:</span> <span id="val-end-at" class="font-medium text-green-600"></span></div>
                             </div>
                         </div>
 
@@ -69,7 +70,7 @@ $userRole = $userData['role_id'] ?? 0;
 
                         <!-- Equipments Card -->
                         <div class="bg-white p-6 rounded-lg shadow-md">
-                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">المعدات المعنية</h2>
+                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">اسم المعدة المراد عزلها</h2>
                             <div id="val-equipments" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-start" dir="rtl"></div>
                         </div>
 
@@ -108,11 +109,10 @@ $userRole = $userData['role_id'] ?? 0;
                         <!-- IO Review Section -->
                         <div id="io-review-section" class="hidden bg-blue-50 p-6 rounded-lg shadow-md border border-blue-200">
                             <h2 class="text-lg font-bold text-blue-800 mb-4 text-right" dir="rtl">مراجعة رخصة العزل</h2>
-                            <p class="text-sm text-blue-600 mb-4 text-right" dir="rtl">يرجى مراجعة المعدات وأنواع الطاقة واختيار shift leader للتأكيد.</p>
+                            <p class="text-sm text-blue-600 mb-4 text-right" dir="rtl">يرجى مراجعة المعدات وأنواع الطاقة واختيار مصدر الرخصه او مسؤول الوجبة للتأكيد.</p>
                             
                             <div class="space-y-4 text-right" dir="rtl">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">اختيار shift leader</label>
                                     <select id="shift_leader_selection" class="w-full"></select>
                                 </div>
                                 <button id="ioConfirmBtn" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">تأكيد المراجعة والتحويل للمرحلة التالية</button>
@@ -121,7 +121,7 @@ $userRole = $userData['role_id'] ?? 0;
 
                         <!-- Shift Leader Review Section -->
                         <div id="sl-review-section" class="hidden bg-purple-50 p-6 rounded-lg shadow-md border border-purple-200">
-                            <h2 class="text-lg font-bold text-purple-800 mb-4 text-right" dir="rtl">التأكيد النهائي (Shift Leader)</h2>
+                            <h2 class="text-lg font-bold text-purple-800 mb-4 text-right" dir="rtl">التأكيد النهائي (مصدر الرخصة او مسؤول الوجبة)</h2>
                             <p class="text-sm text-purple-600 mb-4 text-right" dir="rtl">يرجى مراجعة المعدات وأنواع الطاقة لإتمام إجراءات الرخصة.</p>
                             
                             <div class="space-y-4 text-right" dir="rtl">
@@ -137,6 +137,7 @@ $userRole = $userData['role_id'] ?? 0;
     <script>
         const LICENSE_ID = "<?= $licenseId ?>";
         const CURRENT_USER_ID = "<?= $userId ?>";
+        const CURRENT_USER_ROLE = "<?= $userRole ?>";
         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
         const API_BASE = "../../api/requester/energy_insulation.php";
 
@@ -167,11 +168,13 @@ $userRole = $userData['role_id'] ?? 0;
                     if (data.status === 'approved_by_am' && data.isolation_officer_id == CURRENT_USER_ID) {
                         document.getElementById('io-review-section').classList.remove('hidden');
                         
-                        // User wants to see ONLY equipments and energy types
-                        document.querySelector('[id="val-no"]').closest('.bg-white').classList.add('hidden'); // Hide Basic Info
-                        document.getElementById('rejection-card').classList.add('hidden');
-                        document.getElementById('approval-card').classList.add('hidden');
-                        document.getElementById('staff-card').classList.add('hidden');
+                        // User wants to see ONLY equipments and energy types, except for role 7
+                        if (CURRENT_USER_ROLE != 7) {
+                            document.querySelector('[id="val-no"]').closest('.bg-white').classList.add('hidden'); // Hide Basic Info
+                            document.getElementById('rejection-card').classList.add('hidden');
+                            document.getElementById('approval-card').classList.add('hidden');
+                            document.getElementById('staff-card').classList.add('hidden');
+                        }
                         
                         initShiftLeaderSelect();
                     }
@@ -180,11 +183,13 @@ $userRole = $userData['role_id'] ?? 0;
                     if (data.status === 'reviewed_by_io' && data.shift_leader_id == CURRENT_USER_ID) {
                         document.getElementById('sl-review-section').classList.remove('hidden');
                         
-                        // User wants to see ONLY equipments and energy types
-                        document.querySelector('[id="val-no"]').closest('.bg-white').classList.add('hidden'); // Hide Basic Info
-                        document.getElementById('rejection-card').classList.add('hidden');
-                        document.getElementById('approval-card').classList.add('hidden');
-                        document.getElementById('staff-card').classList.add('hidden');
+                        // User wants to see ONLY equipments and energy types, except for role 7
+                        if (CURRENT_USER_ROLE != 7) {
+                            document.querySelector('[id="val-no"]').closest('.bg-white').classList.add('hidden'); // Hide Basic Info
+                            document.getElementById('rejection-card').classList.add('hidden');
+                            document.getElementById('approval-card').classList.add('hidden');
+                            document.getElementById('staff-card').classList.add('hidden');
+                        }
                     }
 
                     if (data.status === 'rejected') {
@@ -218,6 +223,11 @@ $userRole = $userData['role_id'] ?? 0;
             document.getElementById('val-permit').textContent = data.work_permit;
             document.getElementById('val-requester').textContent = data.requester_name;
             document.getElementById('val-am').textContent = data.area_manager_name;
+
+            if (data.end_at) {
+                document.getElementById('end-at-container').classList.remove('hidden');
+                document.getElementById('val-end-at').textContent = data.end_at;
+            }
 
             const statusEl = document.getElementById('license-status');
             statusEl.textContent = getStatusText(data.status);
@@ -311,7 +321,7 @@ $userRole = $userData['role_id'] ?? 0;
             shiftLeaderSelect = new TomSelect('#shift_leader_selection', {
                 persist: false,
                 create: false,
-                placeholder: 'اختر shift leader...'
+                placeholder: 'اختيار مصدر الرخصه او مسؤول الوجبة'
             });
 
             try {
@@ -357,7 +367,7 @@ $userRole = $userData['role_id'] ?? 0;
         document.getElementById('slConfirmBtn').addEventListener('click', async () => {
             const result = await Swal.fire({
                 title: 'تأكيد نهائي',
-                text: 'هل أنت متأكد من إتمام إجراءات رخصة عزل الطاقة؟',
+                text: 'التأكد من اجراء فحص تشغيل المعدة للتأكد من عزلها من الموقع قبل البدء بالعمل',
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: 'نعم، إتمام',
