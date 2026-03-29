@@ -26,6 +26,31 @@ $userRole = $userData['role_id'] ?? 0;
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+    <style>
+        /* Print Styles */
+        @media print {
+            body { background: white !important; font-size: 9pt; margin: 0; padding: 0.2in; }
+            .dashboard-container { background: white !important; min-height: auto !important; padding: 0 !important; margin: 0 !important; width: 100% !important; flex: none !important; }
+            .flex-1 { flex: none !important; margin: 0 !important; padding: 0 !important; width: 100% !important; overflow: visible !important; }
+            main { padding: 0 !important; margin: 0 !important; width: 100% !important; }
+            .sm\:ml-64 { margin-left: 0 !important; width: 100% !important; }
+            .sidebar, nav, .navbar, #sidebar, .no-print, button, select, #am-approval-section, #io-review-section, #sl-review-section { display: none !important; }
+            .bg-white { border: 1px solid #e5e7eb !important; shadow: none !important; box-shadow: none !important; margin-bottom: 0.25rem !important; padding: 0.5rem !important; }
+            .shadow-md, .shadow-lg { box-shadow: none !important; }
+            #content { display: block !important; visibility: visible !important; opacity: 1 !important; transform: none !important; }
+            .print-header { display: block !important; border-bottom: 2px solid #0b6f76; margin-bottom: 0.5rem; padding-bottom: 0.25rem; text-align: center; }
+            .print-header img { height: 40px; margin: 0 auto 5px; display: block; }
+            .print-header h1 { font-size: 14pt; color: #0b6f76; font-weight: bold; }
+            .max-w-4xl { max-width: 100% !important; width: 100% !important; margin: 0 !important; }
+            h2 { font-size: 11pt !important; margin-bottom: 0.2rem !important; padding-bottom: 0.2rem !important; }
+            .grid { gap: 0.25rem !important; }
+            .grid-cols-1.md\:grid-cols-2 { grid-template-columns: repeat(2, 1fr) !important; }
+            .space-y-6 > * + * { margin-top: 0.25rem !important; }
+            #val-equipments { grid-template-cols: repeat(2, minmax(0, 1fr)) !important; gap: 0.25rem !important; }
+            #val-equipments img { height: 30px !important; width: 30px !important; }
+            #val-equipments div p { font-size: 8pt !important; }
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
     <?php renderNavbar('تفاصيل رخصة عزل الطاقة'); ?>
@@ -35,9 +60,28 @@ $userRole = $userData['role_id'] ?? 0;
         <div class="flex-1 flex flex-col sm:ml-64 transition-all">
             <main class="flex-1 overflow-y-auto p-8 md:pl-12">
                 <div class="max-w-4xl mx-auto">
-                    <div class="flex justify-between items-center mb-6">
-                        <span id="license-status" class="px-3 py-1 rounded-full text-sm font-medium"></span>
+                    <div class="flex justify-between items-center mb-6 no-print">
+                        <div class="flex items-center gap-4">
+                            <div class="text-left">
+                                <span id="license-status" class="px-3 py-1 rounded-full text-sm font-medium"></span>
+                                <p id="status-by" class="text-[10px] text-gray-400 mt-1 text-left"></p>
+                            </div>
+                            <?php if (in_array($userRole, [2, 3])): ?>
+                                <button onclick="window.print()" class="flex items-center gap-2 bg-white border border-red-500 text-red-600 px-4 py-2 rounded-md hover:bg-red-50 transition font-medium shadow-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    تحميل بصيغة PDF
+                                </button>
+                            <?php endif; ?>
+                        </div>
                         <h1 class="text-2xl font-semibold text-gray-700">تفاصيل رخصة عزل الطاقة</h1>
+                    </div>
+
+                    <!-- Print Header (Hidden on screen) -->
+                    <div class="print-header hidden">
+                        <img src="../../public/images/logo.png" alt="Logo">
+                        <h1>رخصة عزل الطاقة - Energy Insulation License</h1>
                     </div>
 
                     <div id="loading" class="text-center py-10">
@@ -84,18 +128,18 @@ $userRole = $userData['role_id'] ?? 0;
 
                         <!-- Isolation Officer Section for Role 7 -->
                         <?php if ($userRole == 7 || $userRole == 2 || $userRole == 3 || $userRole == 5): ?>
-                        <div class="bg-white p-6 rounded-lg shadow-md border-r-4 border-blue-500">
-                            <h2 class="text-lg font-bold text-blue-700 mb-2 text-right" dir="rtl">مسؤول العزل</h2>
-                            <p class="text-blue-600 font-bold text-right mb-2" dir="rtl">الاسم: <span id="val-io-name"></span></p>
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">مسؤول العزل</h2>
+                            <p class="text-gray-700 font-bold text-right mb-2" dir="rtl">الاسم: <span id="val-io-name"></span></p>
                             <p class="text-gray-700 text-right font-medium" dir="rtl">تم عزل جميع المعدات اعلاه ووضع مفاتيح المعدات المعزولة في صندوق العزل</p>
                         </div>
                         <?php endif; ?>
 
                         <!-- Isolation Officer Section for Role 7 -->
                         <?php if ($userRole == 7 || $userRole == 2 || $userRole == 3 || $userRole == 5): ?>
-                        <div class="bg-white p-6 rounded-lg shadow-md border-r-4 border-blue-500">
-                            <h2 class="text-lg font-bold text-blue-700 mb-2 text-right" dir="rtl">التأكيد النهائي مصدر الرخصة او مسؤول الوجبة</h2>
-                            <p class="text-blue-600 font-bold text-right mb-2" dir="rtl">الاسم: <span id="val-sl-name"></span></p>
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">التأكيد النهائي مصدر الرخصة او مسؤول الوجبة</h2>
+                            <p class="text-gray-700 font-bold text-right mb-2" dir="rtl">الاسم: <span id="val-sl-name"></span></p>
                             <p class="text-gray-700 text-right font-medium" dir="rtl">التأكد من اجراء فحص تشغيل المعدة للتأكد من عزلها من الموقع قبل البدء بالعمل</p>
                         </div>
                         <?php endif; ?>
@@ -257,8 +301,21 @@ $userRole = $userData['role_id'] ?? 0;
             }
 
             const statusEl = document.getElementById('license-status');
+            const statusByEl = document.getElementById('status-by');
             statusEl.textContent = getStatusText(data.status);
             statusEl.className = `px-3 py-1 rounded-full text-sm font-medium ${getStatusClass(data.status)}`;
+
+            // Display who approved/signed this status
+            statusByEl.textContent = '';
+            if (data.status === 'approved_by_am') {
+                statusByEl.textContent = `بواسطة: ${data.area_manager_name || 'N/A'}`;
+            } else if (data.status === 'reviewed_by_io') {
+                statusByEl.textContent = `بواسطة: ${data.isolation_officer_name || 'N/A'}`;
+            } else if (data.status === 'completed') {
+                statusByEl.textContent = `بواسطة: ${data.shift_leader_name || 'N/A'}`;
+            } else if (data.status === 'rejected') {
+                statusByEl.textContent = `بواسطة: ${data.area_manager_name || 'N/A'}`;
+            }
 
             // Energy Types
             const energyContainer = document.getElementById('val-energy-types');
