@@ -60,22 +60,24 @@ $userRole = $userData['role_id'] ?? 0;
         <div class="flex-1 flex flex-col sm:ml-64 transition-all">
             <main class="flex-1 overflow-y-auto p-8 md:pl-12">
                 <div class="max-w-4xl mx-auto">
-                    <div class="flex justify-between items-center mb-6 no-print">
-                        <div class="flex items-center gap-4">
-                            <div class="text-left">
-                                <span id="license-status" class="px-3 py-1 rounded-full text-sm font-medium"></span>
-                                <p id="status-by" class="text-[10px] text-gray-400 mt-1 text-left"></p>
-                            </div>
+                    <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-6 no-print">
+                        <h1 class="text-xl md:text-2xl font-semibold text-gray-700 text-right order-1 md:order-2">تفاصيل رخصة عزل الطاقة</h1>
+                        
+                        <div class="flex flex-wrap items-center gap-3 order-2 md:order-1">
                             <?php if (in_array($userRole, [2, 3])): ?>
-                                <button onclick="window.print()" class="flex items-center gap-2 bg-white border border-red-500 text-red-600 px-4 py-2 rounded-md hover:bg-red-50 transition font-medium shadow-sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <button onclick="window.print()" class="flex items-center gap-2 bg-white border border-red-500 text-red-600 px-3 py-1.5 md:px-4 md:py-2 rounded-md hover:bg-red-50 transition text-sm md:text-base font-medium shadow-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
-                                    تحميل بصيغة PDF
+                                    <span>تحميل PDF</span>
                                 </button>
                             <?php endif; ?>
+
+                            <div class="text-right">
+                                <span id="license-status" class="px-3 py-1 rounded-full text-[10px] md:text-sm font-medium"></span>
+                                <p id="status-by" class="text-[9px] md:text-[10px] text-gray-400 mt-1"></p>
+                            </div>
                         </div>
-                        <h1 class="text-2xl font-semibold text-gray-700">تفاصيل رخصة عزل الطاقة</h1>
                     </div>
 
                     <!-- Print Header (Hidden on screen) -->
