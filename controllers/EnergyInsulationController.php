@@ -116,11 +116,12 @@ class EnergyInsulationController
     public function getLicenseById(int $id)
     {
         $stmt = $this->conn->prepare("
-            SELECT l.*, u.name AS requester_name, am.name AS area_manager_name, io.name AS isolation_officer_name, es.name AS section_name
+            SELECT l.*, u.name AS requester_name, am.name AS area_manager_name, io.name AS isolation_officer_name, sl.name AS shift_leader_name, es.name AS section_name
             FROM energy_insulation_license l
             LEFT JOIN users u ON l.created_by = u.id
             LEFT JOIN users am ON l.area_manager_id = am.id
             LEFT JOIN users io ON l.isolation_officer_id = io.id
+            LEFT JOIN users sl ON l.shift_leader_id = sl.id
             LEFT JOIN equipment_sections es ON l.equipment_section_id = es.id
             WHERE l.id = ?
         ");

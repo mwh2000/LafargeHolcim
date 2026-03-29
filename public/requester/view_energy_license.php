@@ -82,6 +82,24 @@ $userRole = $userData['role_id'] ?? 0;
                             <div id="val-staff" class="flex flex-wrap gap-2 justify-start" dir="rtl"></div>
                         </div>
 
+                        <!-- Isolation Officer Section for Role 7 -->
+                        <?php if ($userRole == 7 || $userRole == 2 || $userRole == 3 || $userRole == 5): ?>
+                        <div class="bg-white p-6 rounded-lg shadow-md border-r-4 border-blue-500">
+                            <h2 class="text-lg font-bold text-blue-700 mb-2 text-right" dir="rtl">مسؤول العزل</h2>
+                            <p class="text-blue-600 font-bold text-right mb-2" dir="rtl">الاسم: <span id="val-io-name"></span></p>
+                            <p class="text-gray-700 text-right font-medium" dir="rtl">تم عزل جميع المعدات اعلاه ووضع مفاتيح المعدات المعزولة في صندوق العزل</p>
+                        </div>
+                        <?php endif; ?>
+
+                        <!-- Isolation Officer Section for Role 7 -->
+                        <?php if ($userRole == 7 || $userRole == 2 || $userRole == 3 || $userRole == 5): ?>
+                        <div class="bg-white p-6 rounded-lg shadow-md border-r-4 border-blue-500">
+                            <h2 class="text-lg font-bold text-blue-700 mb-2 text-right" dir="rtl">التأكيد النهائي مصدر الرخصة او مسؤول الوجبة</h2>
+                            <p class="text-blue-600 font-bold text-right mb-2" dir="rtl">الاسم: <span id="val-sl-name"></span></p>
+                            <p class="text-gray-700 text-right font-medium" dir="rtl">التأكد من اجراء فحص تشغيل المعدة للتأكد من عزلها من الموقع قبل البدء بالعمل</p>
+                        </div>
+                        <?php endif; ?>
+
                         <!-- Approval Section (For AM) -->
                         <div id="am-approval-section" class="hidden bg-yellow-50 p-6 rounded-lg shadow-md border border-yellow-200">
                             <h2 class="text-lg font-bold text-yellow-800 mb-4 text-right" dir="rtl">إجراءات مسؤول المنطقة</h2>
@@ -124,7 +142,7 @@ $userRole = $userData['role_id'] ?? 0;
                         <!-- Shift Leader Review Section -->
                         <div id="sl-review-section" class="hidden bg-purple-50 p-6 rounded-lg shadow-md border border-purple-200">
                             <h2 class="text-lg font-bold text-purple-800 mb-4 text-right" dir="rtl">التأكيد النهائي (مصدر الرخصة او مسؤول الوجبة)</h2>
-                            <p class="text-sm text-purple-600 mb-4 text-right" dir="rtl">يرجى مراجعة المعدات وأنواع الطاقة لإتمام إجراءات الرخصة.</p>
+                            <p class="text-sm text-purple-600 mb-4 text-right" dir="rtl">التأكد من اجراء فحص تشغيل المعدة للتأكد من عزلها من الموقع قبل البدء بالعمل</p>
                             
                             <div class="space-y-4 text-right" dir="rtl">
                                 <button id="slConfirmBtn" class="w-full bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700 transition">تأكيد نهائي وإكمال الرخصة</button>
@@ -226,6 +244,12 @@ $userRole = $userData['role_id'] ?? 0;
             document.getElementById('val-permit').textContent = data.work_permit;
             document.getElementById('val-requester').textContent = data.requester_name;
             document.getElementById('val-am').textContent = data.area_manager_name;
+
+            const ioNameEl = document.getElementById('val-io-name');
+            if (ioNameEl) ioNameEl.textContent = data.isolation_officer_name || 'لم يتم التعيين بعد';
+
+            const slNameEl = document.getElementById('val-sl-name');
+            if (slNameEl) slNameEl.textContent = data.shift_leader_name || 'لم يتم التأكيد بعد';
 
             if (data.end_at) {
                 document.getElementById('end-at-container').classList.remove('hidden');
