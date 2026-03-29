@@ -53,7 +53,9 @@ $userRole = $userData['role_id'] ?? 0;
                                 <div><span class="text-gray-500">التاريخ:</span> <span id="val-date" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">الموقع:</span> <span id="val-location" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">اسم المعدة:</span> <span id="val-eq-name" class="font-medium"></span></div>
-                                <div><span class="text-gray-500">القسم:</span> <span id="val-section" class="font-medium"></span></div>
+                                <?php if (in_array($userRole, [7, 8])): ?>
+                                    <div><span class="text-gray-500">القسم:</span> <span id="val-section" class="font-medium"></span></div>
+                                <?php endif; ?>
                                 <div><span class="text-gray-500">السبب:</span> <span id="val-reason" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">تصريح العمل:</span> <span id="val-permit" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">طالب العزل:</span> <span id="val-requester" class="font-medium font-bold text-blue-600"></span></div>
@@ -168,8 +170,8 @@ $userRole = $userData['role_id'] ?? 0;
                     if (data.status === 'approved_by_am' && data.isolation_officer_id == CURRENT_USER_ID) {
                         document.getElementById('io-review-section').classList.remove('hidden');
                         
-                        // User wants to see ONLY equipments and energy types, except for role 7
-                        if (CURRENT_USER_ROLE != 7) {
+                        // User wants to see ONLY equipments and energy types, except for roles 7 & 8
+                        if (CURRENT_USER_ROLE != 7 && CURRENT_USER_ROLE != 8) {
                             document.querySelector('[id="val-no"]').closest('.bg-white').classList.add('hidden'); // Hide Basic Info
                             document.getElementById('rejection-card').classList.add('hidden');
                             document.getElementById('approval-card').classList.add('hidden');
@@ -183,8 +185,8 @@ $userRole = $userData['role_id'] ?? 0;
                     if (data.status === 'reviewed_by_io' && data.shift_leader_id == CURRENT_USER_ID) {
                         document.getElementById('sl-review-section').classList.remove('hidden');
                         
-                        // User wants to see ONLY equipments and energy types, except for role 7
-                        if (CURRENT_USER_ROLE != 7) {
+                        // User wants to see ONLY equipments and energy types, except for roles 7 & 8
+                        if (CURRENT_USER_ROLE != 7 && CURRENT_USER_ROLE != 8) {
                             document.querySelector('[id="val-no"]').closest('.bg-white').classList.add('hidden'); // Hide Basic Info
                             document.getElementById('rejection-card').classList.add('hidden');
                             document.getElementById('approval-card').classList.add('hidden');
@@ -218,7 +220,8 @@ $userRole = $userData['role_id'] ?? 0;
             document.getElementById('val-date').textContent = data.date;
             document.getElementById('val-location').textContent = data.exact_location;
             document.getElementById('val-eq-name').textContent = data.equipment_name;
-            document.getElementById('val-section').textContent = data.section_name;
+            const sectionEl = document.getElementById('val-section');
+            if (sectionEl) sectionEl.textContent = data.section_name;
             document.getElementById('val-reason').textContent = data.reason;
             document.getElementById('val-permit').textContent = data.work_permit;
             document.getElementById('val-requester').textContent = data.requester_name;
@@ -350,7 +353,7 @@ $userRole = $userData['role_id'] ?? 0;
 
             const result = await Swal.fire({
                 title: 'تأكيد المراجعة',
-                text: 'هل أنت متأكد من تأكيد المراجعة وتحويل الرخصة للمرحلة التالية؟',
+                text: 'تم عزل جميع المعدات اعلاه ووضع مفاتيح المعدات المعزولة في صندوق العزل',
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: 'نعم، تأكيد',
@@ -390,7 +393,7 @@ $userRole = $userData['role_id'] ?? 0;
 
             const result = await Swal.fire({
                 title: 'تأكيد الاعتماد',
-                text: 'هل أنت متأكد من تعيين هذا المسؤول واعتماد الرخصة؟',
+                text: 'هل أنت متأكد من تعيين هذا المسؤول؟',
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: 'نعم، تأكيد',

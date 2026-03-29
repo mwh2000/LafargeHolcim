@@ -86,6 +86,7 @@ require_once '../helpers/authCheck.php';
                                 <option value="Clinker">Clinker</option>
                                 <option value="Packing">Packing</option>
                                 <option value="Despatch">Despatch</option>
+                                <option value="Mechanical & Electrical Workshop">Mechanical & Electrical Workshop</option>
                             </select>
                         </div>
                         <!-- Type (full width) -->
@@ -151,6 +152,7 @@ require_once '../helpers/authCheck.php';
                                 <option value="PT buses parking area">PT buses parking area</option>
                                 <option value="Compressors building">Compressors building</option>
                                 <option value="Cresta silos">Cresta silos</option>
+                                <option value="Mechanical & Electrical Workshop">Mechanical & Electrical Workshop</option>
                                 <option value="others">Others</option>
                             </select>
                         </div>
