@@ -14,6 +14,10 @@ class EquipmentController
 
     public function getAll(array $filters = [])
     {
+        $page = isset($filters['page']) ? (int)$filters['page'] : 1;
+        $limit = isset($filters['limit']) ? (int)$filters['limit'] : 10;
+        $offset = ($page - 1) * $limit;
+
         $query = "
             SELECT e.id, e.section_id, e.name, e.image, e.created_at, es.name AS section_name 
             FROM equipments e
@@ -34,6 +38,7 @@ class EquipmentController
         }
 
         $query .= " ORDER BY e.id DESC";
+        $query .= " LIMIT $limit OFFSET $offset";
 
         $stmt = $this->conn->prepare($query);
         $stmt->execute($params);
@@ -64,6 +69,8 @@ class EquipmentController
 
         return $this->respond(true, 'Equipments retrieved successfully', [
             'total' => (int) $total,
+            'page' => $page,
+            'limit' => $limit,
             'equipments' => $equipments
         ]);
     }

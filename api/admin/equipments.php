@@ -52,6 +52,8 @@ try {
                 $filters = [
                     'search' => $queryParams['search'] ?? null,
                     'section_id' => $queryParams['section_id'] ?? null,
+                    'page' => $queryParams['page'] ?? 1,
+                    'limit' => $queryParams['limit'] ?? 10,
                 ];
                 $res = $equipmentController->getAll($filters);
                 sendJson($res);

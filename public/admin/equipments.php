@@ -68,6 +68,21 @@ require_once '../helpers/authCheck.php';
                         </tbody>
                     </table>
                 </div>
+
+                <!-- ✅ Pagination -->
+                <div id="paginationContainer" class="mt-6 flex justify-between items-center bg-white p-4 rounded-lg shadow">
+                    <span id="pageInfo" class="text-sm text-gray-600">Showing 1-10 of 0</span>
+                    <div class="flex gap-2">
+                        <button id="prevBtn" onclick="changePage(currentPage - 1)" 
+                            class="px-4 py-2 border rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition">
+                            Previous
+                        </button>
+                        <button id="nextBtn" onclick="changePage(currentPage + 1)" 
+                            class="px-4 py-2 border rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition">
+                            Next
+                        </button>
+                    </div>
+                </div>
             </main>
         </div>
     </div>
@@ -77,6 +92,10 @@ require_once '../helpers/authCheck.php';
         const DELETE_API = "../../api/admin/equipments.php?action=delete";
         const SECTIONS_API = "../../api/admin/equipment_sections.php?action=all";
         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
+
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let totalItems = 0;
 
         // ================= FETCH SECTIONS =================
         async function fetchSections() {
@@ -111,6 +130,8 @@ require_once '../helpers/authCheck.php';
             const params = new URLSearchParams();
             if (search) params.append("search", search);
             if (sectionId) params.append("section_id", sectionId);
+            params.append("page", currentPage);
+            params.append("limit", itemsPerPage);
 
             const finalUrl = `${BASE_API}&${params.toString()}`;
 
@@ -125,7 +146,9 @@ require_once '../helpers/authCheck.php';
                 const data = await response.json();
                 if (!data.success) throw new Error(data.message);
 
+                totalItems = data.data?.total || 0;
                 renderEquipments(data.data?.equipments || []);
+                renderPagination();
             } catch (error) {
                 document.getElementById('equipmentsTableBody').innerHTML =
                     `<tr><td colspan="4" class="text-center text-red-500 py-4">${error.message}</td></tr>`;
@@ -196,6 +219,24 @@ require_once '../helpers/authCheck.php';
             });
         }
 
+        // ================= RENDER PAGINATION =================
+        function renderPagination() {
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const start = (currentPage - 1) * itemsPerPage + 1;
+            const end = Math.min(currentPage * itemsPerPage, totalItems);
+
+            document.getElementById('pageInfo').textContent = 
+                totalItems > 0 ? `Showing ${start}-${end} of ${totalItems}` : "No equipments to show";
+
+            document.getElementById('prevBtn').disabled = currentPage <= 1;
+            document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            fetchEquipments();
+        }
+
         // ================= INIT =================
         function debounce(func, delay) {
             let timeout;
@@ -205,8 +246,17 @@ require_once '../helpers/authCheck.php';
             };
         }
 
-        document.getElementById('searchInput').addEventListener('input', debounce(fetchEquipments, 400));
-        document.getElementById('sectionFilter').addEventListener('change', fetchEquipments);
+        const debouncedFetch = debounce(() => {
+            currentPage = 1;
+            fetchEquipments();
+        }, 400);
+
+        document.getElementById('searchInput').addEventListener('input', debouncedFetch);
+
+        document.getElementById('sectionFilter').addEventListener('change', () => {
+            currentPage = 1;
+            fetchEquipments();
+        });
         
         document.addEventListener("DOMContentLoaded", () => {
             fetchSections();
