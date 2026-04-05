@@ -140,11 +140,11 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">اسم الطالب للعزل</label>
-                                    <input type="text" value="<?= htmlspecialchars($userName) ?>" readonly class="w-full px-4 py-2 border rounded-md bg-gray-100 cursor-not-allowed">
+                                    <input type="text" name="requester_name" placeholder="ادخل اسم الطالب" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">القسم الطالب للعزل</label>
-                                    <input type="text" value="<?= htmlspecialchars($userDepartment) ?>" readonly class="w-full px-4 py-2 border rounded-md bg-gray-100 cursor-not-allowed">
+                                    <input type="text" name="requester_section" placeholder="ادخل القسم الطالب" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                             </div>
                         </div>
@@ -165,9 +165,23 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                         <!-- Step 3: Equipment Selection -->
                         <div class="step-content" data-step="3">
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">المعدات المراد عزلها</h2>
+                            
+                            <!-- Search Bar -->
+                            <div class="mb-4 relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </span>
+                                <input type="text" id="equipment-search" placeholder="بحث عن اسم المعدة..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-[#0b6f76] focus:border-[#0b6f76]">
+                            </div>
+
                             <div id="equipment-container" class="space-y-4">
                                 <p class="text-sm text-gray-500 italic">يرجى اختيار القسم في الخطوة الأولى أولاً.</p>
                             </div>
+
+                            <!-- Pagination Container -->
+                            <div id="equipment-pagination" class="mt-6 flex justify-center gap-2"></div>
                         </div>
 
                         <!-- Step 4: Crew Selection -->
@@ -227,6 +241,11 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
             const totalSteps = 6;
             const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
 
+            // Equipment search and pagination state
+            let equipmentPage = 1;
+            let equipmentSearch = '';
+            let selectedEquipments = new Map(); // stores id -> {id, name}
+
             const form = document.getElementById('licenseForm');
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
@@ -277,6 +296,18 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 }
             });
 
+            const equipmentSearchInput = document.getElementById('equipment-search');
+            let searchTimeout = null;
+
+            equipmentSearchInput.addEventListener('input', (e) => {
+                equipmentSearch = e.target.value;
+                equipmentPage = 1;
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    loadEquipments();
+                }, 500);
+            });
+
             function updateStaffRemoveButtons() {
                 const entries = staffContainer.querySelectorAll('.staff-entry');
                 entries.forEach((entry, index) => {
@@ -301,15 +332,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     const energyChecked = currentContent.querySelectorAll('input[name="energy_types[]"]:checked').length > 0;
                     if (!energyChecked) return false;
                 } else if (step === 3) {
-                    const equipmentChecked = currentContent.querySelectorAll('.eq-checkbox:checked');
-                    if (equipmentChecked.length === 0) return false;
-                    
-                    // Check if checked equipments have a number (Optional now, but we keep the check if we use hidden input)
-                    for (let cb of equipmentChecked) {
-                        const eqId = cb.value;
-                        const eqNoInput = document.querySelector(`input[name="equipment_nos[${eqId}]"]`);
-                        if (!eqNoInput || !eqNoInput.value.trim()) return false;
-                    }
+                    if (selectedEquipments.size === 0) return false;
                 } else if (step === 4) {
                     const names = Array.from(document.querySelectorAll('.staff-name-input'))
                                        .map(input => input.value.trim())
@@ -381,64 +404,129 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
             async function loadEquipments() {
                 const sectionId = document.getElementById('equipment_section_id').value;
                 const container = document.getElementById('equipment-container');
+                const paginationContainer = document.getElementById('equipment-pagination');
                 
                 if (!sectionId) {
                     container.innerHTML = '<p class="text-red-500">يرجى العودة للخطوة الأولى واختيار القسم.</p>';
+                    paginationContainer.innerHTML = '';
                     lastSectionId = null;
                     return;
                 }
 
-                // If section hasn't changed, don't reload and wipe user choices
-                if (sectionId === lastSectionId) {
-                    return;
+                // If section changed, reset page, search and selected equipments
+                if (sectionId !== lastSectionId) {
+                    equipmentPage = 1;
+                    equipmentSearch = '';
+                    equipmentSearchInput.value = '';
+                    selectedEquipments.clear();
+                    lastSectionId = sectionId;
                 }
 
-                container.innerHTML = '<p>جاري تحميل المعدات...</p>';
+                container.innerHTML = '<p class="text-center py-4">جاري تحميل المعدات...</p>';
                 try {
-                    const res = await fetch(`../../api/requester/energy_insulation.php?action=getEquipmentsBySection&section_id=${sectionId}`, {
+                    const res = await fetch(`../../api/requester/energy_insulation.php?action=getEquipmentsBySection&section_id=${sectionId}&search=${encodeURIComponent(equipmentSearch)}&page=${equipmentPage}`, {
                         headers: { 'Authorization': `Bearer ${TOKEN}` }
                     });
-                    const data = await res.json();
-                    if (data.success) {
+                    const result = await res.json();
+                    
+                    if (result.success) {
+                        const { equipments, total_pages, page } = result.data;
                         container.innerHTML = '';
-                        if (data.data.length === 0) {
-                            container.innerHTML = '<p class="text-yellow-600">لم يتم العثور على معدات لهذا القسم.</p>';
-                            lastSectionId = sectionId;
+                        
+                        if (equipments.length === 0) {
+                            container.innerHTML = '<p class="text-yellow-600 text-center py-4">لم يتم العثور على معدات.</p>';
+                            paginationContainer.innerHTML = '';
                             return;
                         }
-                        data.data.forEach(eq => {
+
+                        equipments.forEach(eq => {
                             const div = document.createElement('div');
                             div.className = 'flex items-center gap-4 p-3 border rounded-md bg-white hover:bg-gray-50 transition-colors cursor-pointer';
                             
+                            const isChecked = selectedEquipments.has(eq.id.toString());
                             const imageHtml = eq.image 
-                                ? `<img src="../../public/${eq.image}" class="w-20 h-20 object-cover rounded border shadow-sm" alt="${eq.name}">` 
-                                : `<div class="w-20 h-20 bg-gray-100 rounded border flex items-center justify-center text-xs text-gray-400">No Image</div>`;
+                                ? `<img src="../../public/${eq.image}" class="w-16 h-16 object-cover rounded border shadow-sm" alt="${eq.name}">` 
+                                : `<div class="w-16 h-16 bg-gray-100 rounded border flex items-center justify-center text-[10px] text-gray-400">No Image</div>`;
 
                             div.innerHTML = `
-                                <input type="checkbox" name="equipment_ids[]" value="${eq.id}" class="eq-checkbox h-5 w-5 text-[#0b6f76]">
+                                <input type="checkbox" value="${eq.id}" class="eq-checkbox h-5 w-5 text-[#0b6f76] rounded" ${isChecked ? 'checked' : ''}>
                                 <div class="flex-1">
                                     <span class="text-sm font-semibold text-gray-800">${eq.name}</span>
                                 </div>
                                 ${imageHtml}
-                                <input type="hidden" name="equipment_nos[${eq.id}]" value="${eq.name}">
                             `;
                             
-                            // Make the whole div clickable to toggle checkbox
+                            // Checkbox change logic
+                            const cb = div.querySelector('.eq-checkbox');
+                            const toggleSelection = () => {
+                                if (cb.checked) {
+                                    selectedEquipments.set(eq.id.toString(), { id: eq.id, name: eq.name });
+                                } else {
+                                    selectedEquipments.delete(eq.id.toString());
+                                }
+                                updateButtonStates();
+                            };
+
+                            cb.addEventListener('change', (e) => {
+                                e.stopPropagation();
+                                toggleSelection();
+                            });
+
                             div.addEventListener('click', (e) => {
                                 if (e.target.tagName !== 'INPUT') {
-                                    const cb = div.querySelector('.eq-checkbox');
                                     cb.checked = !cb.checked;
-                                    updateButtonStates();
+                                    toggleSelection();
                                 }
                             });
 
                             container.appendChild(div);
                         });
-                        lastSectionId = sectionId;
+
+                        // Render Pagination
+                        renderPagination(total_pages, page);
                     }
                 } catch (e) {
-                    container.innerHTML = '<p class="text-red-500">فشل في تحميل المعدات.</p>';
+                    container.innerHTML = '<p class="text-red-500 text-center py-4">فشل في تحميل المعدات.</p>';
                 }
+            }
+
+            function renderPagination(totalPages, currentPage) {
+                const paginationContainer = document.getElementById('equipment-pagination');
+                paginationContainer.innerHTML = '';
+
+                if (totalPages <= 1) return;
+
+                const createBtn = (label, page, isActive = false, isDisabled = false) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = label;
+                    btn.className = `px-3 py-1 text-sm border rounded hover:bg-gray-100 ${isActive ? 'bg-[#0b6f76] text-white border-[#0b6f76] hover:bg-[#0b6f76]' : 'text-gray-600'} ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`;
+                    if (!isDisabled && !isActive) {
+                        btn.addEventListener('click', () => {
+                            equipmentPage = page;
+                            loadEquipments();
+                        });
+                    }
+                    return btn;
+                };
+
+                // Prev Button
+                paginationContainer.appendChild(createBtn('السابق', currentPage - 1, false, currentPage === 1));
+
+                // Page Numbers
+                for (let i = 1; i <= totalPages; i++) {
+                    if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                        paginationContainer.appendChild(createBtn(i, i, i === currentPage));
+                    } else if (i === currentPage - 2 || i === currentPage + 2) {
+                        const span = document.createElement('span');
+                        span.textContent = '...';
+                        span.className = 'px-2';
+                        paginationContainer.appendChild(span);
+                    }
+                }
+
+                // Next Button
+                paginationContainer.appendChild(createBtn('التالي', currentPage + 1, false, currentPage === totalPages));
             }
 
             async function loadEligibleUsers() {
@@ -473,6 +561,8 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     license_expiry: formData.get('license_expiry'),
                     work_permit: formData.get('work_permit'),
                     exact_location: formData.get('exact_location'),
+                    requester_name: formData.get('requester_name'),
+                    requester_section: formData.get('requester_section'),
                     execution_exceeds_shift_time: formData.get('execution_exceeds_shift_time') ? 1 : 0,
                     energy_types: [],
                     equipments: [],
@@ -487,11 +577,9 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     data.energy_types.push(cb.value);
                 });
 
-                // Get Equipments
-                document.querySelectorAll('.eq-checkbox:checked').forEach(cb => {
-                    const eqId = cb.value;
-                    const eqNo = document.querySelector(`input[name="equipment_nos[${eqId}]"]`).value;
-                    data.equipments.push({ id: eqId, no: eqNo });
+                // Get Equipments from selectedEquipments Map
+                selectedEquipments.forEach((eq, id) => {
+                    data.equipments.push({ id: id, no: eq.name });
                 });
 
                 if (data.energy_types.length === 0) {

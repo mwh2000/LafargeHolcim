@@ -69,13 +69,13 @@ function renderSidebar($activePage = '')
   // Define role permissions (Link IDs available for each role)
   $role_permissions = [
     1 => ['dashboard', 'users', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action', 'equipment_sections', 'equipments', 'energy_types', 'permit'], // Admin
-    2 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action', 'permit'], // Requester
+    2 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action'], // Requester
     3 => ['dashboard', 'create_action', 'actions_assigned_to_me', 'actions_created_by_me'], // Area Manager
     4 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action'], // Safety
     5 => ['dashboard', 'create_action', 'actions_assigned_to_me', 'actions_created_by_me'], // Manager
     6 => ['dashboard', 'create_action', 'energy_Isolation'], // Plant Manager
     7 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action', 'permit'], // Shift Leader
-    8 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action', 'permit'], // Isolation Officer
+    8 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action'], // Isolation Officer
   ];
 
   // Map permissions to actual links

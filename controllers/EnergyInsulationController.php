@@ -25,8 +25,8 @@ class EnergyInsulationController
                 INSERT INTO energy_insulation_license (
                     equipment_name, equipment_no, date, reason, license_expiry, 
                     execution_exceeds_shift_time, work_permit, equipment_section_id, 
-                    created_by, status, exact_location
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    created_by, requester_name, requester_section, status, exact_location, end_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
 
             $stmt->execute([
@@ -39,8 +39,11 @@ class EnergyInsulationController
                 $data['work_permit'] ?? null,
                 $data['equipment_section_id'] ?? null,
                 $data['created_by'] ?? null,
+                $data['requester_name'] ?? null,
+                $data['requester_section'] ?? null,
                 'pending',
-                $data['exact_location'] ?? null
+                $data['exact_location'] ?? null,
+                null
             ]);
 
             $licenseId = $this->conn->lastInsertId();
@@ -105,18 +108,48 @@ class EnergyInsulationController
         return $this->respond(true, 'Eligible users retrieved successfully', $users);
     }
 
-    public function getEquipmentsBySection(int $sectionId)
+    public function getEquipmentsBySection(int $sectionId, string $search = '', int $page = 1, int $limit = 10)
     {
-        $stmt = $this->conn->prepare("SELECT id, name, image FROM equipments WHERE section_id = ?");
-        $stmt->execute([$sectionId]);
+        $offset = ($page - 1) * $limit;
+        
+        $query = "SELECT id, name, image FROM equipments WHERE section_id = ?";
+        $params = [$sectionId];
+
+        if (!empty($search)) {
+            $query .= " AND name LIKE ?";
+            $params[] = "%$search%";
+        }
+
+        // Get total count
+        $countQuery = "SELECT COUNT(*) as total FROM equipments WHERE section_id = ?";
+        $countParams = [$sectionId];
+        if (!empty($search)) {
+            $countQuery .= " AND name LIKE ?";
+            $countParams[] = "%$search%";
+        }
+        $countStmt = $this->conn->prepare($countQuery);
+        $countStmt->execute($countParams);
+        $total = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+        $query .= " LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute($params);
         $equipments = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        return $this->respond(true, 'Equipments retrieved successfully', $equipments);
+
+        return $this->respond(true, 'Equipments retrieved successfully', [
+            'equipments' => $equipments,
+            'total' => (int)$total,
+            'page' => $page,
+            'limit' => $limit,
+            'total_pages' => ceil($total / (int)$limit)
+        ]);
     }
 
     public function getLicenseById(int $id)
     {
         $stmt = $this->conn->prepare("
-            SELECT l.*, u.name AS requester_name, am.name AS area_manager_name, io.name AS isolation_officer_name, sl.name AS shift_leader_name, es.name AS section_name
+            SELECT l.*, u.name AS creator_name, am.name AS area_manager_name, io.name AS isolation_officer_name, sl.name AS shift_leader_name, es.name AS section_name
             FROM energy_insulation_license l
             LEFT JOIN users u ON l.created_by = u.id
             LEFT JOIN users am ON l.area_manager_id = am.id

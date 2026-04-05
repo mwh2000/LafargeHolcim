@@ -34,7 +34,10 @@ try {
                 $res = $controller->getEligibleUsers();
             } elseif ($action === 'getEquipmentsBySection') {
                 $sectionId = (int) ($_GET['section_id'] ?? 0);
-                $res = $controller->getEquipmentsBySection($sectionId);
+                $search = $_GET['search'] ?? '';
+                $page = (int) ($_GET['page'] ?? 1);
+                $limit = (int) ($_GET['limit'] ?? 10);
+                $res = $controller->getEquipmentsBySection($sectionId, $search, $page, $limit);
             } elseif ($action === 'show' && isset($_GET['id'])) {
                 $res = $controller->getLicenseById((int)$_GET['id']);
             } elseif ($action === 'getIsolationOfficers') {
