@@ -72,6 +72,12 @@ class EnergyInsulationController
                 }
             }
 
+            // Insert Isolation Official
+            if (!empty($data['official_name'])) {
+                $offStmt = $this->conn->prepare("INSERT INTO energy_insulation_officials (license_id, name, department) VALUES (?, ?, ?)");
+                $offStmt->execute([$licenseId, $data['official_name'], $data['official_department'] ?? null]);
+            }
+
             // Update Area Manager
             if (!empty($data['area_manager_id'])) {
                 $updateStmt = $this->conn->prepare("UPDATE energy_insulation_license SET area_manager_id = ? WHERE id = ?");
@@ -102,7 +108,7 @@ class EnergyInsulationController
 
     public function getEligibleUsers()
     {
-        $stmt = $this->conn->prepare("SELECT id, name FROM users WHERE role_id IN (3, 5, 7) AND is_active = 1");
+        $stmt = $this->conn->prepare("SELECT id, name FROM users WHERE role_id IN (3, 7) AND is_active = 1");
         $stmt->execute();
         $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return $this->respond(true, 'Eligible users retrieved successfully', $users);
@@ -149,13 +155,16 @@ class EnergyInsulationController
     public function getLicenseById(int $id)
     {
         $stmt = $this->conn->prepare("
-            SELECT l.*, u.name AS creator_name, am.name AS area_manager_name, io.name AS isolation_officer_name, sl.name AS shift_leader_name, es.name AS section_name
+            SELECT l.*, u.name AS creator_name, am.name AS area_manager_name, 
+                   io.name AS isolation_officer_name, sl.name AS shift_leader_name, 
+                   es.name AS section_name, off.name AS official_name, off.department AS official_department
             FROM energy_insulation_license l
             LEFT JOIN users u ON l.created_by = u.id
             LEFT JOIN users am ON l.area_manager_id = am.id
             LEFT JOIN users io ON l.isolation_officer_id = io.id
             LEFT JOIN users sl ON l.shift_leader_id = sl.id
             LEFT JOIN equipment_sections es ON l.equipment_section_id = es.id
+            LEFT JOIN energy_insulation_officials off ON l.id = off.license_id
             WHERE l.id = ?
         ");
         $stmt->execute([$id]);
@@ -300,6 +309,78 @@ class EnergyInsulationController
             return $this->respond(true, 'License completed successfully');
         }
         return $this->respond(false, 'Failed to complete license', null, ['code' => 500], 500);
+    }
+
+    public function amDoneAction(int $licenseId, int $userId)
+    {
+        try {
+            // Fetch license info for notification
+            $stmt = $this->conn->prepare("SELECT created_by, equipment_name FROM energy_insulation_license WHERE id = ?");
+            $stmt->execute([$licenseId]);
+            $license = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$license) {
+                return $this->respond(false, 'License not found', null, ['code' => 404], 404);
+            }
+
+            $stmt = $this->conn->prepare("UPDATE energy_insulation_license SET status = 'active_isolation', am_approved_at = NOW() WHERE id = ?");
+            $success = $stmt->execute([$licenseId]);
+
+            if ($success) {
+                // Send Notification and Email to Requester
+                if ($this->notificationController) {
+                    $title = "تم العزل - Isolation Active";
+                    $body = "قام مسؤول المنطقة بتأكيد العزل للمعدة: " . ($license['equipment_name'] ?? 'N/A');
+                    $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
+                    
+                    $this->notificationController->sendNotification($title, $body, [$license['created_by']], $url, $userId);
+                    
+                    if ($this->emailController) {
+                        $this->emailController->sendEmail($title, $body, [$license['created_by']]);
+                    }
+                }
+                return $this->respond(true, 'Isolation confirmed by Area Manager successfully');
+            }
+            return $this->respond(false, 'Failed to confirm isolation', null, ['code' => 500], 500);
+        } catch (Exception $e) {
+            return $this->respond(false, 'Error: ' . $e->getMessage(), null, ['code' => 500], 500);
+        }
+    }
+
+    public function removeIsolationAction(int $licenseId, int $userId)
+    {
+        try {
+            // Fetch license info for notification
+            $stmt = $this->conn->prepare("SELECT area_manager_id, equipment_name FROM energy_insulation_license WHERE id = ?");
+            $stmt->execute([$licenseId]);
+            $license = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$license) {
+                return $this->respond(false, 'License not found', null, ['code' => 404], 404);
+            }
+
+            $stmt = $this->conn->prepare("UPDATE energy_insulation_license SET status = 'completed', isolation_removed_at = NOW(), end_at = NOW() WHERE id = ?");
+            $success = $stmt->execute([$licenseId]);
+
+            if ($success) {
+                // Send Notification and Email to Area Manager
+                if ($this->notificationController && !empty($license['area_manager_id'])) {
+                    $title = "تم فك العزل - Isolation Removed";
+                    $body = "قام طالب الرخصة بفك العزل للمعدة: " . ($license['equipment_name'] ?? 'N/A');
+                    $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
+                    
+                    $this->notificationController->sendNotification($title, $body, [$license['area_manager_id']], $url, $userId);
+                    
+                    if ($this->emailController) {
+                        $this->emailController->sendEmail($title, $body, [$license['area_manager_id']]);
+                    }
+                }
+                return $this->respond(true, 'تم فك العزل بنجاح');
+            }
+            return $this->respond(false, 'فشل فك العزل', null, ['code' => 500], 500);
+        } catch (Exception $e) {
+            return $this->respond(false, 'Error: ' . $e->getMessage(), null, ['code' => 500], 500);
+        }
     }
 
     public function rejectLicense(int $licenseId, string $reason, int $rejectedBy)

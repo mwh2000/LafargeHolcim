@@ -99,14 +99,14 @@ $userRole = $userData['role_id'] ?? 0;
                                 <div><span class="text-gray-500">التاريخ:</span> <span id="val-date" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">الموقع:</span> <span id="val-location" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">اسم المعدة:</span> <span id="val-eq-name" class="font-medium"></span></div>
-                                <?php if (in_array($userRole, [7, 8])): ?>
-                                    <div><span class="text-gray-500">القسم:</span> <span id="val-section" class="font-medium"></span></div>
-                                <?php endif; ?>
+                                <div><span class="text-gray-500">القسم:</span> <span id="val-section" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">السبب:</span> <span id="val-reason" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">تصريح العمل:</span> <span id="val-permit" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">طالب العزل:</span> <span id="val-requester" class="font-medium font-bold text-blue-600"></span></div>
                                 <div><span class="text-gray-500">مسؤول المنطقة:</span> <span id="val-am" class="font-medium"></span></div>
-                                <div id="end-at-container" class="hidden"><span class="text-gray-500">تاريخ الانتهاء:</span> <span id="val-end-at" class="font-medium text-green-600"></span></div>
+                                <div><span class="text-gray-500">مسؤول العزل:</span> <span id="val-official" class="font-medium text-green-700"></span></div>
+                                <div id="am-approved-container" class="hidden"><span class="text-gray-500">تاريخ تأكيد العزل:</span> <span id="val-am-approved-at" class="font-medium text-blue-600"></span></div>
+                                <div id="end-at-container" class="hidden"><span class="text-gray-500">تاريخ فك العزل:</span> <span id="val-end-at" class="font-medium text-green-600"></span></div>
                             </div>
                         </div>
 
@@ -128,72 +128,27 @@ $userRole = $userData['role_id'] ?? 0;
                             <div id="val-staff" class="flex flex-wrap gap-2 justify-start" dir="rtl"></div>
                         </div>
 
-                        <!-- Isolation Officer Section for Role 7 -->
-                        <?php if ($userRole == 7 || $userRole == 2 || $userRole == 3 || $userRole == 5): ?>
-                        <div class="bg-white p-6 rounded-lg shadow-md">
-                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">مسؤول العزل</h2>
-                            <p class="text-gray-700 font-bold text-right mb-2" dir="rtl">الاسم: <span id="val-io-name"></span></p>
-                            <p class="text-gray-700 text-right font-medium" dir="rtl">تم عزل جميع المعدات اعلاه ووضع مفاتيح المعدات المعزولة في صندوق العزل</p>
-                        </div>
-                        <?php endif; ?>
 
-                        <!-- Isolation Officer Section for Role 7 -->
-                        <?php if ($userRole == 7 || $userRole == 2 || $userRole == 3 || $userRole == 5): ?>
-                        <div class="bg-white p-6 rounded-lg shadow-md">
-                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">التأكيد النهائي مصدر الرخصة او مسؤول الوجبة</h2>
-                            <p class="text-gray-700 font-bold text-right mb-2" dir="rtl">الاسم: <span id="val-sl-name"></span></p>
-                            <p class="text-gray-700 text-right font-medium" dir="rtl">التأكد من اجراء فحص تشغيل المعدة للتأكد من عزلها من الموقع قبل البدء بالعمل</p>
-                        </div>
-                        <?php endif; ?>
 
-                        <!-- Approval Section (For AM) -->
-                        <div id="am-approval-section" class="hidden bg-yellow-50 p-6 rounded-lg shadow-md border border-yellow-200">
+                        <!-- AM Done Section -->
+                        <div id="am-action-section" class="hidden bg-yellow-50 p-6 rounded-lg shadow-md border border-yellow-200">
                             <h2 class="text-lg font-bold text-yellow-800 mb-4 text-right" dir="rtl">إجراءات مسؤول المنطقة</h2>
                             <div class="space-y-4 text-right" dir="rtl">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">تعيين مسؤول العزل (Isolation Officer)</label>
-                                    <select id="officer_selection" class="w-full"></select>
-                                </div>
-                                <div class="flex gap-4">
-                                    <button id="approveBtn" class="flex-1 bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition">تأكيد وتعيين مسؤول العزل</button>
-                                    <button id="rejectBtn" class="flex-1 bg-red-600 text-white py-2 rounded-md hover:bg-red-700 transition">رفض الرخصة</button>
-                                </div>
+                                <p class="text-sm text-yellow-700">الرجاء التأكد من العزل قبل الضغط على Done.</p>
+                                <button id="amDoneBtn" class="w-full bg-[#0b6f76] text-white py-3 rounded-md hover:bg-[#085a60] transition font-bold text-lg">Done / تم العزل</button>
                             </div>
                         </div>
 
-                        <!-- Status Details (If rejected or approved) -->
-                        <div id="rejection-card" class="hidden bg-red-50 p-6 rounded-lg shadow-md border border-red-200">
-                            <h2 class="text-lg font-bold text-red-800 mb-2 text-right" dir="rtl">سبب الرفض</h2>
-                            <p id="val-reject-reason" class="text-red-700 italic text-right" dir="rtl"></p>
-                        </div>
-                        
-                        <div id="approval-card" class="hidden bg-green-50 p-6 rounded-lg shadow-md border border-green-200">
-                            <h2 class="text-lg font-bold text-green-800 mb-2 text-right" dir="rtl">تفاصيل الاعتماد</h2>
-                            <p class="text-green-700 text-right" dir="rtl">مسؤول العزل المعين: <span id="val-io" class="font-bold"></span></p>
-                        </div>
-
-                        <!-- IO Review Section -->
-                        <div id="io-review-section" class="hidden bg-blue-50 p-6 rounded-lg shadow-md border border-blue-200">
-                            <h2 class="text-lg font-bold text-blue-800 mb-4 text-right" dir="rtl">مراجعة رخصة العزل</h2>
-                            <p class="text-sm text-blue-600 mb-4 text-right" dir="rtl">يرجى مراجعة المعدات وأنواع الطاقة واختيار مصدر الرخصه او مسؤول الوجبة للتأكيد.</p>
-                            
+                        <!-- Requester Removal Section -->
+                        <div id="requester-action-section" class="hidden bg-green-50 p-6 rounded-lg shadow-md border border-green-200">
+                            <h2 class="text-lg font-bold text-green-800 mb-4 text-right" dir="rtl">فك العزل</h2>
                             <div class="space-y-4 text-right" dir="rtl">
-                                <div>
-                                    <select id="shift_leader_selection" class="w-full"></select>
-                                </div>
-                                <button id="ioConfirmBtn" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">تأكيد المراجعة والتحويل للمرحلة التالية</button>
+                                <p class="text-sm text-green-700">تم إكمال العمل؟ يمكنك الآن فك العزل.</p>
+                                <button id="removeIsolationBtn" class="w-full bg-green-600 text-white py-3 rounded-md hover:bg-green-700 transition font-bold text-lg">فك العزل / Remove Isolation</button>
                             </div>
                         </div>
 
-                        <!-- Shift Leader Review Section -->
-                        <div id="sl-review-section" class="hidden bg-purple-50 p-6 rounded-lg shadow-md border border-purple-200">
-                            <h2 class="text-lg font-bold text-purple-800 mb-4 text-right" dir="rtl">التأكيد النهائي (مصدر الرخصة او مسؤول الوجبة)</h2>
-                            <p class="text-sm text-purple-600 mb-4 text-right" dir="rtl">التأكد من اجراء فحص تشغيل المعدة للتأكد من عزلها من الموقع قبل البدء بالعمل</p>
-                            
-                            <div class="space-y-4 text-right" dir="rtl">
-                                <button id="slConfirmBtn" class="w-full bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700 transition">تأكيد نهائي وإكمال الرخصة</button>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
             </main>
@@ -226,46 +181,17 @@ $userRole = $userData['role_id'] ?? 0;
                     
                     // Show AM actions if pending and user is the assigned AM
                     if (data.status === 'pending' && data.area_manager_id == CURRENT_USER_ID) {
-                        document.getElementById('am-approval-section').classList.remove('hidden');
-                        initOfficerSelect();
+                        document.getElementById('am-action-section').classList.remove('hidden');
                     }
 
-                    // Show IO actions if approved_by_am and user is the assigned IO
-                    if (data.status === 'approved_by_am' && data.isolation_officer_id == CURRENT_USER_ID) {
-                        document.getElementById('io-review-section').classList.remove('hidden');
-                        
-                        // User wants to see ONLY equipments and energy types, except for roles 7 & 8
-                        if (CURRENT_USER_ROLE != 7 && CURRENT_USER_ROLE != 8) {
-                            document.querySelector('[id="val-no"]').closest('.bg-white').classList.add('hidden'); // Hide Basic Info
-                            document.getElementById('rejection-card').classList.add('hidden');
-                            document.getElementById('approval-card').classList.add('hidden');
-                            document.getElementById('staff-card').classList.add('hidden');
-                        }
-                        
-                        initShiftLeaderSelect();
+                    // Show Requester actions if active_isolation and user is creator
+                    if (data.status === 'active_isolation' && data.created_by == CURRENT_USER_ID) {
+                        document.getElementById('requester-action-section').classList.remove('hidden');
                     }
 
-                    // Show SL actions if reviewed_by_io and user is the assigned SL
-                    if (data.status === 'reviewed_by_io' && data.shift_leader_id == CURRENT_USER_ID) {
-                        document.getElementById('sl-review-section').classList.remove('hidden');
-                        
-                        // User wants to see ONLY equipments and energy types, except for roles 7 & 8
-                        if (CURRENT_USER_ROLE != 7 && CURRENT_USER_ROLE != 8) {
-                            document.querySelector('[id="val-no"]').closest('.bg-white').classList.add('hidden'); // Hide Basic Info
-                            document.getElementById('rejection-card').classList.add('hidden');
-                            document.getElementById('approval-card').classList.add('hidden');
-                            document.getElementById('staff-card').classList.add('hidden');
-                        }
-                    }
-
-                    if (data.status === 'rejected') {
-                        document.getElementById('rejection-card').classList.remove('hidden');
-                        document.getElementById('val-reject-reason').textContent = data.reject_reason || 'لا يوجد سبب محدد';
-                    }
-
-                    if (data.status === 'approved_by_am') {
-                        document.getElementById('approval-card').classList.remove('hidden');
-                        document.getElementById('val-io').textContent = data.isolation_officer_name || 'N/A';
+                    if (data.am_approved_at) {
+                        document.getElementById('am-approved-container').classList.remove('hidden');
+                        document.getElementById('val-am-approved-at').textContent = data.am_approved_at;
                     }
 
                     document.getElementById('loading').classList.add('hidden');
@@ -290,6 +216,7 @@ $userRole = $userData['role_id'] ?? 0;
             document.getElementById('val-permit').textContent = data.work_permit;
             document.getElementById('val-requester').textContent = data.requester_name;
             document.getElementById('val-am').textContent = data.area_manager_name;
+            document.getElementById('val-official').textContent = `${data.official_name} (${data.official_department})`;
 
             const ioNameEl = document.getElementById('val-io-name');
             if (ioNameEl) ioNameEl.textContent = data.isolation_officer_name || 'لم يتم التعيين بعد';
@@ -362,10 +289,10 @@ $userRole = $userData['role_id'] ?? 0;
 
         function getStatusText(status) {
             const map = {
-                'pending': 'قيد الانتظار',
-                'approved_by_am': 'معتمدة من مسؤول المنطقة',
+                'pending': 'بانتظار الموافقة',
+                'active_isolation': 'تم العزل - Isolation Active',
                 'rejected': 'مرفوضة',
-                'completed': 'مكتملة'
+                'completed': 'مكتملة - Isolation Removed'
             };
             return map[status] || status;
         }
@@ -373,143 +300,44 @@ $userRole = $userData['role_id'] ?? 0;
         function getStatusClass(status) {
             const map = {
                 'pending': 'bg-yellow-100 text-yellow-800',
-                'approved_by_am': 'bg-blue-100 text-blue-800',
+                'active_isolation': 'bg-blue-100 text-blue-800',
                 'rejected': 'bg-red-100 text-red-800',
                 'completed': 'bg-green-100 text-green-800'
             };
             return map[status] || 'bg-gray-100 text-gray-800';
         }
 
-        async function initOfficerSelect() {
-            officerSelect = new TomSelect('#officer_selection', {
-                persist: false,
-                create: false,
-                placeholder: 'اختر مسؤول العزل (Role 8)...'
-            });
-
-            try {
-                const res = await fetch(`${API_BASE}?action=getIsolationOfficers`, {
-                    headers: { 'Authorization': `Bearer ${TOKEN}` }
-                });
-                const result = await res.json();
-                if (result.success) {
-                    result.data.forEach(user => {
-                        officerSelect.addOption({ value: user.id, text: user.name });
-                    });
-                    officerSelect.refreshOptions(false);
-                }
-            } catch (e) {
-                console.error('Failed to load officers');
-            }
-        }
-
-        async function initShiftLeaderSelect() {
-            shiftLeaderSelect = new TomSelect('#shift_leader_selection', {
-                persist: false,
-                create: false,
-                placeholder: 'اختيار مصدر الرخصه او مسؤول الوجبة'
-            });
-
-            try {
-                const res = await fetch(`${API_BASE}?action=getShiftLeaders`, {
-                    headers: { 'Authorization': `Bearer ${TOKEN}` }
-                });
-                const result = await res.json();
-                if (result.success) {
-                    result.data.forEach(user => {
-                        shiftLeaderSelect.addOption({ value: user.id, text: user.name });
-                    });
-                    shiftLeaderSelect.refreshOptions(false);
-                }
-            } catch (e) {
-                console.error('Failed to load shift leaders');
-            }
-        }
-
-        // IO Confirm Button Logic
-        document.getElementById('ioConfirmBtn').addEventListener('click', async () => {
-            const slId = shiftLeaderSelect.getValue();
-            if (!slId) {
-                Swal.fire('تنبيه', 'يرجى اختيار المستخدم التالي أولاً', 'warning');
-                return;
-            }
-
+        // AM Done Button Logic
+        document.getElementById('amDoneBtn').addEventListener('click', async () => {
             const result = await Swal.fire({
-                title: 'تأكيد المراجعة',
-                text: 'تم عزل جميع المعدات اعلاه ووضع مفاتيح المعدات المعزولة في صندوق العزل',
+                title: 'تأكيد العزل',
+                text: 'هل تم التأكد من عزل جميع الطاقات المطلوبة؟',
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonText: 'نعم، تأكيد',
+                confirmButtonText: 'نعم، Done',
                 cancelButtonText: 'إلغاء',
                 confirmButtonColor: '#0b6f76'
             });
 
             if (result.isConfirmed) {
-                submitAction('confirmByIsolationOfficer', { license_id: LICENSE_ID, shift_leader_id: slId });
+                submitAction('amDone', { license_id: LICENSE_ID });
             }
         });
 
-        // SL Confirm Button Logic
-        document.getElementById('slConfirmBtn').addEventListener('click', async () => {
+        // Requester Removal Button Logic
+        document.getElementById('removeIsolationBtn').addEventListener('click', async () => {
             const result = await Swal.fire({
-                title: 'تأكيد نهائي',
-                text: 'التأكد من اجراء فحص تشغيل المعدة للتأكد من عزلها من الموقع قبل البدء بالعمل',
-                icon: 'question',
+                title: 'تأكيد فك العزل',
+                text: 'تم فك العزل وارجاع الطاقات الى حالة التشغيل من قبل العازل',
+                icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: 'نعم، إتمام',
+                confirmButtonText: 'نعم، تأكيد فك العزل',
                 cancelButtonText: 'إلغاء',
-                confirmButtonColor: '#7c3aed'
+                confirmButtonColor: '#059669'
             });
 
             if (result.isConfirmed) {
-                submitAction('confirmByShiftLeader', { license_id: LICENSE_ID });
-            }
-        });
-
-        // Approve Button Logic
-        document.getElementById('approveBtn').addEventListener('click', async () => {
-            const officerId = officerSelect.getValue();
-            if (!officerId) {
-                Swal.fire('تنبيه', 'يرجى اختيار مسؤول العزل أولاً', 'warning');
-                return;
-            }
-
-            const result = await Swal.fire({
-                title: 'تأكيد الاعتماد',
-                text: 'هل أنت متأكد من تعيين هذا المسؤول؟',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'نعم، تأكيد',
-                cancelButtonText: 'إلغاء',
-                confirmButtonColor: '#0b6f76'
-            });
-
-            if (result.isConfirmed) {
-                submitAction('updateIsolationOfficer', { license_id: LICENSE_ID, officer_id: officerId });
-            }
-        });
-
-        // Reject Button Logic
-        document.getElementById('rejectBtn').addEventListener('click', async () => {
-            const { value: reason } = await Swal.fire({
-                title: 'رفض الرخصة',
-                input: 'textarea',
-                inputLabel: 'سبب الرفض',
-                inputPlaceholder: 'اكتب سبب الرفض هنا...',
-                inputAttributes: { 'aria-label': 'اكتب سبب الرفض هنا' },
-                showCancelButton: true,
-                confirmButtonText: 'تأكيد الرفض',
-                cancelButtonText: 'إلغاء',
-                confirmButtonColor: '#dc2626',
-                inputValidator: (value) => {
-                    if (!value) {
-                        return 'يجب كتابة سبب الرفض'
-                    }
-                }
-            });
-
-            if (reason) {
-                submitAction('reject', { license_id: LICENSE_ID, reason: reason });
+                submitAction('removeIsolation', { license_id: LICENSE_ID });
             }
         });
 

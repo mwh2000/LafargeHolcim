@@ -4,6 +4,8 @@ require_once '../../config/config.php';
 require_once __DIR__ . '../../partials/sidebar.php';
 require_once __DIR__ . '../../partials/navbar.php';
 require_once '../helpers/authCheck.php';
+$officials = require 'officials_list.php';
+
 
 // Fetch sections and energy types for the form
 $config = require '../../config/config.php';
@@ -69,13 +71,14 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     <h1 class="text-2xl font-semibold text-gray-700 mb-6">رخصة عزل الطاقة  Energy Isolation</h1>
 
                     <!-- Progress Bar -->
-                    <div class="flex justify-between mb-8 border-b pb-2">
+                    <div class="flex justify-between mb-8 border-b pb-2 text-[10px] md:text-sm">
                         <div class="step-indicator active px-2 transition-all duration-300" data-step="1">طلب الرخصة</div>
                         <div class="step-indicator px-2 transition-all duration-300" data-step="2">الطاقة</div>
                         <div class="step-indicator px-2 transition-all duration-300" data-step="3">المعدات</div>
                         <div class="step-indicator px-2 transition-all duration-300" data-step="4">طاقم العمل</div>
                         <div class="step-indicator px-2 transition-all duration-300" data-step="5">السلامة</div>
-                        <div class="step-indicator px-2 transition-all duration-300" data-step="6">المسؤول</div>
+                        <div class="step-indicator px-2 transition-all duration-300" data-step="6">مسؤول العزل</div>
+                        <div class="step-indicator px-2 transition-all duration-300" data-step="7">المسؤول</div>
                     </div>
 
                     <form id="licenseForm" class="bg-white p-6 rounded-lg shadow-md">
@@ -115,10 +118,11 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">تاريخ انتهاء الرخصة</label>
-                                    <select name="license_expiry" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
-                                        <option value="">اختر</option>
-                                        <option selected value="بعد 12 ساعة اجباريا">بعد 12 ساعة اجباريا</option>
+                                    <select id="license_expiry_select" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76] mb-2">
+                                        <option value="بعد 12 ساعة اجباريا" selected>بعد 12 ساعة اجباريا</option>
+                                        <option value="manual">كتابة يدوية (أخرى)</option>
                                     </select>
+                                    <input type="text" id="license_expiry_manual" placeholder="اكتب التاريخ هنا..." class="hidden w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">تصريح العمل</label>
@@ -214,8 +218,25 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                             </p>
                         </div>
 
-                        <!-- Step 6: Area Manager Selection -->
+                        <!-- Step 6: Isolation Official Selection -->
                         <div class="step-content" data-step="6">
+                            <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">مسؤول العزل</h2>
+                            <div>
+                                <label class="block text-sm font-medium text-green-700 mb-2">اختر مسؤول العزل</label>
+                                <select id="official_selection" name="official_name" class="w-full">
+                                    <option value="">اختر المسؤول...</option>
+                                    <?php foreach ($officials as $off): ?>
+                                        <option value="<?= htmlspecialchars($off['name']) ?>" data-department="<?= htmlspecialchars($off['department']) ?>">
+                                            <?= htmlspecialchars($off['name']) ?> (<?= htmlspecialchars($off['department']) ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <input type="hidden" name="official_department" id="official_department">
+                            </div>
+                        </div>
+
+                        <!-- Step 7: Area Manager Selection -->
+                        <div class="step-content" data-step="7">
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">مسؤول المنطقة</h2>
                             <div>
                                 <label class="block text-sm font-medium text-green-700 mb-2">اختر مسؤول المنطقة</label>
@@ -238,7 +259,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             let currentStep = 1;
-            const totalSteps = 6;
+            const totalSteps = 7;
             const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
 
             // Equipment search and pagination state
@@ -260,6 +281,40 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 placeholder: 'اختر المسؤول...',
                 onChange: () => updateButtonStates()
             });
+
+            // Initialize TomSelect for Official
+            let officialSelect = new TomSelect('#official_selection', {
+                persist: false,
+                create: false,
+                placeholder: 'اختر مسؤول العزل...',
+                onChange: (value) => {
+                    const select = document.getElementById('official_selection');
+                    const selectedOption = Array.from(select.options).find(opt => opt.value === value);
+                    if (selectedOption) {
+                        document.getElementById('official_department').value = selectedOption.dataset.department;
+                    }
+                    updateButtonStates();
+                }
+            });
+
+
+            // Toggle Manual Expiry Input
+            const licenseExpirySelect = document.getElementById('license_expiry_select');
+            const licenseExpiryManual = document.getElementById('license_expiry_manual');
+
+            licenseExpirySelect.addEventListener('change', () => {
+                if (licenseExpirySelect.value === 'manual') {
+                    licenseExpiryManual.classList.remove('hidden');
+                    licenseExpiryManual.required = true;
+                } else {
+                    licenseExpiryManual.classList.add('hidden');
+                    licenseExpiryManual.required = false;
+                    licenseExpiryManual.value = '';
+                }
+                updateButtonStates();
+            });
+
+            licenseExpiryManual.addEventListener('input', updateButtonStates);
 
             // Staff dynamic inputs logic
             const staffContainer = document.getElementById('staff-container');
@@ -339,6 +394,8 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                        .filter(val => val !== '');
                     if (names.length === 0) return false;
                 } else if (step === 6) {
+                    if (!officialSelect.getValue()) return false;
+                } else if (step === 7) {
                     if (!managerSelect.getValue()) return false;
                 }
                 
@@ -377,7 +434,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 if (currentStep === 3) {
                     loadEquipments().then(() => updateButtonStates());
                 }
-                if (currentStep === 4 || currentStep === 5) {
+                if (currentStep >= 4) {
                     loadEligibleUsers().then(() => updateButtonStates());
                 }
                 
@@ -558,7 +615,9 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     equipment_section_id: formData.get('equipment_section_id'),
                     date: formData.get('date'),
                     reason: formData.get('reason'),
-                    license_expiry: formData.get('license_expiry'),
+                    license_expiry: document.getElementById('license_expiry_select').value === 'manual' 
+                                    ? document.getElementById('license_expiry_manual').value.trim() 
+                                    : document.getElementById('license_expiry_select').value,
                     work_permit: formData.get('work_permit'),
                     exact_location: formData.get('exact_location'),
                     requester_name: formData.get('requester_name'),
@@ -569,7 +628,9 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     staff: Array.from(document.querySelectorAll('.staff-name-input'))
                                 .map(input => input.value.trim())
                                 .filter(val => val !== ''),
-                    area_manager_id: managerSelect.getValue()
+                    area_manager_id: managerSelect.getValue(),
+                    official_name: officialSelect.getValue(),
+                    official_department: document.getElementById('official_department').value
                 };
 
                 // Get Energy Types

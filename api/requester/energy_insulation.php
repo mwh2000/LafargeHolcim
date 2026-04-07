@@ -55,6 +55,10 @@ try {
                 $res = $controller->confirmByIsolationOfficer((int)$input['license_id'], (int)$input['shift_leader_id'], $decoded->id);
             } elseif ($action === 'confirmByShiftLeader') {
                 $res = $controller->confirmByShiftLeader((int)$input['license_id'], $decoded->id);
+            } elseif ($action === 'amDone') {
+                $res = $controller->amDoneAction((int)$input['license_id'], $decoded->id);
+            } elseif ($action === 'removeIsolation') {
+                $res = $controller->removeIsolationAction((int)$input['license_id'], $decoded->id);
             } elseif ($action === 'reject') {
                 $res = $controller->rejectLicense((int)$input['license_id'], $input['reason'] ?? '', $decoded->id);
             } else {
