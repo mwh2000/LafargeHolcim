@@ -16,7 +16,7 @@ $conn = $database->getConnection();
 $auth = new AuthMiddleware();
 $decoded = $auth->verifyToken();
 // Only requester, area_manager, etc. can access
-$auth->requireRoles($decoded, ['requester', 'safety', 'area_manager', 'manager', 'shift leader', 'مسؤل العزل']);
+$auth->requireRoles($decoded, ['requester', 'safety', 'area_manager', 'manager', 'shift leader and issurs', 'مسؤل العزل']);
 
 $notificationController = new NotificationController($conn);
 $emailController = new EmailController($conn);
