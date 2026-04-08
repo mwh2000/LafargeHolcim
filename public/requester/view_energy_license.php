@@ -236,14 +236,14 @@ $userRole = $userData['role_id'] ?? 0;
 
             // Display who approved/signed this status
             statusByEl.textContent = '';
-            if (data.status === 'approved_by_am') {
+            if (data.status === 'pending') {
+                statusByEl.textContent = `بواسطة: ${data.requester_name || 'N/A'}`;
+            } else if (data.status === 'active_isolation' || data.status === 'completed' || data.status === 'rejected') {
+                statusByEl.textContent = `بواسطة: ${data.area_manager_name || 'N/A'}`;
+            } else if (data.status === 'approved_by_am') {
                 statusByEl.textContent = `بواسطة: ${data.area_manager_name || 'N/A'}`;
             } else if (data.status === 'reviewed_by_io') {
                 statusByEl.textContent = `بواسطة: ${data.isolation_officer_name || 'N/A'}`;
-            } else if (data.status === 'completed') {
-                statusByEl.textContent = `بواسطة: ${data.shift_leader_name || 'N/A'}`;
-            } else if (data.status === 'rejected') {
-                statusByEl.textContent = `بواسطة: ${data.area_manager_name || 'N/A'}`;
             }
 
             // Energy Types
