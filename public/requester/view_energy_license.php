@@ -242,8 +242,6 @@ $userRole = $userData['role_id'] ?? 0;
                 statusByEl.textContent = `بواسطة: ${data.area_manager_name || 'N/A'}`;
             } else if (data.status === 'approved_by_am') {
                 statusByEl.textContent = `بواسطة: ${data.area_manager_name || 'N/A'}`;
-            } else if (data.status === 'reviewed_by_io') {
-                statusByEl.textContent = `بواسطة: ${data.isolation_officer_name || 'N/A'}`;
             }
 
             // Energy Types
