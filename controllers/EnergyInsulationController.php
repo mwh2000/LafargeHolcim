@@ -160,7 +160,6 @@ class EnergyInsulationController
             FROM energy_insulation_license l
             LEFT JOIN users u ON l.created_by = u.id
             LEFT JOIN users am ON l.area_manager_id = am.id
-            LEFT JOIN users io ON l.isolation_officer_id = io.id
             LEFT JOIN users sl ON l.shift_leader_id = sl.id
             LEFT JOIN equipment_sections es ON l.equipment_section_id = es.id
             LEFT JOIN energy_insulation_officials off ON l.id = off.license_id
