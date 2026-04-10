@@ -21,10 +21,6 @@ return [
     "department" => "Maintenance"
   ],
   [
-    "name" => "Khalid Nasir Abbas Hussain Al-Shemari",
-    "department" => "Maintenance"
-  ],
-  [
     "name" => "Reda Mukhailif AbdullHasan Hussain Al-Khalidi",
     "department" => "Maintenance"
   ],
@@ -77,19 +73,11 @@ return [
     "department" => "Maintenance"
   ],
   [
-    "name" => "Waleed Yahya Jawad",
-    "department" => "Quarry & Crusher"
-  ],
-  [
     "name" => "Hayder Ali Hussein Almaliki",
     "department" => "Optimization"
   ],
   [
     "name" => "Bashir Hussain Aboud Jabr Al-Araji",
-    "department" => "Maintenance"
-  ],
-  [
-    "name" => "Haider Abdullah Taqi Sakhi Al-Sakhi",
     "department" => "Maintenance"
   ],
   [
@@ -102,38 +90,6 @@ return [
   ],
   [
     "name" => "Hazim Hammed Hamid Faris Jabawi",
-    "department" => "Production"
-  ],
-  [
-    "name" => "Hamid Khadum Soud Sathaa Al-Soud",
-    "department" => "Environment"
-  ],
-  [
-    "name" => "Laith Lafta Fahad Aliwi Al-Oaidi",
-    "department" => "Production"
-  ],
-  [
-    "name" => "Yass Khudair Ashour Khalil Rahimi",
-    "department" => "Production"
-  ],
-  [
-    "name" => "Ahmed Hatem Maan Alsaeedi",
-    "department" => "Production"
-  ],
-  [
-    "name" => "Muntadher Salim Mahdi",
-    "department" => "Production"
-  ],
-  [
-    "name" => "Anwer Muneer Abduljabbar",
-    "department" => "Production"
-  ],
-  [
-    "name" => "Mohammed Jasim AbdullHussain Salman",
-    "department" => "Production"
-  ],
-  [
-    "name" => "Muzahim Abbas Hussain Humadi Al-Dwali",
     "department" => "Production"
   ],
   [
@@ -159,9 +115,5 @@ return [
   [
     "name" => "Ali Adana Abdullah",
     "department" => "Maintenance"
-  ],
-  [
-    "name" => "Munaf AbdullAmir Mohammed Ali Al-Saadi",
-    "department" => "Production"
   ]
 ];

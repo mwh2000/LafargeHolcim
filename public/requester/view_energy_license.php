@@ -14,6 +14,7 @@ if (!$licenseId) {
 $userData = json_decode($_COOKIE['user_data'] ?? '{}', true);
 $userId = $userData['id'] ?? 0;
 $userRole = $userData['role_id'] ?? 0;
+$userName = $userData['name'] ?? 'N/A';
 ?>
 
 <!DOCTYPE html>
@@ -49,7 +50,9 @@ $userRole = $userData['role_id'] ?? 0;
             #val-equipments { grid-template-cols: repeat(2, minmax(0, 1fr)) !important; gap: 0.25rem !important; }
             #val-equipments img { height: 30px !important; width: 30px !important; }
             #val-equipments div p { font-size: 8pt !important; }
+            .print-only { display: block !important; }
         }
+        .print-only { display: none; }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -64,14 +67,12 @@ $userRole = $userData['role_id'] ?? 0;
                         <h1 class="text-xl md:text-2xl font-semibold text-gray-700 text-right order-1 md:order-2">تفاصيل رخصة عزل الطاقة</h1>
                         
                         <div class="flex flex-wrap items-center gap-3 order-2 md:order-1">
-                            <?php if (in_array($userRole, [2, 3])): ?>
-                                <button onclick="window.print()" class="flex items-center gap-2 bg-white border border-red-500 text-red-600 px-3 py-1.5 md:px-4 md:py-2 rounded-md hover:bg-red-50 transition text-sm md:text-base font-medium shadow-sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <span>تحميل PDF</span>
-                                </button>
-                            <?php endif; ?>
+                            <button onclick="window.print()" class="flex items-center gap-2 bg-white border border-red-500 text-red-600 px-3 py-1.5 md:px-4 md:py-2 rounded-md hover:bg-red-50 transition text-sm md:text-base font-medium shadow-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span>تحميل PDF</span>
+                            </button>
 
                             <div class="text-right">
                                 <span id="license-status" class="px-3 py-1 rounded-full text-[10px] md:text-sm font-medium"></span>
@@ -104,7 +105,7 @@ $userRole = $userData['role_id'] ?? 0;
                                 <div><span class="text-gray-500">تصريح العمل:</span> <span id="val-permit" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">طالب العزل:</span> <span id="val-requester" class="font-medium font-bold text-blue-600"></span></div>
                                 <div><span class="text-gray-500">مسؤول المنطقة:</span> <span id="val-am" class="font-medium"></span></div>
-                                <div><span class="text-gray-500">مسؤول العزل:</span> <span id="val-official" class="font-medium text-green-700"></span></div>
+                                <div><span class="text-gray-500">اسم العازل:</span> <span id="val-official" class="font-medium text-green-700"></span></div>
                                 <div id="am-approved-container" class="hidden"><span class="text-gray-500">تاريخ تأكيد العزل:</span> <span id="val-am-approved-at" class="font-medium text-blue-600"></span></div>
                                 <div id="end-at-container" class="hidden"><span class="text-gray-500">تاريخ فك العزل:</span> <span id="val-end-at" class="font-medium text-green-600"></span></div>
                             </div>
@@ -141,13 +142,29 @@ $userRole = $userData['role_id'] ?? 0;
 
                         <!-- Requester Removal Section -->
                         <div id="requester-action-section" class="hidden bg-green-50 p-6 rounded-lg shadow-md border border-green-200">
-                            <h2 class="text-lg font-bold text-green-800 mb-4 text-right" dir="rtl">فك العزل</h2>
+                            <h2 class="text-lg font-bold text-green-800 mb-4 text-right" dir="rtl">فك العزل - <?= $userName ?></h2>
                             <div class="space-y-4 text-right" dir="rtl">
                                 <p class="text-sm text-green-700">المصادقه على الترخيص للعمل بعد التأكد من تجربة التشغيل للمعده من الموقع.</p>
-                                <button id="removeIsolationBtn" class="w-full bg-green-600 text-white py-3 rounded-md hover:bg-green-700 transition font-bold text-lg">فك العزل / Remove Isolation</button>
+                                
+                                <label class="flex items-center gap-3 justify-start cursor-pointer group" dir="rtl">
+                                    <input type="checkbox" id="permitWorkCb" class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                                    <span class="text-sm font-medium text-gray-700 group-hover:text-green-700 transition-colors">يسمح بالعمل</span>
+                                </label>
+
+                                <button id="removeIsolationBtn" disabled class="w-full bg-green-600 text-white py-3 rounded-md hover:bg-green-700 transition font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                                    فك العزل
+                                </button>
                             </div>
                         </div>
 
+
+                        <!-- Print Completion Confirmation (Visible in PDF when completed) -->
+                        <div id="print-completion-card" class="hidden print-only bg-white p-6 rounded-lg shadow-md border-t-4 border-green-600 mt-6">
+                            <div class="text-right" dir="rtl">
+                                <p class="text-sm font-bold text-green-800 italic mb-2">المصادقه على الترخيص للعمل بعد التأكد من تجربة التشغيل للمعده من الموقع</p>
+                                <p class="text-sm text-gray-700">تم فك العزل بواسطة: <span id="val-remover-name" class="font-bold border-b border-gray-400 pb-0.5"></span></p>
+                            </div>
+                        </div>
 
                     </div>
                 </div>
@@ -159,6 +176,7 @@ $userRole = $userData['role_id'] ?? 0;
         const LICENSE_ID = "<?= $licenseId ?>";
         const CURRENT_USER_ID = "<?= $userId ?>";
         const CURRENT_USER_ROLE = "<?= $userRole ?>";
+        const CURRENT_USER_NAME = "<?= $userName ?>";
         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
         const API_BASE = "../../api/requester/energy_insulation.php";
 
@@ -166,6 +184,15 @@ $userRole = $userData['role_id'] ?? 0;
 
         document.addEventListener('DOMContentLoaded', async () => {
             await loadLicenseData();
+
+            // Handle work permit checkbox
+            const permitCb = document.getElementById('permitWorkCb');
+            const removeBtn = document.getElementById('removeIsolationBtn');
+            if (permitCb && removeBtn) {
+                permitCb.addEventListener('change', (e) => {
+                    removeBtn.disabled = !e.target.checked;
+                });
+            }
         });
 
         async function loadLicenseData() {
@@ -282,6 +309,15 @@ $userRole = $userData['role_id'] ?? 0;
                 });
             } else {
                 staffContainer.innerHTML = '<p class="text-gray-400 italic text-sm">لا يوجد طاقم عمل مسجل</p>';
+            }
+
+            // Print Completion Section
+            if (data.status === 'completed') {
+                const pcCard = document.getElementById('print-completion-card');
+                if (pcCard) {
+                    pcCard.classList.remove('hidden');
+                    document.getElementById('val-remover-name').textContent = data.requester_name;
+                }
             }
         }
 
