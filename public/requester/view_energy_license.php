@@ -143,7 +143,7 @@ $userRole = $userData['role_id'] ?? 0;
                         <div id="requester-action-section" class="hidden bg-green-50 p-6 rounded-lg shadow-md border border-green-200">
                             <h2 class="text-lg font-bold text-green-800 mb-4 text-right" dir="rtl">فك العزل</h2>
                             <div class="space-y-4 text-right" dir="rtl">
-                                <p class="text-sm text-green-700">تم إكمال العمل؟ يمكنك الآن فك العزل.</p>
+                                <p class="text-sm text-green-700">المصادقه على الترخيص للعمل بعد التأكد من تجربة التشغيل للمعده من الموقع.</p>
                                 <button id="removeIsolationBtn" class="w-full bg-green-600 text-white py-3 rounded-md hover:bg-green-700 transition font-bold text-lg">فك العزل / Remove Isolation</button>
                             </div>
                         </div>

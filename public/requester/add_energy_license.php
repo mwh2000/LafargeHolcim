@@ -77,7 +77,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                         <div class="step-indicator px-2 transition-all duration-300" data-step="3">المعدات</div>
                         <div class="step-indicator px-2 transition-all duration-300" data-step="4">طاقم العمل</div>
                         <div class="step-indicator px-2 transition-all duration-300" data-step="5">السلامة</div>
-                        <div class="step-indicator px-2 transition-all duration-300" data-step="6">مسؤول العزل</div>
+                        <div class="step-indicator px-2 transition-all duration-300" data-step="6">اسم العازل</div>
                         <div class="step-indicator px-2 transition-all duration-300" data-step="7">المسؤول</div>
                     </div>
 
@@ -220,11 +220,11 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
                         <!-- Step 6: Isolation Official Selection -->
                         <div class="step-content" data-step="6">
-                            <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">مسؤول العزل</h2>
+                            <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">اسم العازل</h2>
                             <div>
-                                <label class="block text-sm font-medium text-green-700 mb-2">اختر مسؤول العزل</label>
+                                <label class="block text-sm font-medium text-green-700 mb-2">اختر العازل</label>
                                 <select id="official_selection" name="official_name" class="w-full">
-                                    <option value="">اختر المسؤول...</option>
+                                    <option value="">اختر العازل...</option>
                                     <?php foreach ($officials as $off): ?>
                                         <option value="<?= htmlspecialchars($off['name']) ?>" data-department="<?= htmlspecialchars($off['department']) ?>">
                                             <?= htmlspecialchars($off['name']) ?> (<?= htmlspecialchars($off['department']) ?>)

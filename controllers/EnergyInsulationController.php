@@ -156,7 +156,8 @@ class EnergyInsulationController
     {
         $stmt = $this->conn->prepare("
             SELECT l.*, u.name AS creator_name, am.name AS area_manager_name, 
-                   off.name AS official_name, off.department AS official_department
+                   off.name AS official_name, off.department AS official_department,
+                   es.name AS section_name
             FROM energy_insulation_license l
             LEFT JOIN users u ON l.created_by = u.id
             LEFT JOIN users am ON l.area_manager_id = am.id
