@@ -20,7 +20,7 @@ $conn = $database->getConnection();
 
 $auth = new AuthMiddleware();
 $decoded = $auth->verifyToken();
-$auth->requireRoles($decoded, ['requester', 'safety', 'area_manager', 'manager', 'plant manager']);
+$auth->requireRoles($decoded, ['requester', 'safety', 'area_manager', 'manager', 'plant manager', 'shift leader and issurs']);
 
 $service = new ActionService($conn);
 $controller = new ActionController($conn);
