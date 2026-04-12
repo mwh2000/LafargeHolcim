@@ -107,7 +107,7 @@ $userName = $userData['name'] ?? 'N/A';
                                 <div><span class="text-gray-500">مسؤول المنطقة:</span> <span id="val-am" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">اسم العازل:</span> <span id="val-official" class="font-medium text-green-700"></span></div>
                                 <div id="am-approved-container" class="hidden"><span class="text-gray-500">تاريخ تأكيد العزل:</span> <span id="val-am-approved-at" class="font-medium text-blue-600"></span></div>
-                                <div id="end-at-container" class="hidden"><span class="text-gray-500">تاريخ فك العزل:</span> <span id="val-end-at" class="font-medium text-green-600"></span></div>
+                                <div id="end-at-container" class="hidden"><span class="text-gray-500">تاريخ رفع العزل:</span> <span id="val-end-at" class="font-medium text-green-600"></span></div>
                             </div>
                         </div>
 
@@ -129,30 +129,59 @@ $userName = $userData['name'] ?? 'N/A';
                             <div id="val-staff" class="flex flex-wrap gap-2 justify-start" dir="rtl"></div>
                         </div>
 
+                        <!-- Isolation Done Info Card -->
+                        <div id="isolation-done-card" class="hidden bg-white p-6 rounded-lg shadow-md border-t-4 border-green-600">
+                             <h2 class="text-lg font-bold text-green-700 mb-4 border-b pb-2 text-right" dir="rtl">تم العزل</h2>
+                             <div class="space-y-4 text-right" dir="rtl">
+                                 <p class="text-sm text-gray-700 font-medium">المصادقه على الترخيص للعمل بعد التأكد من تجربة التشغيل للمعده من الموقع</p>
+                                 <div class="flex flex-col gap-1">
+                                     <span class="text-[10px] text-gray-400">بواسطة مسؤول العزل</span>
+                                     <span id="val-iso-done-by" class="text-sm font-bold text-green-800"></span>
+                                 </div>
+                             </div>
+                        </div>
+
+                        <!-- Isolation Removed Info Card -->
+                        <div id="isolation-removed-card" class="hidden bg-white p-6 rounded-lg shadow-md border-t-4 border-blue-600">
+                             <h2 class="text-lg font-bold text-blue-700 mb-4 border-b pb-2 text-right" dir="rtl">طالب رفع العزل</h2>
+                             <div class="space-y-4 text-right" dir="rtl">
+                                 <p class="text-sm text-gray-700 font-medium">تم الانتهاء من العمل على المعده وتم ازالة كافة الاقفال الشخصية الخاصه للمجموعه وتم تنصيب كافة الواقيات وتنظيف المكان</p>
+                                 <div class="flex flex-col gap-1">
+                                     <span class="text-[10px] text-gray-400">تم رفع العزل بواسطة</span>
+                                     <span id="val-iso-removed-by" class="text-sm font-bold text-blue-800"></span>
+                                 </div>
+                             </div>
+                        </div>
+
 
 
                         <!-- AM Done Section -->
                         <div id="am-action-section" class="hidden bg-yellow-50 p-6 rounded-lg shadow-md border border-yellow-200">
-                            <h2 class="text-lg font-bold text-yellow-800 mb-4 text-right" dir="rtl">إجراءات مسؤول المنطقة</h2>
+                            <h2 class="text-lg font-bold text-yellow-800 mb-4 text-right" dir="rtl">إجراءات مسؤول العزل</h2>
                             <div class="space-y-4 text-right" dir="rtl">
-                                <p class="text-sm text-yellow-700">الرجاء التأكد من العزل قبل الضغط على Done.</p>
+                                <p class="text-sm text-yellow-700">المصادقه على الترخيص للعمل بعد التأكد من تجربة التشغيل للمعده من الموقع</p>
                                 <button id="amDoneBtn" class="w-full bg-[#0b6f76] text-white py-3 rounded-md hover:bg-[#085a60] transition font-bold text-lg">Done / تم العزل</button>
                             </div>
                         </div>
 
                         <!-- Requester Removal Section -->
                         <div id="requester-action-section" class="hidden bg-green-50 p-6 rounded-lg shadow-md border border-green-200">
-                            <h2 class="text-lg font-bold text-green-800 mb-4 text-right" dir="rtl">فك العزل - <?= $userName ?></h2>
+                            <h2 class="text-lg font-bold text-green-800 mb-4 text-right" dir="rtl">طلب رفع العزل - <?= $userName ?></h2>
                             <div class="space-y-4 text-right" dir="rtl">
-                                <p class="text-sm text-green-700">المصادقه على الترخيص للعمل بعد التأكد من تجربة التشغيل للمعده من الموقع.</p>
+                                <p class="text-sm text-green-700">تم الانتهاء من العمل على المعده وتم ازالة كافة الاقفال الشخصية الخاصه للمجموعه وتم تنصيب كافة الواقيات وتنظيف المكان</p>
                                 
                                 <label class="flex items-center gap-3 justify-start cursor-pointer group" dir="rtl">
                                     <input type="checkbox" id="permitWorkCb" class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
-                                    <span class="text-sm font-medium text-gray-700 group-hover:text-green-700 transition-colors">يسمح بالعمل</span>
+                                    <span class="text-sm font-medium text-gray-700 group-hover:text-green-700 transition-colors">اطلب رفع العزل بعد ان تم التأكيد من العزل</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 justify-start cursor-pointer group" dir="rtl">
+                                    <input type="checkbox" id="removeSectionLockCb" class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                                    <span class="text-sm font-medium text-gray-700 group-hover:text-green-700 transition-colors">اطلب اطلب ادالة قفل القسم  من صندوق العزل</span>
                                 </label>
 
                                 <button id="removeIsolationBtn" disabled class="w-full bg-green-600 text-white py-3 rounded-md hover:bg-green-700 transition font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed">
-                                    فك العزل
+                                    رفع العزل
                                 </button>
                             </div>
                         </div>
@@ -162,7 +191,7 @@ $userName = $userData['name'] ?? 'N/A';
                         <div id="print-completion-card" class="hidden print-only bg-white p-6 rounded-lg shadow-md border-t-4 border-green-600 mt-6">
                             <div class="text-right" dir="rtl">
                                 <p class="text-sm font-bold text-green-800 italic mb-2">المصادقه على الترخيص للعمل بعد التأكد من تجربة التشغيل للمعده من الموقع</p>
-                                <p class="text-sm text-gray-700">تم فك العزل بواسطة: <span id="val-remover-name" class="font-bold border-b border-gray-400 pb-0.5"></span></p>
+                                <p class="text-sm text-gray-700">تم رفع العزل بواسطة: <span id="val-remover-name" class="font-bold border-b border-gray-400 pb-0.5"></span></p>
                             </div>
                         </div>
 
@@ -187,11 +216,14 @@ $userName = $userData['name'] ?? 'N/A';
 
             // Handle work permit checkbox
             const permitCb = document.getElementById('permitWorkCb');
+            const removeSectionLockCb = document.getElementById('removeSectionLockCb');
             const removeBtn = document.getElementById('removeIsolationBtn');
-            if (permitCb && removeBtn) {
-                permitCb.addEventListener('change', (e) => {
-                    removeBtn.disabled = !e.target.checked;
-                });
+            if (permitCb && removeSectionLockCb && removeBtn) {
+                const updateBtnState = () => {
+                    removeBtn.disabled = !(permitCb.checked && removeSectionLockCb.checked);
+                };
+                permitCb.addEventListener('change', updateBtnState);
+                removeSectionLockCb.addEventListener('change', updateBtnState);
             }
         });
 
@@ -241,7 +273,7 @@ $userName = $userData['name'] ?? 'N/A';
             if (sectionEl) sectionEl.textContent = data.section_name;
             document.getElementById('val-reason').textContent = data.reason;
             document.getElementById('val-permit').textContent = data.work_permit;
-            document.getElementById('val-requester').textContent = data.requester_name;
+            document.getElementById('val-requester').textContent = data.creator_name;
             document.getElementById('val-am').textContent = data.area_manager_name;
             document.getElementById('val-official').textContent = `${data.official_name} (${data.official_department})`;
 
@@ -264,7 +296,7 @@ $userName = $userData['name'] ?? 'N/A';
             // Display who approved/signed this status
             statusByEl.textContent = '';
             if (data.status === 'pending') {
-                statusByEl.textContent = `بواسطة: ${data.requester_name || 'N/A'}`;
+                statusByEl.textContent = `بواسطة: ${data.creator_name || 'N/A'}`;
             } else if (data.status === 'active_isolation' || data.status === 'completed' || data.status === 'rejected') {
                 statusByEl.textContent = `بواسطة: ${data.area_manager_name || 'N/A'}`;
             } else if (data.status === 'approved_by_am') {
@@ -311,12 +343,30 @@ $userName = $userData['name'] ?? 'N/A';
                 staffContainer.innerHTML = '<p class="text-gray-400 italic text-sm">لا يوجد طاقم عمل مسجل</p>';
             }
 
+            // Isolation Done Card
+            if (data.status === 'active_isolation' || data.status === 'completed') {
+                const isoDoneCard = document.getElementById('isolation-done-card');
+                if (isoDoneCard) {
+                    isoDoneCard.classList.remove('hidden');
+                    document.getElementById('val-iso-done-by').textContent = data.area_manager_name || 'N/A';
+                }
+            }
+
+            // Isolation Removed Card
+            if (data.status === 'completed' && CURRENT_USER_ROLE != '3') {
+                const isoRemovedCard = document.getElementById('isolation-removed-card');
+                if (isoRemovedCard) {
+                    isoRemovedCard.classList.remove('hidden');
+                    document.getElementById('val-iso-removed-by').textContent = data.creator_name || 'N/A';
+                }
+            }
+
             // Print Completion Section
-            if (data.status === 'completed') {
+            if (data.status === 'completed' && CURRENT_USER_ROLE != '3') {
                 const pcCard = document.getElementById('print-completion-card');
                 if (pcCard) {
                     pcCard.classList.remove('hidden');
-                    document.getElementById('val-remover-name').textContent = data.requester_name;
+                    document.getElementById('val-remover-name').textContent = data.creator_name;
                 }
             }
         }
@@ -361,11 +411,11 @@ $userName = $userData['name'] ?? 'N/A';
         // Requester Removal Button Logic
         document.getElementById('removeIsolationBtn').addEventListener('click', async () => {
             const result = await Swal.fire({
-                title: 'تأكيد فك العزل',
-                text: 'تم فك العزل وارجاع الطاقات الى حالة التشغيل من قبل العازل',
+                title: 'تأكيد رفع العزل',
+                text: 'تم رفع العزل وارجاع الطاقات الى حالة التشغيل من قبل العازل',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: 'نعم، تأكيد فك العزل',
+                confirmButtonText: 'نعم، تأكيد رفع العزل',
                 cancelButtonText: 'إلغاء',
                 confirmButtonColor: '#059669'
             });

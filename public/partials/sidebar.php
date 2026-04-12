@@ -53,9 +53,17 @@ function renderSidebar($activePage = '')
       'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h.01M9 16h.01M9 8h.01M13 12h3M13 16h3M13 8h3m-7 11h10a2 2 0 002-2V7a2 2 0 00-2-2H9a2 2 0 00-2 2v10a2 2 0 002 2z" />',
       'type' => 'group',
       'sub_links' => [
+        'permit_dashboard' => [
+          'label' => 'Dashboard',
+          'href' => BASE_URL . '/public/permit_dashboard.php',
+        ],
         'energy_isolation' => [
           'label' => 'Energy Isolation',
           'href' => BASE_URL . '/public/requester/add_energy_license.php',
+        ],
+        'all_permits' => [
+          'label' => 'All Permits',
+          'href' => BASE_URL . '/public/permits.php',
         ],
       ]
     ],
@@ -73,7 +81,7 @@ function renderSidebar($activePage = '')
     3 => ['dashboard', 'create_action', 'actions_assigned_to_me', 'actions_created_by_me', 'permit'], // Area Manager
     4 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action'], // Safety
     5 => ['dashboard', 'create_action', 'actions_assigned_to_me', 'actions_created_by_me', 'permit'], // Manager
-    6 => ['dashboard', 'create_action', 'energy_Isolation'], // Plant Manager
+    6 => ['dashboard', 'create_action', 'permit', 'energy_Isolation'], // Plant Manager
     7 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action', 'permit'], // Shift Leader
     8 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action'], // Isolation Officer
   ];
@@ -94,7 +102,7 @@ function renderSidebar($activePage = '')
 
   <!-- Sidebar -->
   <aside id="sidebar"
-    class="bg-white shadow-sm sm:m-6 sm:rounded-3xl border-r border-gray-200 h-[calc(100vh-64px)] sm:min-h-100vh w-64 fixed top-18 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-50">
+    class="bg-white shadow-sm sm:m-6 sm:rounded-3xl border-r border-gray-200 h-[calc(100vh-64px)] sm:min-h-100vh w-64 fixed top-18 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-50 overflow-y-auto">
     <div class="p-6">
       <div class="space-y-2">
         <?php foreach ($links as $key => $link):

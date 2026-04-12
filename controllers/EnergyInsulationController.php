@@ -328,7 +328,7 @@ class EnergyInsulationController
                 // Send Notification and Email to Requester
                 if ($this->notificationController) {
                     $title = "تم العزل - Isolation Active";
-                    $body = "قام مسؤول المنطقة بتأكيد العزل للمعدة: " . ($license['equipment_name'] ?? 'N/A');
+                    $body = "قام مسؤول العزل بتأكيد العزل للمعدة: " . ($license['equipment_name'] ?? 'N/A');
                     $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
                     
                     $this->notificationController->sendNotification($title, $body, [$license['created_by']], $url, $userId);
@@ -363,8 +363,8 @@ class EnergyInsulationController
             if ($success) {
                 // Send Notification and Email to Area Manager
                 if ($this->notificationController && !empty($license['area_manager_id'])) {
-                    $title = "تم فك العزل - Isolation Removed";
-                    $body = "قام طالب الرخصة بفك العزل للمعدة: " . ($license['equipment_name'] ?? 'N/A');
+                    $title = "تم رفع العزل - Isolation Removed";
+                    $body = "قام طالب الرخصة برفع العزل للمعدة: " . ($license['equipment_name'] ?? 'N/A');
                     $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
                     
                     $this->notificationController->sendNotification($title, $body, [$license['area_manager_id']], $url, $userId);
@@ -373,9 +373,9 @@ class EnergyInsulationController
                         $this->emailController->sendEmail($title, $body, [$license['area_manager_id']]);
                     }
                 }
-                return $this->respond(true, 'تم فك العزل بنجاح');
+                return $this->respond(true, 'تم رفع العزل بنجاح');
             }
-            return $this->respond(false, 'فشل فك العزل', null, ['code' => 500], 500);
+            return $this->respond(false, 'فشل رفع العزل', null, ['code' => 500], 500);
         } catch (Exception $e) {
             return $this->respond(false, 'Error: ' . $e->getMessage(), null, ['code' => 500], 500);
         }
@@ -415,5 +415,116 @@ class EnergyInsulationController
             return $this->respond(true, 'License rejected successfully');
         }
         return $this->respond(false, 'Failed to reject license', null, ['code' => 500], 500);
+    }
+
+    public function getStatistics(array $filters)
+    {
+        try {
+            $query = "SELECT 
+                        COUNT(*) as total,
+                        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                        SUM(CASE WHEN status = 'active_isolation' THEN 1 ELSE 0 END) as active_isolation,
+                        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
+                      FROM energy_insulation_license WHERE 1=1";
+            
+            $params = [];
+            
+            if (!empty($filters['from_date'])) {
+                $query .= " AND date >= ?";
+                $params[] = $filters['from_date'];
+            }
+            if (!empty($filters['to_date'])) {
+                $query .= " AND date <= ?";
+                $params[] = $filters['to_date'];
+            }
+
+            // Role-based filtering
+            $userRole = (int)$filters['role_id'];
+            $userId = (int)$filters['user_id'];
+            
+            if (!in_array($userRole, [1, 6])) {
+                // Roles 7, 3, 5 see only permits assigned to them as Area Manager
+                // Or if they created it.
+                $query .= " AND (area_manager_id = ? OR created_by = ?)";
+                $params[] = $userId;
+                $params[] = $userId;
+            }
+
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute($params);
+            $stats = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $this->respond(true, 'Statistics retrieved successfully', [
+                'total' => (int)$stats['total'],
+                'pending' => (int)$stats['pending'],
+                'active_isolation' => (int)$stats['active_isolation'],
+                'completed' => (int)$stats['completed']
+            ]);
+        } catch (Exception $e) {
+            return $this->respond(false, 'Failed to fetch statistics: ' . $e->getMessage(), null, ['code' => 500], 500);
+        }
+    }
+
+    public function getAllLicenses(array $filters)
+    {
+        try {
+            $page = isset($filters['page']) ? (int)$filters['page'] : 1;
+            $limit = isset($filters['limit']) ? (int)$filters['limit'] : 10;
+            $offset = ($page - 1) * $limit;
+
+            $where = " WHERE 1=1";
+            $params = [];
+            
+            if (!empty($filters['status'])) {
+                $where .= " AND l.status = ?";
+                $params[] = $filters['status'];
+            }
+            if (!empty($filters['from_date'])) {
+                $where .= " AND l.date >= ?";
+                $params[] = $filters['from_date'];
+            }
+            if (!empty($filters['to_date'])) {
+                $where .= " AND l.date <= ?";
+                $params[] = $filters['to_date'];
+            }
+
+            // Role-based filtering
+            $userRole = (int)$filters['role_id'];
+            $userId = (int)$filters['user_id'];
+            
+            if (!in_array($userRole, [1, 6])) {
+                $where .= " AND (l.area_manager_id = ? OR l.created_by = ?)";
+                $params[] = $userId;
+                $params[] = $userId;
+            }
+
+            // Get total count
+            $countQuery = "SELECT COUNT(*) as total FROM energy_insulation_license l $where";
+            $countStmt = $this->conn->prepare($countQuery);
+            $countStmt->execute($params);
+            $total = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+            $query = "SELECT l.*, es.name as section_name, am.name as area_manager_name 
+                      FROM energy_insulation_license l
+                      LEFT JOIN equipment_sections es ON l.equipment_section_id = es.id
+                      LEFT JOIN users am ON l.area_manager_id = am.id
+                      $where
+                      ORDER BY l.id DESC
+                      LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
+
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute($params);
+            $licenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return $this->respond(true, 'Licenses retrieved successfully', [
+                'licenses' => $licenses,
+                'total' => $total,
+                'page' => $page,
+                'limit' => $limit,
+                'total_pages' => ceil($total / $limit)
+            ]);
+        } catch (Exception $e) {
+            return $this->respond(false, 'Failed to fetch licenses: ' . $e->getMessage(), null, ['code' => 500], 500);
+        }
     }
 }

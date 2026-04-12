@@ -1,0 +1,214 @@
+<?php
+require_once __DIR__ . '/../core/Database.php';
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/partials/sidebar.php';
+require_once __DIR__ . '/partials/navbar.php';
+require_once __DIR__ . '/helpers/authCheck.php';
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <title>KCML / SLV | Permits List</title>
+</head>
+
+<body class="bg-gray-50">
+
+    <?php renderNavbar('Energy Isolation Permits'); ?>
+
+    <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]">
+        <?php renderSidebar('all_permits'); ?>
+
+        <div class="flex-1 flex flex-col sm:ml-64 transition-all">
+            <main class="flex-1 overflow-y-auto p-8 md:pl-12">
+
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+                    <h1 class="text-2xl font-semibold text-gray-700">Permits List</h1>
+                    
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <button id="resetFilters"
+                            class="hidden text-gray-500 hover:text-gray-700 px-4 py-2 text-sm font-medium">
+                            Clear Filters
+                        </button>
+                        <select id="statusFilter" class="border px-4 py-2 rounded-md text-sm">
+                            <option value="">All Status</option>
+                            <option value="pending">Open</option>
+                            <option value="active_isolation">Active Isolation</option>
+                            <option value="completed">Completed (Isolation Removed)</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+
+                        <button onclick="location.href='requester/add_energy_license.php'"
+                            class="bg-[#0b6f76] text-white px-4 py-2 rounded-md text-sm hover:bg-opacity-90">
+                            + New Permit
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+                    <table class="min-w-full text-sm text-left text-gray-600">
+                        <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
+                            <tr>
+                                <th class="px-6 py-3">Equipment</th>
+                                <th class="px-6 py-3">Section</th>
+                                <th class="px-6 py-3">Requester</th>
+                                <th class="px-6 py-3">Area Manager</th>
+                                <th class="px-6 py-3">Created Date</th>
+                                <th class="px-6 py-3 text-blue-600">Isolation confirmation</th>
+                                <th class="px-6 py-3 text-green-600">Isolation removal</th>
+                                <th class="px-6 py-3">Status</th>
+                                <th class="px-6 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="permitsTableBody">
+                            <tr>
+                                <td colspan="9" class="text-center py-4 text-gray-500">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Component -->
+                <div id="pagination" class="flex justify-between items-center bg-white p-4 mt-4 rounded-lg shadow-sm">
+                    <span id="pageInfo" class="text-sm text-gray-500">Page 1 of 1</span>
+                    <div class="flex gap-2">
+                        <button id="prevPage" disabled class="px-4 py-2 border rounded-md text-sm hover:bg-gray-50 disabled:opacity-50 transition">Previous</button>
+                        <button id="nextPage" disabled class="px-4 py-2 border rounded-md text-sm hover:bg-gray-50 disabled:opacity-50 transition">Next</button>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
+        const API_URL = "../api/requester/energy_insulation.php";
+
+        function getStatusText(status) {
+            const map = {
+                'pending': 'Open',
+                'active_isolation': 'Active Isolation',
+                'rejected': 'Rejected',
+                'completed': 'Completed (Isolation Removed)'
+            };
+            return map[status] || status;
+        }
+
+        function getStatusClass(status) {
+            const map = {
+                'pending': 'bg-yellow-100 text-yellow-800',
+                'active_isolation': 'bg-blue-100 text-blue-800',
+                'rejected': 'bg-red-100 text-red-800',
+                'completed': 'bg-green-100 text-green-800'
+            };
+            return map[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        let currentPage = 1;
+        const PAGE_LIMIT = 10;
+
+        async function fetchPermits(page = 1) {
+            currentPage = page;
+            const params = new URLSearchParams(window.location.search);
+            params.set("action", "getAll");
+            params.set("page", currentPage);
+            params.set("limit", PAGE_LIMIT);
+
+            try {
+                const response = await fetch(`${API_URL}?${params.toString()}`, {
+                    headers: { "Authorization": `Bearer ${TOKEN}` }
+                });
+                const result = await response.json();
+                if (!result.success) throw new Error(result.message);
+
+                renderPermits(result.data.licenses);
+                updatePaginationControls(result.data);
+            } catch (error) {
+                document.getElementById('permitsTableBody').innerHTML = `
+                    <tr><td colspan="9" class="text-center py-4 text-red-500">${error.message}</td></tr>`;
+            }
+        }
+
+        function updatePaginationControls(data) {
+            const { page, total_pages } = data;
+            document.getElementById('pageInfo').textContent = `Page ${page} of ${total_pages || 1}`;
+            
+            const prevBtn = document.getElementById('prevPage');
+            const nextBtn = document.getElementById('nextPage');
+
+            prevBtn.disabled = page <= 1;
+            nextBtn.disabled = page >= total_pages;
+
+            prevBtn.onclick = () => fetchPermits(page - 1);
+            nextBtn.onclick = () => fetchPermits(page + 1);
+        }
+
+        function renderPermits(permits) {
+            const tbody = document.getElementById('permitsTableBody');
+            tbody.innerHTML = '';
+
+            if (!permits || !permits.length) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-gray-400">No permits found</td></tr>';
+                return;
+            }
+
+            permits.forEach(p => {
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 font-medium text-gray-900">${p.equipment_name} <br> <span class="text-xs text-gray-400">${p.equipment_no}</span></td>
+                        <td class="px-6 py-4">${p.section_name || '-'}</td>
+                        <td class="px-6 py-4">${p.creator_name || p.requester_name}</td>
+                        <td class="px-6 py-4">${p.area_manager_name || '-'}</td>
+                        <td class="px-6 py-4">${p.date}</td>
+                        <td class="px-6 py-4 text-xs font-semibold text-blue-800">${p.am_approved_at || '-'}</td>
+                        <td class="px-6 py-4 text-xs font-semibold text-green-800">${p.isolation_removed_at || '-'}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 rounded-full text-[10px] font-bold ${getStatusClass(p.status)}">
+                                ${getStatusText(p.status)}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <a href="requester/view_energy_license.php?id=${p.id}"
+                               class="text-[#0b6f76] hover:underline font-medium">
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.getElementById('statusFilter').addEventListener('change', e => {
+            const params = new URLSearchParams(window.location.search);
+            if (e.target.value) params.set('status', e.target.value);
+            else params.delete('status');
+            window.location.search = params.toString();
+        });
+
+        document.getElementById('resetFilters').addEventListener('click', () => {
+            window.location.href = 'permits.php';
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const params = new URLSearchParams(window.location.search);
+            const status = params.get('status');
+            document.getElementById('statusFilter').value = status || '';
+            
+            if (status) {
+                document.getElementById('resetFilters').classList.remove('hidden');
+            }
+
+            fetchPermits();
+        });
+    </script>
+
+</body>
+
+</html>
