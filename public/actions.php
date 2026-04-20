@@ -48,26 +48,101 @@ require_once 'helpers/authCheck.php';
                     <table class="min-w-full text-sm text-left text-gray-600">
                         <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
                             <tr>
-                                <th class="px-6 py-3">Action</th>
-                                <th class="px-6 py-3">Created by</th>
-                                <th class="px-6 py-3">By Group</th>
-                                <th class="px-6 py-3">Assigned to</th>
-                                <th class="px-6 py-3">To Group</th>
-                                <th class="px-6 py-3">Visit duration</th>
-                                <th class="px-6 py-3">Description</th>
-                                <th class="px-6 py-3">Priority</th>
-                                <th class="px-6 py-3">Start Date</th>
-                                <th class="px-6 py-3">Due Date</th>
-                                <th class="px-6 py-3">Status</th>
+                                <th class="px-6 py-3 cursor-pointer hover:bg-gray-200 transition-colors group" onclick="toggleSort('action')">
+                                    <div class="flex items-center">
+                                        Action
+                                        <span class="ml-1 opacity-0 group-hover:opacity-100 sort-icon-action">↕</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3 cursor-pointer hover:bg-gray-200 transition-colors group" onclick="toggleSort('created_by_name')">
+                                    <div class="flex items-center">
+                                        Created by
+                                        <span class="ml-1 opacity-0 group-hover:opacity-100 sort-icon-created_by_name">↕</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3 cursor-pointer hover:bg-gray-200 transition-colors group" onclick="toggleSort('group')">
+                                    <div class="flex items-center">
+                                        By Group
+                                        <span class="ml-1 opacity-0 group-hover:opacity-100 sort-icon-group">↕</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3 cursor-pointer hover:bg-gray-200 transition-colors group" onclick="toggleSort('assigned_user_name')">
+                                    <div class="flex items-center">
+                                        Assigned to
+                                        <span class="ml-1 opacity-0 group-hover:opacity-100 sort-icon-assigned_user_name">↕</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3 cursor-pointer hover:bg-gray-200 transition-colors group" onclick="toggleSort('assigned_user_group')">
+                                    <div class="flex items-center">
+                                        To Group
+                                        <span class="ml-1 opacity-0 group-hover:opacity-100 sort-icon-assigned_user_group">↕</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3 cursor-pointer hover:bg-gray-200 transition-colors group" onclick="toggleSort('visit_duration')">
+                                    <div class="flex items-center">
+                                        Visit duration
+                                        <span class="ml-1 opacity-0 group-hover:opacity-100 sort-icon-visit_duration">↕</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3 cursor-pointer hover:bg-gray-200 transition-colors group" onclick="toggleSort('description')">
+                                    <div class="flex items-center">
+                                        Description
+                                        <span class="ml-1 opacity-0 group-hover:opacity-100 sort-icon-description">↕</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3 cursor-pointer hover:bg-gray-200 transition-colors group" onclick="toggleSort('priority')">
+                                    <div class="flex items-center">
+                                        Priority
+                                        <span class="ml-1 opacity-0 group-hover:opacity-100 sort-icon-priority">↕</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3 cursor-pointer hover:bg-gray-200 transition-colors group" onclick="toggleSort('start_date')">
+                                    <div class="flex items-center">
+                                        Start Date
+                                        <span class="ml-1 opacity-0 group-hover:opacity-100 sort-icon-start_date">↕</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3 cursor-pointer hover:bg-gray-200 transition-colors group" onclick="toggleSort('expiry_date')">
+                                    <div class="flex items-center">
+                                        Due Date
+                                        <span class="ml-1 opacity-0 group-hover:opacity-100 sort-icon-expiry_date">↕</span>
+                                    </div>
+                                </th>
+                                <th class="px-6 py-3 cursor-pointer hover:bg-gray-200 transition-colors group" onclick="toggleSort('status')">
+                                    <div class="flex items-center">
+                                        Status
+                                        <span class="ml-1 opacity-0 group-hover:opacity-100 sort-icon-status">↕</span>
+                                    </div>
+                                </th>
                                 <th class="px-6 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="actionsTableBody">
                             <tr>
-                                <td colspan="4" class="text-center py-4 text-gray-500">Loading...</td>
+                                <td colspan="12" class="text-center py-4 text-gray-500">Loading...</td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Pagination Container -->
+                <div id="paginationContainer" class="flex items-center justify-between bg-white px-4 py-3 sm:px-6 border-t mt-4 rounded-lg shadow-sm">
+                    <div class="flex flex-1 justify-between sm:hidden">
+                        <button id="prevMobile" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</button>
+                        <button id="nextMobile" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Next</button>
+                    </div>
+                    <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm text-gray-700">
+                                Showing <span id="pageStart" class="font-medium">0</span> to <span id="pageEnd" class="font-medium">0</span> of <span id="totalResults" class="font-medium">0</span> results
+                            </p>
+                        </div>
+                        <div>
+                            <nav id="paginationNav" class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                                <!-- Pagination buttons will be inserted here -->
+                            </nav>
+                        </div>
+                    </div>
                 </div>
 
             </main>
@@ -80,6 +155,12 @@ require_once 'helpers/authCheck.php';
         const USER_ID = "<?= $_COOKIE['user_id'] ?? '' ?>";
         const USER_ROLE = "<?= $_COOKIE['user_type'] ?? '2' ?>"; // 1 = admin
         const IS_ADMIN = Number(USER_ROLE) === 1;
+
+        let currentPage = 1;
+        const rowsPerPage = 15;
+        let totalRecords = 0;
+        let sortBy = 'created_at';
+        let sortOrder = 'DESC';
 
         /* ================= BASE API ================= */
         function getBaseApi() {
@@ -118,7 +199,13 @@ require_once 'helpers/authCheck.php';
             const params = new URLSearchParams(window.location.search);
             const baseApi = getBaseApi();
 
-            const finalUrl = baseApi + (params.toString() ? '&' + params.toString() : '');
+            // إضافة بيانات الـ Pagination و Sorting
+            params.set('page', currentPage);
+            params.set('limit', rowsPerPage);
+            params.set('sort_by', sortBy);
+            params.set('sort_order', sortOrder);
+
+            const finalUrl = baseApi + (baseApi.includes('?') ? '&' : '?') + params.toString();
 
             try {
                 const response = await fetch(finalUrl, {
@@ -131,12 +218,14 @@ require_once 'helpers/authCheck.php';
                 const result = await response.json();
                 if (!result.success) throw new Error(result.message);
 
+                totalRecords = result.data.total;
                 renderActions(result.data.actions);
+                renderPagination();
 
             } catch (error) {
                 document.getElementById('actionsTableBody').innerHTML = `
                     <tr>
-                        <td colspan="4" class="text-center py-4 text-red-500">
+                        <td colspan="12" class="text-center py-4 text-red-500">
                             ${error.message}
                         </td>
                     </tr>`;
@@ -151,12 +240,14 @@ require_once 'helpers/authCheck.php';
             if (!actions || !actions.length) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="4" class="text-center py-4 text-gray-400">
+                        <td colspan="12" class="text-center py-4 text-gray-400">
                             No actions found
                         </td>
                     </tr>`;
+                document.getElementById('paginationContainer').classList.add('hidden');
                 return;
             }
+            document.getElementById('paginationContainer').classList.remove('hidden');
 
             const today = new Date();
 
@@ -209,6 +300,105 @@ require_once 'helpers/authCheck.php';
                 `;
 
 
+            });
+
+            updateSortIcons();
+        }
+
+        /* ================= SORTING ================= */
+        function toggleSort(column) {
+            if (sortBy === column) {
+                sortOrder = sortOrder === 'ASC' ? 'DESC' : 'ASC';
+            } else {
+                sortBy = column;
+                sortOrder = 'ASC';
+            }
+            currentPage = 1; // إعادة للصفحة الأولى عند التغيير
+            fetchActions();
+        }
+
+        function updateSortIcons() {
+            // إخفاء كل الأيقونات أو تصفيرها
+            document.querySelectorAll('[class^="sort-icon-"]').forEach(el => {
+                el.innerHTML = '↕';
+                el.classList.add('opacity-0');
+            });
+
+            const currentIcon = document.querySelector(`.sort-icon-${sortBy}`);
+            if (currentIcon) {
+                currentIcon.innerHTML = sortOrder === 'ASC' ? '↑' : '↓';
+                currentIcon.classList.remove('opacity-0');
+                currentIcon.classList.add('opacity-100');
+            }
+        }
+
+        /* ================= PAGINATION RENDER ================= */
+        function renderPagination() {
+            const totalPages = Math.ceil(totalRecords / rowsPerPage);
+            const nav = document.getElementById('paginationNav');
+            const pageStart = document.getElementById('pageStart');
+            const pageEnd = document.getElementById('pageEnd');
+            const totalResults = document.getElementById('totalResults');
+
+            pageStart.textContent = totalRecords === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
+            pageEnd.textContent = Math.min(currentPage * rowsPerPage, totalRecords);
+            totalResults.textContent = totalRecords;
+
+            let html = "";
+
+            // Previous button
+            html += `
+                <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} 
+                    class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span class="sr-only">Previous</span>
+                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01.02 1.06L8.832 10l3.978 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            `;
+
+            // Page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, startPage + 4);
+            const adjustedStart = Math.max(1, endPage - 4);
+
+            for (let i = adjustedStart; i <= endPage; i++) {
+                html += `
+                    <button onclick="changePage(${i})" 
+                        class="relative inline-flex items-center px-4 py-2 text-sm font-semibold ${i === currentPage ? 'z-10 bg-[#0b6f76] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600' : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'}">
+                        ${i}
+                    </button>
+                `;
+            }
+
+            // Next button
+            html += `
+                <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''} 
+                    class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span class="sr-only">Next</span>
+                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01-.02-1.06L11.168 10 7.19 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            `;
+
+            nav.innerHTML = html;
+
+            // Mobile buttons
+            document.getElementById('prevMobile').onclick = () => changePage(currentPage - 1);
+            document.getElementById('prevMobile').disabled = currentPage === 1;
+            document.getElementById('nextMobile').onclick = () => changePage(currentPage + 1);
+            document.getElementById('nextMobile').disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(totalRecords / rowsPerPage);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            fetchActions();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
             });
         }
 
@@ -276,6 +466,12 @@ require_once 'helpers/authCheck.php';
 
             // أضف exportExcel
             params.set('action', 'exportExcel');
+
+            // تأكد من حذف بيانات الباجينيشن والترتيب لضمان تحميل الكل بنفس السلوك السابق
+            params.delete('page');
+            params.delete('limit');
+            params.delete('sort_by');
+            params.delete('sort_order');
 
             // حافظ على باقي الصلاحيات (manager_id, user_id, ...)
             const base = getBaseApi().split('?')[0];

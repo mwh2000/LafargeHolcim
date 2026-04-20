@@ -411,6 +411,31 @@ class ActionController
         /* =========================
      * 2️⃣ Query الأكشنات
      * ========================= */
+        /* =========================
+         * 2️⃣ Dynamic Sorting
+         * ========================= */
+        $allowedSortColumns = [
+            'id', 'status', 'description', 'action', 'group', 'start_date', 'expiry_date', 
+            'visit_duration', 'priority', 'created_at',
+            'type_name', 'assigned_user_name', 'assigned_user_group', 'created_by_name'
+        ];
+
+        $sortBy = 'a.created_at';
+        if (isset($filters['sort_by']) && in_array($filters['sort_by'], $allowedSortColumns)) {
+            $map = [
+                'type_name' => 't.name',
+                'assigned_user_name' => 'u.name',
+                'assigned_user_group' => 'u.`group`',
+                'created_by_name' => 'u2.name'
+            ];
+            $sortBy = $map[$filters['sort_by']] ?? 'a.' . $filters['sort_by'];
+        }
+
+        $sortOrder = 'DESC';
+        if (isset($filters['sort_order']) && strtoupper($filters['sort_order']) === 'ASC') {
+            $sortOrder = 'ASC';
+        }
+
         $sql = "
         SELECT 
             a.id, a.status, a.description, a.action, a.`group`, a.start_date, a.expiry_date, visit_duration, description, priority,
@@ -426,19 +451,46 @@ class ActionController
         LEFT JOIN type_categories tc ON t.category_id = tc.id
         WHERE 1=1
         $baseWhere
-        ORDER BY a.created_at DESC
+        ORDER BY $sortBy $sortOrder
     ";
+
+        if ($export) {
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC); // 👈 للـ Excel / CSV
+        }
+
+        /* =========================
+         * 3️⃣ Pagination & Read
+         * ========================= */
+        $countSql = "
+            SELECT COUNT(*)
+            FROM actions a
+            LEFT JOIN users u ON a.assigned_user_id = u.id
+            LEFT JOIN users u2 ON a.created_by = u2.id
+            LEFT JOIN types t ON a.type_id = t.id
+            LEFT JOIN type_categories tc ON t.category_id = tc.id
+            WHERE 1=1
+            $baseWhere
+        ";
+        $stmtCount = $this->conn->prepare($countSql);
+        $stmtCount->execute($params);
+        $total = (int)$stmtCount->fetchColumn();
+
+        $limit = isset($filters['limit']) ? (int)$filters['limit'] : 15;
+        $page = isset($filters['page']) ? (int)$filters['page'] : 1;
+        $offset = ($page - 1) * $limit;
+
+        $sql .= " LIMIT $limit OFFSET $offset";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->execute($params);
         $actions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        if ($export) {
-            return $actions; // 👈 للـ Excel / CSV
-        }
-
         return $this->respond(true, 'Actions retrieved successfully', [
-            'count' => count($actions),
+            'total'   => $total,
+            'page'    => $page,
+            'limit'   => $limit,
             'actions' => $actions
         ]);
     }
@@ -485,20 +537,64 @@ class ActionController
             $params[] = (int) $filters['assigned_user_id'];
         }
 
-        // Pagination
-        $limit = isset($filters['limit']) ? (int) $filters['limit'] : 10000;
-        $offset = isset($filters['offset']) ? (int) $filters['offset'] : 0;
+        // 1️⃣ جلب الإجمالي للمساعدة في الـ Pagination
+        $countQuery = "SELECT COUNT(*) FROM actions a WHERE a.created_by = ?";
+        // نحتاج بناء نفس شروط البحث في الـ count query
+        $countParams = [$userId];
+        $countWhere = "";
+        if (!empty($filters['search'])) {
+            $countWhere .= " AND (a.action LIKE ? OR a.description LIKE ?)";
+            $countParams[] = '%' . $filters['search'] . '%';
+            $countParams[] = '%' . $filters['search'] . '%';
+        }
+        if (!empty($filters['type_id'])) {
+            $countWhere .= " AND a.type_id = ?";
+            $countParams[] = (int) $filters['type_id'];
+        }
+        if (!empty($filters['assigned_user_id'])) {
+            $countWhere .= " AND a.assigned_user_id = ?";
+            $countParams[] = (int) $filters['assigned_user_id'];
+        }
 
-        $query .= " ORDER BY a.created_at DESC LIMIT $limit OFFSET $offset";
+        $stmtCount = $this->conn->prepare($countQuery . $countWhere);
+        $stmtCount->execute($countParams);
+        $total = (int)$stmtCount->fetchColumn();
+
+        // Pagination & Sorting
+        $limit = isset($filters['limit']) ? (int) $filters['limit'] : 15;
+        $page = isset($filters['page']) ? (int) $filters['page'] : 1;
+        $offset = ($page - 1) * $limit;
+
+        $allowedSortColumns = [
+            'id', 'status', 'description', 'action', 'expiry_date', 'created_at',
+            'type_name', 'assigned_user_name', 'created_by_name'
+        ];
+
+        $sortBy = 'a.created_at';
+        if (isset($filters['sort_by']) && in_array($filters['sort_by'], $allowedSortColumns)) {
+            $map = [
+                'type_name' => 't.name',
+                'assigned_user_name' => 'u.name',
+                'created_by_name' => 'u2.name'
+            ];
+            $sortBy = $map[$filters['sort_by']] ?? 'a.' . $filters['sort_by'];
+        }
+
+        $sortOrder = 'DESC';
+        if (isset($filters['sort_order']) && strtoupper($filters['sort_order']) === 'ASC') {
+            $sortOrder = 'ASC';
+        }
+
+        $query .= " ORDER BY $sortBy $sortOrder LIMIT $limit OFFSET $offset";
 
         $stmt = $this->conn->prepare($query);
         $stmt->execute($params);
         $actions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return $this->respond(true, 'Actions retrieved successfully', [
-            'count' => count($actions),
-            'limit' => $limit,
-            'offset' => $offset,
+            'total'   => $total,
+            'page'    => $page,
+            'limit'   => $limit,
             'actions' => $actions
         ]);
     }
@@ -607,6 +703,30 @@ class ActionController
         /* =========================
      * 2️⃣ Query الأكشنات
      * ========================= */
+        /* =========================
+         * 2️⃣ Dynamic Sorting
+         * ========================= */
+        $allowedSortColumns = [
+            'id', 'status', 'description', 'action', 'group', 'start_date', 'expiry_date', 
+            'visit_duration', 'priority', 'created_at',
+            'type_name', 'assigned_user_name', 'created_by_name'
+        ];
+
+        $sortBy = 'a.created_at';
+        if (isset($filters['sort_by']) && in_array($filters['sort_by'], $allowedSortColumns)) {
+            $map = [
+                'type_name' => 't.name',
+                'assigned_user_name' => 'u.name',
+                'created_by_name' => 'u2.name'
+            ];
+            $sortBy = $map[$filters['sort_by']] ?? 'a.' . $filters['sort_by'];
+        }
+
+        $sortOrder = 'DESC';
+        if (isset($filters['sort_order']) && strtoupper($filters['sort_order']) === 'ASC') {
+            $sortOrder = 'ASC';
+        }
+
         $sql = "
         SELECT 
             a.id, a.description, a.action, a.`group`, a.start_date, a.expiry_date,
@@ -621,15 +741,40 @@ class ActionController
         LEFT JOIN type_categories tc ON t.category_id = tc.id
         WHERE 1=1
         $baseWhere
-        ORDER BY a.created_at DESC
+        ORDER BY $sortBy $sortOrder
     ";
+
+        /* =========================
+         * 3️⃣ Pagination & Read
+         * ========================= */
+        $countSql = "
+            SELECT COUNT(*)
+            FROM actions a
+            LEFT JOIN users u ON a.assigned_user_id = u.id
+            LEFT JOIN users u2 ON a.created_by = u2.id
+            LEFT JOIN types t ON a.type_id = t.id
+            LEFT JOIN type_categories tc ON t.category_id = tc.id
+            WHERE 1=1
+            $baseWhere
+        ";
+        $stmtCount = $this->conn->prepare($countSql);
+        $stmtCount->execute($params);
+        $total = (int)$stmtCount->fetchColumn();
+
+        $limit = isset($filters['limit']) ? (int)$filters['limit'] : 15;
+        $page = isset($filters['page']) ? (int)$filters['page'] : 1;
+        $offset = ($page - 1) * $limit;
+
+        $sql .= " LIMIT $limit OFFSET $offset";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->execute($params);
         $actions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return $this->respond(true, 'Assigned actions retrieved successfully', [
-            'count' => count($actions),
+            'total'   => $total,
+            'page'    => $page,
+            'limit'   => $limit,
             'actions' => $actions
         ]);
     }

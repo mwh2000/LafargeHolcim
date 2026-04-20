@@ -133,7 +133,7 @@ require_once __DIR__ . '/partials/navbar.php';
 <body>
     <?php renderNavbar('Action'); ?>
     <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]">
-        <?php renderSidebar('users'); ?>
+        <?php renderSidebar(''); ?>
 
         <div class="flex-1 flex flex-col sm:ml-64 transition-all">
             <main class="flex-1 overflow-y-auto p-8 md:pl-12">
