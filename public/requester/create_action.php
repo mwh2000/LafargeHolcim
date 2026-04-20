@@ -312,71 +312,6 @@ require_once '../helpers/authCheck.php';
                          * ========================= */
                         let userSelect;
 
-                        let filter_roles = [];
-
-                        const roleSources = {
-                            incidentClassification: [],
-                            cmm: [],
-                            incident: [],
-                            type: []
-                        };
-
-                        // دالة لدمج كل القيم وتحديث المستخدمين
-                        function updateFilterRoles() {
-                            filter_roles = [
-                                ...new Set(
-                                    Object.values(roleSources).flat()
-                                )
-                            ];
-                            loadUsers();
-                        }
-
-                        // دالة عامة للتعامل مع أي input وتعيين قيمه الخاصة
-                        function handleRolesChange(sourceKey, roles, value) {
-                            roleSources[sourceKey] = value ? roles : [];
-                            updateFilterRoles();
-                        }
-
-                        // ربط inputs مع handler الخاص بهم
-                        [
-                            ["incidentClassification", el.incidentClassification, [3, 4]],
-                            ["cmm", el.cmm, [3, 4]],
-                        ].forEach(([key, element, roles]) => {
-                            element?.addEventListener("change", function() {
-                                handleRolesChange(key, roles, this.value);
-                            });
-                        });
-
-                        // input آخر مستقل
-                        el.incident?.addEventListener("change", function() {
-                            handleRolesChange("incident", [2, 4], this.value);
-                        });
-
-                        // دالة للحصول على اسم optgroup لأي خيار محدد
-                        function getSelectedOptGroupName(selectEl) {
-                            const option = selectEl.selectedOptions[0]; // الخيار المحدد
-                            if (!option) return null;
-
-                            const optGroup = option.parentElement;
-                            if (optGroup && optGroup.tagName === "OPTGROUP") {
-                                return optGroup.label; // اسم الـ optgroup
-                            }
-
-                            return null; // إذا الخيار بدون optgroup
-                        }
-
-                        // التعامل مع type
-                        el.type.addEventListener("change", function() {
-                            const groupName = getSelectedOptGroupName(this);
-                            if (["NM", "VPC", "Hazard"].includes(groupName)) {
-                                handleRolesChange("type", [2, 4], true);
-                            } else if (["CVPC"].includes(groupName)) {
-                                handleRolesChange("type", [3, 4], true); // إذا تريد مسح القيم للبقية
-                            } else {
-                                handleRolesChange("type", [], false);
-                            }
-                        });
-
                         async function loadUsers() {
                             try {
                                 let url = API_USERS;
@@ -389,10 +324,6 @@ require_once '../helpers/authCheck.php';
 
                                 // نظف القائمة واضف خيار مؤقت
                                 select.innerHTML = `<option value="">Loading...</option>`;
-
-                                if (filter_roles.length > 0) {
-                                    url += `&role_id=${filter_roles.join(",")}`;
-                                }
 
                                 const res = await fetch(url, {
                                     headers: {
