@@ -133,25 +133,16 @@ $userName = $userData['name'] ?? 'N/A';
                         <div id="isolation-done-card" class="hidden bg-white p-6 rounded-lg shadow-md border-t-4 border-green-600">
                              <h2 class="text-lg font-bold text-green-700 mb-4 border-b pb-2 text-right" dir="rtl">تم العزل</h2>
                              <div class="space-y-4 text-right" dir="rtl">
-                                 <p class="text-sm text-gray-700 font-medium">المصادقه على الترخيص للعمل بعد التأكد من تجربة التشغيل للمعده من الموقع</p>
+                                 <p class="text-sm text-gray-700 font-medium">تمت المصادقة على رفع العزل</p>
                                  <div class="flex flex-col gap-1">
-                                     <span class="text-[10px] text-gray-400">بواسطة مسؤول العزل</span>
+                                     <span class="text-[10px] text-gray-400 flex">بواسطة مسؤول العزل ✔
+                                     </span>
                                      <span id="val-iso-done-by" class="text-sm font-bold text-green-800"></span>
                                  </div>
                              </div>
                         </div>
 
                         <!-- Isolation Removed Info Card -->
-                        <div id="isolation-removed-card" class="hidden bg-white p-6 rounded-lg shadow-md border-t-4 border-blue-600">
-                             <h2 class="text-lg font-bold text-blue-700 mb-4 border-b pb-2 text-right" dir="rtl">طالب رفع العزل</h2>
-                             <div class="space-y-4 text-right" dir="rtl">
-                                 <p class="text-sm text-gray-700 font-medium">تم الانتهاء من العمل على المعده وتم ازالة كافة الاقفال الشخصية الخاصه للمجموعه وتم تنصيب كافة الواقيات وتنظيف المكان</p>
-                                 <div class="flex flex-col gap-1">
-                                     <span class="text-[10px] text-gray-400">تم رفع العزل بواسطة</span>
-                                     <span id="val-iso-removed-by" class="text-sm font-bold text-blue-800"></span>
-                                 </div>
-                             </div>
-                        </div>
 
 
 
@@ -159,7 +150,7 @@ $userName = $userData['name'] ?? 'N/A';
                         <div id="am-action-section" class="hidden bg-yellow-50 p-6 rounded-lg shadow-md border border-yellow-200">
                             <h2 class="text-lg font-bold text-yellow-800 mb-4 text-right" dir="rtl">إجراءات مسؤول العزل</h2>
                             <div class="space-y-4 text-right" dir="rtl">
-                                <p class="text-sm text-yellow-700">المصادقه على الترخيص للعمل بعد التأكد من تجربة التشغيل للمعده من الموقع</p>
+                                <p class="text-sm text-yellow-700">تمت المصادقة على رفع العزل</p>
                                 <button id="amDoneBtn" class="w-full bg-[#0b6f76] text-white py-3 rounded-md hover:bg-[#085a60] transition font-bold text-lg">Done / تم العزل</button>
                             </div>
                         </div>
@@ -172,12 +163,12 @@ $userName = $userData['name'] ?? 'N/A';
                                 
                                 <label class="flex items-center gap-3 justify-start cursor-pointer group" dir="rtl">
                                     <input type="checkbox" id="permitWorkCb" class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
-                                    <span class="text-sm font-medium text-gray-700 group-hover:text-green-700 transition-colors">اطلب رفع العزل بعد ان تم التأكيد من العزل</span>
+                                    <span class="text-sm font-medium text-gray-700 group-hover:text-green-700 transition-colors">اطلب رفع العزل بعد ان تم التأكيد ان جميع العاملين خارج المعدة</span>
                                 </label>
 
                                 <label class="flex items-center gap-3 justify-start cursor-pointer group" dir="rtl">
                                     <input type="checkbox" id="removeSectionLockCb" class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
-                                    <span class="text-sm font-medium text-gray-700 group-hover:text-green-700 transition-colors">اطلب اطلب ادالة قفل القسم  من صندوق العزل</span>
+                                    <span class="text-sm font-medium text-gray-700 group-hover:text-green-700 transition-colors">اطلب ازالة قفل القسم من صندوق العزل</span>
                                 </label>
 
                                 <button id="removeIsolationBtn" disabled class="w-full bg-green-600 text-white py-3 rounded-md hover:bg-green-700 transition font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed">
@@ -188,10 +179,24 @@ $userName = $userData['name'] ?? 'N/A';
 
 
                         <!-- Print Completion Confirmation (Visible in PDF when completed) -->
-                        <div id="print-completion-card" class="hidden print-only bg-white p-6 rounded-lg shadow-md border-t-4 border-green-600 mt-6">
+                        <div id="print-completion-card" class="hidden print-only bg-white border border-gray-200 rounded-lg p-3 mt-2">
                             <div class="text-right" dir="rtl">
-                                <p class="text-sm font-bold text-green-800 italic mb-2">المصادقه على الترخيص للعمل بعد التأكد من تجربة التشغيل للمعده من الموقع</p>
-                                <p class="text-sm text-gray-700">تم رفع العزل بواسطة: <span id="val-remover-name" class="font-bold border-b border-gray-400 pb-0.5"></span></p>
+                                <h2 class="text-lg font-bold text-[#0b6f76] mb-1 text-right" dir="rtl">طلب رفع العزل - <span id="val-remover-name"></span></h2>
+                                <p class="text-sm text-[#0b6f76] mb-2">تم الانتهاء من العمل على المعده وتم ازالة كافة الاقفال الشخصية الخاصه للمجموعه وتم تنصيب كافة الواقيات وتنظيف المكان</p>
+                                
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-3 justify-start" dir="rtl">
+                                        <input type="checkbox" class="w-4 h-4 text-[#0b6f76] border-gray-300 rounded" onclick="return false;">
+                                        <span class="text-sm font-medium text-gray-700">اطلب رفع العزل بعد ان تم التأكيد ان جميع العاملين خارج المعدة</span>
+                                    </div>
+
+                                    <div class="flex items-center gap-3 justify-start" dir="rtl">
+                                        <input type="checkbox" class="w-4 h-4 text-[#0b6f76] border-gray-300 rounded" onclick="return false;">
+                                        <span class="text-sm font-medium text-gray-700">اطلب ازالة قفل القسم من صندوق العزل</span>
+                                    </div>
+                                </div>
+                                
+                                <p class="text-sm font-bold text-gray-700 italic mt-4 text-xs">تمت المصادقة على رفع العزل</p>
                             </div>
                         </div>
 
