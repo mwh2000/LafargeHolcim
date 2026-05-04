@@ -1,0 +1,116 @@
+<?php
+
+class HotWorkPermitController
+{
+    private $db;
+
+    public function __construct($db)
+    {
+        $this->db = $db;
+    }
+
+    public function createPermit($data)
+    {
+        try {
+            $this->db->beginTransaction();
+
+            // 1. Insert main permit
+            $stmt = $this->db->prepare("INSERT INTO hot_work_permit (
+                permit_no, issuing_date_time, company_name, location, supervisor, 
+                equipment_used, task_start_datetime, finishing_time, assigned_to
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+            $stmt->execute([
+                $data['permit_no'],
+                date('Y-m-d H:i:s'),
+                $data['company_name'],
+                $data['location'],
+                $data['supervisor'],
+                $data['equipment_used'],
+                $data['task_start_datetime'],
+                $data['finishing_time'],
+                $data['assigned_to']
+            ]);
+
+            $permitId = $this->db->lastInsertId();
+
+            // 2. Insert Additional Permits
+            if (!empty($data['additional_permits'])) {
+                $stmtAdd = $this->db->prepare("INSERT INTO additional_hot_permits (
+                    hot_work_permit_id, permit_name, permit_number, work_description
+                ) VALUES (?, ?, ?, ?)");
+                foreach ($data['additional_permits'] as $permit) {
+                    if (!empty($permit['permit_name'])) {
+                        $stmtAdd->execute([
+                            $permitId,
+                            $permit['permit_name'],
+                            $permit['permit_number'] ?? '',
+                            $permit['work_description'] ?? ''
+                        ]);
+                    }
+                }
+            }
+
+            // 3. Insert Control Measures
+            if (!empty($data['control_measures'])) {
+                $stmtCtrl = $this->db->prepare("INSERT INTO hot_work_control_measures (
+                    hot_work_permit_id, measure_text, status
+                ) VALUES (?, ?, ?)");
+                foreach ($data['control_measures'] as $measure) {
+                    $stmtCtrl->execute([
+                        $permitId,
+                        $measure['text'],
+                        $measure['status']
+                    ]);
+                }
+            }
+
+            // 4. Insert Performers Check
+            if (!empty($data['performers_check'])) {
+                $stmtPerf = $this->db->prepare("INSERT INTO hot_work_performers_check (
+                    hot_work_permit_id, question_text, answer
+                ) VALUES (?, ?, ?)");
+                foreach ($data['performers_check'] as $check) {
+                    $stmtPerf->execute([
+                        $permitId,
+                        $check['text'],
+                        $check['answer']
+                    ]);
+                }
+            }
+
+            // 5. Insert Approvals
+            if (!empty($data['approvals'])) {
+                $stmtAppr = $this->db->prepare("INSERT INTO hot_permit_approvals (
+                    hot_work_permit_id, role_name, approval_status
+                ) VALUES (?, ?, ?)");
+                foreach ($data['approvals'] as $approval) {
+                    // Storing name and status in approval_status as suggested in plan
+                    $statusText = ($approval['name'] ?? 'N/A') . " - " . ($approval['approved'] ? 'Approved' : 'Pending');
+                    $stmtAppr->execute([
+                        $permitId,
+                        $approval['role'],
+                        $statusText
+                    ]);
+                }
+            }
+
+            $this->db->commit();
+            return ['success' => true, 'message' => 'Hot Work Permit created successfully!', 'id' => $permitId];
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            return ['success' => false, 'message' => 'Error creating permit: ' . $e->getMessage()];
+        }
+    }
+
+    public function getAssignees()
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT id, name FROM users WHERE role_id IN (3, 5)");
+            $stmt->execute();
+            return ['success' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error fetching assignees: ' . $e->getMessage()];
+        }
+    }
+}

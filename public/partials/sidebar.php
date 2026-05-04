@@ -61,6 +61,10 @@ function renderSidebar($activePage = '')
           'label' => 'Energy Isolation',
           'href' => BASE_URL . '/public/requester/add_energy_license.php',
         ],
+        'hot_work' => [
+          'label' => 'Hot Work',
+          'href' => BASE_URL . '/public/requester/add_hot_work_license.php',
+        ],
         'all_permits' => [
           'label' => 'All Permits',
           'href' => BASE_URL . '/public/permits.php',
