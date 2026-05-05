@@ -32,6 +32,35 @@ $userName = $userData['name'] ?? 'N/A';
             .sidebar, nav, .navbar, #sidebar, .no-print, button { display: none !important; }
             main { padding: 0 !important; margin: 0 !important; width: 100% !important; }
             .sm\:ml-64 { margin-left: 0 !important; width: 100% !important; }
+
+            /* Table Header repeating trick */
+            .print-table { width: 100%; border-collapse: collapse; }
+            .print-header-space { height: 100px; }
+            .print-header-container { display: table-header-group; }
+            
+            /* Grids for space saving */
+            .grid-cols-1.md\:grid-cols-2 { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 0.5rem !important; }
+            
+            #val-control-measures, #val-performers-check {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.25rem !important;
+            }
+            .space-y-2 > * + * { margin-top: 0 !important; }
+
+            #val-approvals {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 0.25rem !important;
+            }
+
+            /* Table compression */
+            td, th { padding: 0.2rem !important; font-size: 9pt !important; }
+            
+            /* Print Header Styling */
+            .print-header { border-bottom: 2px solid #0b6f76; margin-bottom: 0.5rem; padding-bottom: 0.25rem; text-align: center; width: 100%; }
+            .print-header img { height: 40px; margin: 0 auto 5px; display: block; }
+            .print-header h1 { font-size: 14pt; color: #0b6f76; font-weight: bold; }
         }
     </style>
 </head>
@@ -53,13 +82,28 @@ $userName = $userData['name'] ?? 'N/A';
                         </button>
                     </div>
 
-                    <div id="loading" class="text-center py-10">
-                        <p class="text-gray-500">جاري تحميل البيانات...</p>
-                    </div>
+                    <table class="print-table">
+                        <thead class="print-header-container">
+                            <tr>
+                                <td>
+                                    <!-- Print Header (Visible only in print) -->
+                                    <div class="print-header hidden print:block">
+                                        <img src="../../public/images/logo.png" alt="Logo" class="mx-auto h-12 mb-2">
+                                        <h1 class="text-xl font-bold text-[#0b6f76] text-center pb-2 mb-4">Hot Work Permit - رخصة العمل الساخن</h1>
+                                    </div>
+                                </td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div id="loading" class="text-center py-10">
+                                        <p class="text-gray-500">جاري تحميل البيانات...</p>
+                                    </div>
 
-                    <div id="content" class="hidden space-y-6">
+                                    <div id="content" class="hidden space-y-6">
                         <!-- القسم الأول: المعلومات الأساسية -->
-                        <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-[#0b6f76]">
+                        <div class="bg-white p-6 rounded-lg shadow-md">
                             <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">المعلومات الأساسية</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">
                                 <div><span class="text-gray-500">رقم الرخصة:</span> <span id="val-permit-no" class="font-medium text-gray-800"></span></div>
@@ -119,7 +163,11 @@ $userName = $userData['name'] ?? 'N/A';
                             </div>
                         </div>
 
-                    </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </main>
         </div>
