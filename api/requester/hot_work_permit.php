@@ -28,6 +28,8 @@ try {
         case 'GET':
             if ($action === 'getAssignees') {
                 $res = $controller->getAssignees();
+            } elseif ($action === 'show' && isset($_GET['id'])) {
+                $res = $controller->getPermit($_GET['id']);
             }
             break;
 

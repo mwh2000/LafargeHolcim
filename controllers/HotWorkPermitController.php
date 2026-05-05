@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/notificationsController.php';
+
 
 class HotWorkPermitController
 {
@@ -17,8 +19,8 @@ class HotWorkPermitController
             // 1. Insert main permit
             $stmt = $this->db->prepare("INSERT INTO hot_work_permit (
                 permit_no, issuing_date_time, company_name, location, supervisor, 
-                equipment_used, task_start_datetime, finishing_time, assigned_to
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                equipment_used, task_start_datetime, finishing_time, assigned_to, created_by, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
             $stmt->execute([
                 $data['permit_no'],
@@ -29,7 +31,9 @@ class HotWorkPermitController
                 $data['equipment_used'],
                 $data['task_start_datetime'],
                 $data['finishing_time'],
-                $data['assigned_to']
+                $data['assigned_to'],
+                $data['created_by'],
+                date('Y-m-d H:i:s')
             ]);
 
             $permitId = $this->db->lastInsertId();
@@ -96,6 +100,17 @@ class HotWorkPermitController
             }
 
             $this->db->commit();
+            
+            try {
+                $notificationController = new NotificationController($this->db);
+                $title = 'رخصة عمل ساخن جديدة';
+                $body = 'تم إسناد رخصة عمل ساخن جديدة إليك برقم ' . $data['permit_no'];
+                $url = '/LafargeHolcim/public/requester/view_hot_work_license.php?id=' . $permitId;
+                $notificationController->sendNotification($title, $body, [$data['assigned_to']], $url, $data['created_by']);
+            } catch (Exception $e) {
+                // Ignore notification error
+            }
+
             return ['success' => true, 'message' => 'Hot Work Permit created successfully!', 'id' => $permitId];
         } catch (Exception $e) {
             $this->db->rollBack();
@@ -111,6 +126,43 @@ class HotWorkPermitController
             return ['success' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Error fetching assignees: ' . $e->getMessage()];
+        }
+    }
+
+    public function getPermit($id)
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT h.*, u.name as assigned_to_name, c.name as creator_name
+                                        FROM hot_work_permit h 
+                                        LEFT JOIN users u ON h.assigned_to = u.id
+                                        LEFT JOIN users c ON h.created_by = c.id
+                                        WHERE h.id = ?");
+            $stmt->execute([$id]);
+            $permit = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$permit) {
+                return ['success' => false, 'message' => 'Permit not found'];
+            }
+
+            $stmtAdd = $this->db->prepare("SELECT * FROM additional_hot_permits WHERE hot_work_permit_id = ?");
+            $stmtAdd->execute([$id]);
+            $permit['additional_permits'] = $stmtAdd->fetchAll(PDO::FETCH_ASSOC);
+
+            $stmtCtrl = $this->db->prepare("SELECT * FROM hot_work_control_measures WHERE hot_work_permit_id = ?");
+            $stmtCtrl->execute([$id]);
+            $permit['control_measures'] = $stmtCtrl->fetchAll(PDO::FETCH_ASSOC);
+
+            $stmtPerf = $this->db->prepare("SELECT * FROM hot_work_performers_check WHERE hot_work_permit_id = ?");
+            $stmtPerf->execute([$id]);
+            $permit['performers_check'] = $stmtPerf->fetchAll(PDO::FETCH_ASSOC);
+
+            $stmtAppr = $this->db->prepare("SELECT * FROM hot_permit_approvals WHERE hot_work_permit_id = ?");
+            $stmtAppr->execute([$id]);
+            $permit['approvals'] = $stmtAppr->fetchAll(PDO::FETCH_ASSOC);
+
+            return ['success' => true, 'data' => $permit];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error fetching permit: ' . $e->getMessage()];
         }
     }
 }
