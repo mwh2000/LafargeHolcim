@@ -19,8 +19,9 @@ class HotWorkPermitController
             // 1. Insert main permit
             $stmt = $this->db->prepare("INSERT INTO hot_work_permit (
                 permit_no, issuing_date_time, company_name, location, supervisor, 
-                equipment_used, task_start_datetime, finishing_time, assigned_to, created_by, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                equipment_used, task_start_datetime, finishing_time, assigned_to, 
+                work_description, created_by, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
             $stmt->execute([
                 $data['permit_no'],
@@ -32,6 +33,7 @@ class HotWorkPermitController
                 $data['task_start_datetime'],
                 $data['finishing_time'],
                 $data['assigned_to'],
+                $data['work_description'] ?? '',
                 $data['created_by'],
                 date('Y-m-d H:i:s')
             ]);
@@ -41,15 +43,14 @@ class HotWorkPermitController
             // 2. Insert Additional Permits
             if (!empty($data['additional_permits'])) {
                 $stmtAdd = $this->db->prepare("INSERT INTO additional_hot_permits (
-                    hot_work_permit_id, permit_name, permit_number, work_description
-                ) VALUES (?, ?, ?, ?)");
+                    hot_work_permit_id, permit_name, permit_number
+                ) VALUES (?, ?, ?)");
                 foreach ($data['additional_permits'] as $permit) {
                     if (!empty($permit['permit_name'])) {
                         $stmtAdd->execute([
                             $permitId,
                             $permit['permit_name'],
-                            $permit['permit_number'] ?? '',
-                            $permit['work_description'] ?? ''
+                            $permit['permit_number'] ?? ''
                         ]);
                     }
                 }
@@ -105,7 +106,7 @@ class HotWorkPermitController
                 $notificationController = new NotificationController($this->db);
                 $title = 'رخصة عمل ساخن جديدة';
                 $body = 'تم إسناد رخصة عمل ساخن جديدة إليك برقم ' . $data['permit_no'];
-                $url = '/LafargeHolcim/public/requester/view_hot_work_license.php?id=' . $permitId;
+                $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
                 $notificationController->sendNotification($title, $body, [$data['assigned_to']], $url, $data['created_by']);
             } catch (Exception $e) {
                 // Ignore notification error

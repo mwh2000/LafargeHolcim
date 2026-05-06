@@ -57,6 +57,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
             <main class="flex-1 overflow-y-auto p-4 md:p-8 md:pl-12">
                 <div class="max-w-4xl mx-auto">
                     <h1 class="text-xl md:text-2xl font-semibold text-gray-700 mb-6">رخصة العمل الساخن (Hot Work Permit)</h1>
+                    <p class="text-lg text-red-700 mb-6">الاعمال الساخنة تشمل اعمال اللحام والجلغ والقطع</p>
 
                     <!-- Progress Bar -->
                     <div class="flex justify-between mb-8 border-b pb-2 text-[9px] md:text-sm overflow-x-auto no-scrollbar whitespace-nowrap gap-2">
@@ -79,15 +80,15 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                     <input type="text" name="permit_no" value="<?= $nextLicenseNo ?>" readonly class="w-full px-4 py-2 border rounded-md bg-gray-100 cursor-not-allowed focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-green-700 mb-1">اسم الشركة</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">اسم طالب الرخصه</label>
                                     <input type="text" name="company_name" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-green-700 mb-1">الموقع</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">القسم</label>
                                     <input type="text" name="location" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-green-700 mb-1">المشرف</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">الموقع الدقيق</label>
                                     <input type="text" name="supervisor" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
@@ -95,11 +96,11 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                     <input type="text" name="equipment_used" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-green-700 mb-1">تاريخ ووقت البدء</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">تاريخ  اصدار الرخصه</label>
                                     <input type="datetime-local" name="task_start_datetime" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-green-700 mb-1">وقت الانتهاء المتوقع</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">وقت انتهاء الرخصه</label>
                                     <input type="text" name="finishing_time" placeholder="مثال: 04:00 PM" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                             </div>
@@ -108,13 +109,12 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                         <!-- Step 2: Additional Permits -->
                         <div class="step-content" data-step="2">
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم الثاني: التصاريح الإضافية المطلوبة</h2>
-                            <div class="overflow-x-auto">
+                            <div class="overflow-x-auto mb-6">
                                 <table class="w-full text-right border-collapse">
                                     <thead>
                                         <tr class="bg-gray-50">
                                             <th class="p-2 border">التصريح</th>
                                             <th class="p-2 border">رقم التصريح</th>
-                                            <th class="p-2 border">وصف العمل</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -130,13 +130,14 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                                 <td class="p-2 border">
                                                     <input type="text" name="permit_no_<?= $permit['id'] ?>" placeholder="رقم التصريح" class="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#0b6f76] outline-none">
                                                 </td>
-                                                <td class="p-2 border">
-                                                    <textarea name="permit_desc_<?= $permit['id'] ?>" rows="1" placeholder="وصف العمل" class="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#0b6f76] outline-none"></textarea>
-                                                </td>
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>
                                 </table>
+                            </div>
+                            <div class="border-t pt-4">
+                                <label class="block text-sm font-medium text-green-700 mb-2">وصف العمل (Work Description)</label>
+                                <textarea name="work_description" rows="3" required placeholder="يرجى كتابة وصف العمل هنا..." class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76] outline-none"></textarea>
                             </div>
                         </div>
 
@@ -203,16 +204,25 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم الخامس: المطابقة والموافقة</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <?php 
+                                $userData = json_decode($_COOKIE['user_data'] ?? '{}', true);
+                                $currentUserName = $userData['name'] ?? '';
                                 $roles = [
-                                    ['id' => 'welding', 'label' => 'اللحام (Welding Operator)'],
+                                    ['id' => 'welding', 'label' => 'اللحام (Welding Name)'],
                                     ['id' => 'supervisor', 'label' => 'المشرف (Supervisor)'],
                                     ['id' => 'fire_sentry', 'label' => 'مراقب النار (Fire Sentry)'],
                                     ['id' => 'ptw_issuer', 'label' => 'مخول التصريح (PTW Issuer)']
                                 ];
-                                foreach ($roles as $role): ?>
+                                foreach ($roles as $role): 
+                                    $isIssuer = ($role['id'] === 'ptw_issuer');
+                                ?>
                                     <div class="p-4 border rounded-lg bg-gray-50">
                                         <label class="block text-sm font-medium text-green-700 mb-1"><?= $role['label'] ?></label>
-                                        <input type="text" name="approval_name_<?= $role['id'] ?>" placeholder="الاسم الكامل" class="w-full px-3 py-2 border rounded-md mb-2 focus:ring-[#0b6f76] outline-none">
+                                        <input type="text" 
+                                               name="approval_name_<?= $role['id'] ?>" 
+                                               value="<?= $isIssuer ? $currentUserName : '' ?>"
+                                               <?= $isIssuer ? 'readonly' : '' ?>
+                                               placeholder="الاسم الكامل" 
+                                               class="w-full px-3 py-2 border rounded-md mb-2 focus:ring-[#0b6f76] outline-none <?= $isIssuer ? 'bg-gray-100 cursor-not-allowed' : '' ?>">
                                         <label class="flex items-center gap-2 cursor-pointer">
                                             <input type="checkbox" name="approval_status_<?= $role['id'] ?>" value="1" class="w-5 h-5 text-[#0b6f76] rounded">
                                             <span class="text-xs font-medium text-gray-700">تمت المطابقة والموافقة</span>
@@ -275,15 +285,18 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     }
                 } else if (step === 2) {
                     const checkedCount = currentContent.querySelectorAll('input[name="additional_permits_selected[]"]:checked').length;
-                    if (checkedCount === 0) return false;
+                    const workDesc = currentContent.querySelector('textarea[name="work_description"]').value.trim();
+                    if (checkedCount === 0 || !workDesc) return false;
                 } else if (step === 3) {
-                    // At least one choice must be made across all measures
+                    // Must answer ALL control measures
+                    const questionsCount = currentContent.querySelectorAll('.p-3.border.rounded-lg').length;
                     const radioChecked = currentContent.querySelectorAll('input[type="radio"]:checked').length;
-                    if (radioChecked === 0) return false;
+                    if (radioChecked < questionsCount) return false;
                 } else if (step === 4) {
-                    // At least one choice must be made across all performer checks
+                    // Must answer ALL performer checks
+                    const questionsCount = currentContent.querySelectorAll('.p-3.border.rounded-lg').length;
                     const radioChecked = currentContent.querySelectorAll('input[type="radio"]:checked').length;
-                    if (radioChecked === 0) return false;
+                    if (radioChecked < questionsCount) return false;
                 } else if (step === 5) {
                     // Assuming all 4 names are mandatory as section is mandatory
                     const names = currentContent.querySelectorAll('input[type="text"]');
@@ -412,6 +425,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     task_start_datetime: formData.get('task_start_datetime'),
                     finishing_time: formData.get('finishing_time'),
                     assigned_to: formData.get('assigned_to'),
+                    work_description: formData.get('work_description'),
                     additional_permits: [],
                     control_measures: [],
                     performers_check: [],
@@ -423,8 +437,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 selectedPermits.forEach(id => {
                     data.additional_permits.push({
                         permit_name: formData.get('permit_name_' + id),
-                        permit_number: formData.get('permit_no_' + id),
-                        work_description: formData.get('permit_desc_' + id)
+                        permit_number: formData.get('permit_no_' + id)
                     });
                 });
 
@@ -447,7 +460,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 // Collection of Approvals
                 const roles = ['welding', 'supervisor', 'fire_sentry', 'ptw_issuer'];
                 const roleLabels = {
-                    'welding': 'Welding Operator',
+                    'welding': 'Welding Name',
                     'supervisor': 'Supervisor',
                     'fire_sentry': 'Fire Sentry',
                     'ptw_issuer': 'PTW Issuer'
@@ -481,10 +494,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                             confirmButtonText: 'حسناً',
                             confirmButtonColor: '#0b6f76'
                         }).then(() => {
-                            // As per user's request: "فقط اضهار رسالة تم بنجاح"
-                            // I'll reload to reset the form or just stay here. 
-                            // Usually, staying with a reset form is better.
-                            window.location.reload();
+                            window.location.href = `view_hot_work_license.php?id=${result.id}`;
                         });
                     } else {
                         throw new Error(result.message);

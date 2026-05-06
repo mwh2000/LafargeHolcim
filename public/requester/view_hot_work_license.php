@@ -108,12 +108,12 @@ $userName = $userData['name'] ?? 'N/A';
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">
                                 <div><span class="text-gray-500">رقم الرخصة:</span> <span id="val-permit-no" class="font-medium text-gray-800"></span></div>
                                 <div><span class="text-gray-500">تاريخ الإصدار:</span> <span id="val-issuing-date" class="font-medium text-gray-800"></span></div>
-                                <div><span class="text-gray-500">الشركة:</span> <span id="val-company" class="font-medium text-gray-800"></span></div>
-                                <div><span class="text-gray-500">الموقع:</span> <span id="val-location" class="font-medium text-gray-800"></span></div>
-                                <div><span class="text-gray-500">المشرف:</span> <span id="val-supervisor" class="font-medium text-gray-800"></span></div>
+                                <div><span class="text-gray-500">اسم طالب الرخصه:</span> <span id="val-company" class="font-medium text-gray-800"></span></div>
+                                <div><span class="text-gray-500">القسم:</span> <span id="val-location" class="font-medium text-gray-800"></span></div>
+                                <div><span class="text-gray-500">الموقع الدقيق:</span> <span id="val-supervisor" class="font-medium text-gray-800"></span></div>
                                 <div><span class="text-gray-500">المعدة المستخدمة:</span> <span id="val-equipment" class="font-medium text-gray-800"></span></div>
-                                <div><span class="text-gray-500">تاريخ ووقت البدء:</span> <span id="val-start" class="font-medium text-blue-600"></span></div>
-                                <div><span class="text-gray-500">وقت الانتهاء المتوقع:</span> <span id="val-finish" class="font-medium text-green-600"></span></div>
+                                <div><span class="text-gray-500">تاريخ  اصدار الرخصه:</span> <span id="val-start" class="font-medium text-blue-600"></span></div>
+                                <div><span class="text-gray-500">وقت انتهاء الرخصه:</span> <span id="val-finish" class="font-medium text-green-600"></span></div>
                                 <div><span class="text-gray-500">تم الإنشاء بواسطة:</span> <span id="val-creator" class="font-medium text-gray-800"></span></div>
                                 <div><span class="text-gray-500">مسند إلى (Assigned To):</span> <span id="val-assigned" class="font-bold text-[#0b6f76]"></span></div>
                             </div>
@@ -128,13 +128,16 @@ $userName = $userData['name'] ?? 'N/A';
                                         <tr class="bg-gray-50">
                                             <th class="p-2 border">اسم التصريح</th>
                                             <th class="p-2 border">رقم التصريح</th>
-                                            <th class="p-2 border">وصف العمل</th>
                                         </tr>
                                     </thead>
                                     <tbody id="val-additional-permits">
                                         <!-- Data will be injected here -->
                                     </tbody>
                                 </table>
+                            </div>
+                            <div class="mt-4 pt-4 border-t">
+                                <span class="text-gray-500 block mb-1 text-right" dir="rtl">وصف العمل (Work Description):</span>
+                                <div id="val-work-description" class="p-3 bg-gray-50 rounded border text-gray-800 whitespace-pre-wrap text-right" dir="rtl"></div>
                             </div>
                             <p id="no-additional-permits" class="text-sm text-gray-500 hidden mt-2">لا توجد تصاريح إضافية محددة.</p>
                         </div>
@@ -212,6 +215,7 @@ $userName = $userData['name'] ?? 'N/A';
             document.getElementById('val-equipment').textContent = data.equipment_used || '-';
             document.getElementById('val-start').textContent = data.task_start_datetime ? data.task_start_datetime.replace('T', ' ') : '-';
             document.getElementById('val-finish').textContent = data.finishing_time || '-';
+            document.getElementById('val-work-description').textContent = data.work_description || '-';
             document.getElementById('val-creator').textContent = data.creator_name || '-';
             document.getElementById('val-assigned').textContent = data.assigned_to_name || '-';
 
@@ -224,7 +228,6 @@ $userName = $userData['name'] ?? 'N/A';
                     tr.innerHTML = `
                         <td class="p-2 border text-gray-700">${ap.permit_name}</td>
                         <td class="p-2 border font-medium">${ap.permit_number || '-'}</td>
-                        <td class="p-2 border text-gray-600">${ap.work_description || '-'}</td>
                     `;
                     apContainer.appendChild(tr);
                 });
