@@ -56,7 +56,10 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
         <div class="flex-1 flex flex-col sm:ml-64 transition-all">
             <main class="flex-1 overflow-y-auto p-4 md:p-8 md:pl-12">
                 <div class="max-w-4xl mx-auto">
-                    <h1 class="text-xl md:text-2xl font-semibold text-gray-700 mb-6">رخصة العمل الساخن (Hot Work Permit)</h1>
+                    <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                        <h1 class="text-xl md:text-2xl font-semibold text-gray-700">رخصة العمل الساخن (Hot Work Permit)</h1>
+                        <span class="text-sm text-red-600 md:text-base">رقم الطوارئ ( 07806444440 )</span>
+                    </div>
                     <p class="text-lg text-red-700 mb-6">الاعمال الساخنة تشمل اعمال اللحام والجلغ والقطع</p>
 
                     <!-- Progress Bar -->
@@ -516,3 +519,4 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
     </script>
 </body>
 </html>
+

@@ -154,7 +154,7 @@ require_once 'helpers/authCheck.php';
         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
         const USER_ID = "<?= $_COOKIE['user_id'] ?? '' ?>";
         const USER_ROLE = "<?= $_COOKIE['user_type'] ?? '2' ?>"; // 1 = admin
-        const IS_ADMIN = Number(USER_ROLE) === 1;
+        const IS_ADMIN = [1, 3, 5, 6].includes(Number(USER_ROLE));
 
         let currentPage = 1;
         const rowsPerPage = 15;
@@ -164,18 +164,9 @@ require_once 'helpers/authCheck.php';
 
         /* ================= BASE API ================= */
         function getBaseApi() {
-            // الادمن يرى كل الأكشنات
-            if (IS_ADMIN || USER_ROLE === '6') {
+            // الادمن يرى كل الأكشنات (بما في ذلك 3 و 5 و 6)
+            if (IS_ADMIN) {
                 return '../api/actions.php?action=getAll';
-            }
-
-            if (USER_ROLE === '3') {
-                // المدير يرى أكشنات فريقه
-                return `../api/actions.php?action=getAll&manager_id=${USER_ID}`;
-            }
-            if (USER_ROLE === '5') {
-                // مسؤول السلامة يرى أكشنات القسم
-                return `../api/actions.php?action=getAll&super_manager_id=${USER_ID}`;
             }
 
             // المستخدم العادي يرى فقط المسند له

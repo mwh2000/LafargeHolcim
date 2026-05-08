@@ -43,11 +43,6 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <option value="completed">Completed (Isolation Removed)</option>
                             <option value="rejected">Rejected</option>
                         </select>
-
-                        <button onclick="location.href='requester/add_energy_license.php'"
-                            class="bg-[#0b6f76] text-white px-4 py-2 rounded-md text-sm hover:bg-opacity-90">
-                            + New Permit
-                        </button>
                     </div>
                 </div>
 
