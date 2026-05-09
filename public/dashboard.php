@@ -99,6 +99,8 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <option value="L">L</option>
                             <option value="M">M</option>
                         </select>
+
+                        <?php include __DIR__ . '/partials/departments_filter.php'; ?>
                     </div>
 
                     <!-- الزر -->
@@ -142,7 +144,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
         let actionsStatusChart = null;
 
         /* ================= INSTANCES TOMSELECT ================= */
-        let typeCategorySelect, incidentClassSelect, incident, environmentSelect, groupSelect;
+        let typeCategorySelect, incidentClassSelect, incident, environmentSelect, groupSelect, departmentSelect;
 
         /* ================= HELPERS ================= */
         function getSelectedValues(selectEl) {
@@ -232,6 +234,17 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 placeholder: "Group",
                 maxItems: null
             });
+
+            // Department
+            const deptEl = document.getElementById("department");
+            if (deptEl) {
+                if (departmentSelect) departmentSelect.destroy();
+                departmentSelect = new TomSelect(deptEl, {
+                    plugins: ['remove_button'],
+                    placeholder: "Department",
+                    maxItems: null
+                });
+            }
         }
 
         function buildFiltersQuery() {
@@ -260,6 +273,11 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
             getSelectedValues(document.getElementById("group"))
                 .forEach(v => params.append("group[]", v));
+
+            const dept = document.getElementById("department");
+            if (dept) {
+                getSelectedValues(dept).forEach(v => params.append("department[]", v));
+            }
 
             return params.toString();
         }
@@ -352,6 +370,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 const incident = getSelectedValues(document.getElementById("incident"));
                 const environment = getSelectedValues(document.getElementById("environment"));
                 const group = getSelectedValues(document.getElementById("group"));
+                const department = getSelectedValues(document.getElementById("department"));
 
                 const params = new URLSearchParams();
                 if (fromDate) params.append("from_date", fromDate);
@@ -362,6 +381,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 incident.forEach(val => params.append("incident[]", val));
                 environment.forEach(val => params.append("environment[]", val));
                 group.forEach(val => params.append("group[]", val));
+                department.forEach(val => params.append("department[]", val));
 
                 // Admin → يشوف الكل (لا فلترة)
                 if (!IS_ADMIN) {

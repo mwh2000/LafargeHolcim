@@ -393,6 +393,17 @@ class ActionController
             $baseConditions[] = "a.`group` IN (" . implode(',', $placeholders) . ")";
         }
 
+        if (!empty($filters['department'])) {
+            $values = (array)$filters['department'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":dept_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $baseConditions[] = "u.department IN (" . implode(',', $placeholders) . ")";
+        }
+
         if (isset($filters['status']) && $filters['status'] !== '') {
             if ($filters['status'] === 'overdue') {
                 $baseConditions[] = "a.status = 'open' AND a.expiry_date < CURDATE()";
@@ -537,8 +548,15 @@ class ActionController
             $params[] = (int) $filters['assigned_user_id'];
         }
 
+        if (!empty($filters['department'])) {
+            $values = (array)$filters['department'];
+            $placeholders = str_repeat('?,', count($values) - 1) . '?';
+            $query .= " AND u.department IN ($placeholders)";
+            $params = array_merge($params, $values);
+        }
+
         // 1️⃣ جلب الإجمالي للمساعدة في الـ Pagination
-        $countQuery = "SELECT COUNT(*) FROM actions a WHERE a.created_by = ?";
+        $countQuery = "SELECT COUNT(*) FROM actions a LEFT JOIN users u ON a.assigned_user_id = u.id WHERE a.created_by = ?";
         // نحتاج بناء نفس شروط البحث في الـ count query
         $countParams = [$userId];
         $countWhere = "";
@@ -554,6 +572,13 @@ class ActionController
         if (!empty($filters['assigned_user_id'])) {
             $countWhere .= " AND a.assigned_user_id = ?";
             $countParams[] = (int) $filters['assigned_user_id'];
+        }
+
+        if (!empty($filters['department'])) {
+            $values = (array)$filters['department'];
+            $placeholders = str_repeat('?,', count($values) - 1) . '?';
+            $countWhere .= " AND u.department IN ($placeholders)";
+            $countParams = array_merge($countParams, $values);
         }
 
         $stmtCount = $this->conn->prepare($countQuery . $countWhere);
@@ -678,6 +703,17 @@ class ActionController
                 $params[$key] = $v;
             }
             $baseConditions[] = "a.`group` IN (" . implode(',', $placeholders) . ")";
+        }
+
+        if (!empty($filters['department'])) {
+            $values = (array)$filters['department'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":dept_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $baseConditions[] = "u.department IN (" . implode(',', $placeholders) . ")";
         }
 
         if (isset($filters['status']) && $filters['status'] !== '') {
@@ -891,6 +927,18 @@ class ActionController
                 $params[$key] = $v;
             }
             $baseConditions[] = "a.`group` IN (" . implode(',', $placeholders) . ")";
+        }
+
+        // Department
+        if (!empty($filters['department'])) {
+            $values = (array) $filters['department'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":dept_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $baseConditions[] = "u.department IN (" . implode(',', $placeholders) . ")";
         }
 
         $baseWhere = $baseConditions
