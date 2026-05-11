@@ -67,7 +67,7 @@ $userName = $userData['name'] ?? 'N/A';
                         <h1 class="text-xl md:text-2xl font-semibold text-gray-700 text-right order-1 md:order-2">تفاصيل رخصة عزل الطاقة</h1>
                         
                         <div class="flex flex-wrap items-center gap-3 order-2 md:order-1">
-                            <button onclick="window.print()" class="flex items-center gap-2 bg-white border border-red-500 text-red-600 px-3 py-1.5 md:px-4 md:py-2 rounded-md hover:bg-red-50 transition text-sm md:text-base font-medium shadow-sm">
+                            <button id="pdfDownloadBtn" onclick="window.print()" class="hidden flex items-center gap-2 bg-white border border-red-500 text-red-600 px-3 py-1.5 md:px-4 md:py-2 rounded-md hover:bg-red-50 transition text-sm md:text-base font-medium shadow-sm">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
@@ -133,7 +133,7 @@ $userName = $userData['name'] ?? 'N/A';
                         <div id="isolation-done-card" class="hidden bg-white p-6 rounded-lg shadow-md border-t-4 border-green-600">
                              <h2 class="text-lg font-bold text-green-700 mb-4 border-b pb-2 text-right" dir="rtl">تم العزل</h2>
                              <div class="space-y-4 text-right" dir="rtl">
-                                 <p class="text-sm text-gray-700 font-medium">تمت المصادقة على رفع العزل</p>
+                                 <p class="text-sm text-gray-700 font-medium">تمت المصادقة على العزل</p>
                                  <div class="flex flex-col gap-1">
                                      <span class="text-[10px] text-gray-400 flex">بواسطة مسؤول العزل ✔
                                      </span>
@@ -150,7 +150,7 @@ $userName = $userData['name'] ?? 'N/A';
                         <div id="am-action-section" class="hidden bg-yellow-50 p-6 rounded-lg shadow-md border border-yellow-200">
                             <h2 class="text-lg font-bold text-yellow-800 mb-4 text-right" dir="rtl">إجراءات مسؤول العزل</h2>
                             <div class="space-y-4 text-right" dir="rtl">
-                                <p class="text-sm text-yellow-700">تمت المصادقة على رفع العزل</p>
+                                <p class="text-sm text-yellow-700">تمت المصادقة على العزل</p>
                                 <button id="amDoneBtn" class="w-full bg-[#0b6f76] text-white py-3 rounded-md hover:bg-[#085a60] transition font-bold text-lg">Done / تم العزل</button>
                             </div>
                         </div>
@@ -196,7 +196,7 @@ $userName = $userData['name'] ?? 'N/A';
                                     </div>
                                 </div>
                                 
-                                <p class="text-sm font-bold text-gray-700 italic mt-4 text-xs">تمت المصادقة على رفع العزل</p>
+                                <p class="text-sm font-bold text-gray-700 italic mt-4 text-xs">تمت المصادقة على العزل</p>
                             </div>
                         </div>
 
@@ -373,6 +373,11 @@ $userName = $userData['name'] ?? 'N/A';
                     pcCard.classList.remove('hidden');
                     document.getElementById('val-remover-name').textContent = data.creator_name;
                 }
+            }
+
+            // Show PDF download button only in the last state (completed)
+            if (data.status === 'completed') {
+                document.getElementById('pdfDownloadBtn').classList.remove('hidden');
             }
         }
 
