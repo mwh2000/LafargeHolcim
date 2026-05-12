@@ -375,8 +375,8 @@ $userName = $userData['name'] ?? 'N/A';
                 }
             }
 
-            // Show PDF download button only in the last state (completed)
-            if (data.status === 'completed') {
+            // Show PDF download button after isolation is done (active_isolation or completed)
+            if (data.status === 'active_isolation' || data.status === 'completed') {
                 document.getElementById('pdfDownloadBtn').classList.remove('hidden');
             }
         }
