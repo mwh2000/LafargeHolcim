@@ -54,7 +54,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                     </div>
 
                     <!-- =بقية الفلاتر -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         <select id="type_category" multiple
                             class="multi-select w-full px-3 py-2 border rounded-md"></select>
 
@@ -100,6 +100,11 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <option value="M">M</option>
                         </select>
 
+                        <?php if (in_array((int)($_COOKIE['user_type'] ?? 0), [1, 3, 5, 6], true)): ?>
+                            <select id="supervisor_filter" multiple
+                                class="multi-select w-full px-4 py-2 border rounded-md"></select>
+                        <?php endif; ?>
+
                         <?php include __DIR__ . '/partials/departments_filter.php'; ?>
                     </div>
 
@@ -144,7 +149,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
         let actionsStatusChart = null;
 
         /* ================= INSTANCES TOMSELECT ================= */
-        let typeCategorySelect, incidentClassSelect, incident, environmentSelect, groupSelect, departmentSelect;
+        let typeCategorySelect, incidentClassSelect, incident, environmentSelect, groupSelect, departmentSelect, supervisorSelect;
 
         /* ================= HELPERS ================= */
         function getSelectedValues(selectEl) {
@@ -162,6 +167,37 @@ require_once __DIR__ . '/helpers/authCheck.php';
             return base + '?' + params.toString();
         }
 
+
+        async function loadSupervisorOptions() {
+            const el = document.getElementById("supervisor_filter");
+            if (!el) return;
+            try {
+                const res = await fetch("../api/actions.php?action=getSupervisorFilterOptions", {
+                    headers: {
+                        "Authorization": `Bearer ${TOKEN}`
+                    }
+                });
+                const data = await res.json();
+                if (!data.success) return;
+
+                el.innerHTML = "";
+                (data.data.users || []).forEach(u => {
+                    const opt = document.createElement("option");
+                    opt.value = u.id;
+                    opt.textContent = u.name;
+                    el.appendChild(opt);
+                });
+
+                if (supervisorSelect) supervisorSelect.destroy();
+                supervisorSelect = new TomSelect(el, {
+                    plugins: ['remove_button'],
+                    placeholder: "Supervisors (reports' actions)",
+                    maxItems: null,
+                });
+            } catch (e) {
+                console.error("Failed to load supervisors", e);
+            }
+        }
 
         /* ================= LOAD TYPE CATEGORIES ================= */
         async function loadTypeCategories() {
@@ -279,6 +315,11 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 getSelectedValues(dept).forEach(v => params.append("department[]", v));
             }
 
+            const sup = document.getElementById("supervisor_filter");
+            if (sup) {
+                getSelectedValues(sup).forEach(v => params.append("manager_id[]", v));
+            }
+
             return params.toString();
         }
 
@@ -371,6 +412,8 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 const environment = getSelectedValues(document.getElementById("environment"));
                 const group = getSelectedValues(document.getElementById("group"));
                 const department = getSelectedValues(document.getElementById("department"));
+                const supervisorEl = document.getElementById("supervisor_filter");
+                const supervisorIds = supervisorEl ? getSelectedValues(supervisorEl) : [];
 
                 const params = new URLSearchParams();
                 if (fromDate) params.append("from_date", fromDate);
@@ -382,6 +425,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 environment.forEach(val => params.append("environment[]", val));
                 group.forEach(val => params.append("group[]", val));
                 department.forEach(val => params.append("department[]", val));
+                supervisorIds.forEach(val => params.append("manager_id[]", val));
 
                 // Admin → يشوف الكل (لا فلترة)
                 if (!IS_ADMIN) {
@@ -439,6 +483,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
         /* ================= EVENTS ================= */
         document.addEventListener("DOMContentLoaded", () => {
             loadTypeCategories(); // خيارات ديناميكية
+            loadSupervisorOptions();
             initStaticSelects(); // تهيئة الحقول الثابتة
             loadStatistics();
 

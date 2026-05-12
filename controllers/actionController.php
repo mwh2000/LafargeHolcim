@@ -333,8 +333,16 @@ class ActionController
         }
 
         if (!empty($filters['manager_id'])) {
-            $baseConditions[] = "u.manager_id = :manager_id";
-            $params[':manager_id'] = (int)$filters['manager_id'];
+            $ids = (array) $filters['manager_id'];
+            $placeholders = [];
+            foreach ($ids as $i => $id) {
+                $key = ":manager_id_$i";
+                $placeholders[] = $key;
+                $params[$key] = (int) $id;
+            }
+            if ($placeholders) {
+                $baseConditions[] = "u.manager_id IN (" . implode(',', $placeholders) . ")";
+            }
         }
 
         if (!empty($filters['super_manager_id'])) {
@@ -815,6 +823,23 @@ class ActionController
         ]);
     }
 
+    /**
+     * Users with role 3 or 5 (for dashboard: filter actions assigned to their direct reports).
+     */
+    public function getSupervisorFilterOptions(): array
+    {
+        $stmt = $this->conn->prepare("
+            SELECT id, name
+            FROM users
+            WHERE role_id IN (3, 5) AND is_active = 1
+            ORDER BY name ASC
+        ");
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return $this->respond(true, 'Supervisors retrieved successfully', ['users' => $rows]);
+    }
+
     /** ✅ Get Statistics about Actions */
     public function getStatistics(array $filters = [])
     {
@@ -860,10 +885,18 @@ class ActionController
             $baseConditions[] = "a.assigned_user_id IN (" . implode(',', $placeholders) . ")";
         }
 
-        // ✅ فلترة حسب المدير (manager_id)
+        // ✅ فلترة حسب المدير (manager_id) — يدعم manager_id[]=1&manager_id[]=2 أو manager_id=1
         if (!empty($filters['manager_id'])) {
-            $baseConditions[] = "u.manager_id = :manager_id";
-            $params[':manager_id'] = (int) $filters['manager_id'];
+            $ids = (array) $filters['manager_id'];
+            $placeholders = [];
+            foreach ($ids as $i => $id) {
+                $key = ":stat_manager_id_$i";
+                $placeholders[] = $key;
+                $params[$key] = (int) $id;
+            }
+            if ($placeholders) {
+                $baseConditions[] = "u.manager_id IN (" . implode(',', $placeholders) . ")";
+            }
         }
 
         // ✅ فلترة حسب super_manager_id
