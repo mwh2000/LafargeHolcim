@@ -109,7 +109,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-green-700 mb-1">السبب</label>
+                                    <label class="block text-smf font-medium text-green-700 mb-1">السبب</label>
                                     <select name="reason" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                         <option value="صيانة وقائية">صيانة وقائية</option>
                                         <option value="طارئة">طارئة</option>
@@ -120,7 +120,8 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                     <label class="block text-sm font-medium text-green-700 mb-1">تاريخ انتهاء الرخصة</label>
                                     <select id="license_expiry_select" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76] mb-2">
                                         <option value="بعد 12 ساعة اجباريا" selected>بعد 12 ساعة اجباريا</option>
-                                        <option value="manual">كتابة يدوية (أخرى)</option>
+                                        <option value="بعد 4 ساعات">بعد 4 ساعات</option>
+                                        <!-- <option value="manual">كتابة يدوية (أخرى)</option> -->
                                     </select>
                                     <input type="text" id="license_expiry_manual" placeholder="اكتب التاريخ هنا..." class="hidden w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>

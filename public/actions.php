@@ -298,14 +298,14 @@ require_once 'helpers/authCheck.php';
 
         /* ================= SORTING ================= */
         function toggleSort(column) {
-            // if (sortBy === column) {
-            //     sortOrder = sortOrder === 'ASC' ? 'DESC' : 'ASC';
-            // } else {
-            //     sortBy = column;
-            //     sortOrder = 'ASC';
-            // }
-            // currentPage = 1; // إعادة للصفحة الأولى عند التغيير
-            // fetchActions();
+            if (sortBy === column) {
+                sortOrder = sortOrder === 'ASC' ? 'DESC' : 'ASC';
+            } else {
+                sortBy = column;
+                sortOrder = 'ASC';
+            }
+            currentPage = 1; // إعادة للصفحة الأولى عند التغيير
+            fetchActions();
         }
 
         function updateSortIcons() {

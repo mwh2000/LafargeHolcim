@@ -182,7 +182,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
                     <div onclick="location.href='${getPermitsUrl('completed')}'"
                          class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-green-400 hover:shadow-lg transition">
-                        <p class="text-sm text-gray-500">Completed (Isolation Removed)</p>
+                        <p class="text-sm text-gray-500">Completed</p>
                         <p class="mt-2 text-2xl font-semibold text-green-600">${d.completed}</p>
                     </div>
                 `;
