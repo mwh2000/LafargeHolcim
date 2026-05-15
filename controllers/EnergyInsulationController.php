@@ -64,11 +64,20 @@ class EnergyInsulationController
                 }
             }
 
-            // Insert Staff
-            if (!empty($data['staff'])) {
-                $staffStmt = $this->conn->prepare("INSERT INTO energy_insulation_staff (license_id, name) VALUES (?, ?)");
-                foreach ($data['staff'] as $staffName) {
-                    $staffStmt->execute([$licenseId, $staffName]);
+            // Insert Staff Groups
+            if (!empty($data['staff_groups'])) {
+                $groupStmt = $this->conn->prepare("INSERT INTO energy_insulation_staff_group (name, license_id) VALUES (?, ?)");
+                $staffStmt = $this->conn->prepare("INSERT INTO energy_insulation_staff (license_id, name, group_id) VALUES (?, ?, ?)");
+                
+                foreach ($data['staff_groups'] as $group) {
+                    $groupStmt->execute([$group['group_name'], $licenseId]);
+                    $groupId = $this->conn->lastInsertId();
+                    
+                    if (!empty($group['members'])) {
+                        foreach ($group['members'] as $staffName) {
+                            $staffStmt->execute([$licenseId, $staffName, $groupId]);
+                        }
+                    }
                 }
             }
 
@@ -194,9 +203,10 @@ class EnergyInsulationController
 
         // Get Staff
         $staffStmt = $this->conn->prepare("
-            SELECT name
-            FROM energy_insulation_staff
-            WHERE license_id = ?
+            SELECT s.name, sg.name as group_name
+            FROM energy_insulation_staff s
+            LEFT JOIN energy_insulation_staff_group sg ON s.group_id = sg.id
+            WHERE s.license_id = ?
         ");
         $staffStmt->execute([$id]);
         $license['staff'] = $staffStmt->fetchAll(PDO::FETCH_ASSOC);

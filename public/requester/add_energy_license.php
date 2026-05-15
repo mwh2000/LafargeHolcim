@@ -192,22 +192,14 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                         <!-- Step 4: Crew Selection -->
                         <div class="step-content" data-step="4">
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">طاقم العمل</h2>
-                            <div id="staff-container" class="space-y-3">
-                                <label class="block text-sm font-medium text-green-700 mb-2">أسماء طاقم العمل</label>
-                                <div class="staff-entry flex gap-2">
-                                    <input type="text" name="staff_names[]" placeholder="ادخل الاسم هنا" class="flex-1 px-4 py-2 border rounded-md focus:ring-[#0b6f76] staff-name-input">
-                                    <button type="button" class="remove-staff px-3 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors hidden">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                        </svg>
-                                    </button>
-                                </div>
+                            <div id="staff-groups-container" class="space-y-6">
+                                <!-- Groups will be dynamically added here -->
                             </div>
-                            <button type="button" id="addStaffBtn" class="mt-4 flex items-center gap-2 text-sm text-[#0b6f76] font-medium hover:underline">
+                            <button type="button" id="addGroupBtn" class="mt-4 flex items-center gap-2 text-sm text-[#0b6f76] font-medium hover:underline">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                                 </svg>
-                                إضافة اسم آخر
+                                إضافة مجموعة
                             </button>
                         </div>
 
@@ -317,40 +309,103 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
             licenseExpiryManual.addEventListener('input', updateButtonStates);
 
-            // Staff dynamic inputs logic
-            const staffContainer = document.getElementById('staff-container');
-            const addStaffBtn = document.getElementById('addStaffBtn');
+            // Staff dynamic groups logic
+            const staffGroupsContainer = document.getElementById('staff-groups-container');
+            const addGroupBtn = document.getElementById('addGroupBtn');
 
-            addStaffBtn.addEventListener('click', () => {
-                const newEntry = document.createElement('div');
-                newEntry.className = 'staff-entry flex gap-2 animate-slide-in';
-                newEntry.innerHTML = `
-                    <input type="text" name="staff_names[]" placeholder="ادخل الاسم هنا" class="flex-1 px-4 py-2 border rounded-md focus:ring-[#0b6f76] staff-name-input">
-                    <button type="button" class="remove-staff px-3 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            function createStaffInput() {
+                return `
+                    <div class="staff-entry flex gap-2 mb-2 animate-slide-in">
+                        <input type="text" placeholder="ادخل اسم الفرد هنا" class="flex-1 px-4 py-2 border rounded-md focus:ring-[#0b6f76] staff-name-input">
+                        <button type="button" class="remove-staff px-3 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                `;
+            }
+
+            function addGroup() {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'staff-group-card bg-white border border-gray-200 p-5 rounded-lg shadow-sm relative mb-4';
+                groupDiv.innerHTML = `
+                    <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2" dir="rtl">
+                        <div class="flex-1">
+                             <label class="block text-sm font-bold text-[#0b6f76] mb-1">اسم المجموعة</label>
+                             <input type="text" placeholder="مثال: Group A أو فريق الصيانة" class="w-full md:w-3/4 px-4 py-2 border border-gray-300 rounded-md focus:ring-[#0b6f76] group-name-input" required>
+                        </div>
+                        <button type="button" class="remove-group text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-full transition-colors mr-2" title="حذف المجموعة">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="staff-members-container" dir="rtl">
+                        <label class="block text-sm font-medium text-gray-700 mb-3">أفراد المجموعة</label>
+                        ${createStaffInput()}
+                    </div>
+                    <button type="button" class="add-staff-to-group-btn mt-4 flex items-center gap-2 text-sm text-[#0b6f76] font-bold hover:underline" dir="rtl">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                         </svg>
+                        إضافة فرد للمجموعة
                     </button>
                 `;
-                staffContainer.appendChild(newEntry);
-                updateStaffRemoveButtons();
+                staffGroupsContainer.appendChild(groupDiv);
+                updateStaffRemoveButtons(groupDiv);
                 updateButtonStates();
-            });
+            }
 
-            staffContainer.addEventListener('click', (e) => {
+            addGroupBtn.addEventListener('click', addGroup);
+
+            staffGroupsContainer.addEventListener('click', (e) => {
+                // Add staff member to group
+                if (e.target.closest('.add-staff-to-group-btn')) {
+                    const groupCard = e.target.closest('.staff-group-card');
+                    const membersContainer = groupCard.querySelector('.staff-members-container');
+                    membersContainer.insertAdjacentHTML('beforeend', createStaffInput());
+                    updateStaffRemoveButtons(groupCard);
+                    updateButtonStates();
+                }
+
+                // Remove staff member from group
                 if (e.target.closest('.remove-staff')) {
                     const entry = e.target.closest('.staff-entry');
+                    const groupCard = entry.closest('.staff-group-card');
                     entry.remove();
-                    updateStaffRemoveButtons();
+                    updateStaffRemoveButtons(groupCard);
+                    updateButtonStates();
+                }
+
+                // Remove entire group
+                if (e.target.closest('.remove-group')) {
+                    e.target.closest('.staff-group-card').remove();
                     updateButtonStates();
                 }
             });
 
-            staffContainer.addEventListener('input', (e) => {
-                if (e.target.classList.contains('staff-name-input')) {
+            staffGroupsContainer.addEventListener('input', (e) => {
+                if (e.target.classList.contains('staff-name-input') || e.target.classList.contains('group-name-input')) {
                     updateButtonStates();
                 }
             });
+
+            function updateStaffRemoveButtons(groupCard) {
+                if (!groupCard) return;
+                const entries = groupCard.querySelectorAll('.staff-entry');
+                entries.forEach((entry, index) => {
+                    const removeBtn = entry.querySelector('.remove-staff');
+                    if (entries.length === 1) {
+                        removeBtn.classList.add('hidden');
+                    } else {
+                        removeBtn.classList.remove('hidden');
+                    }
+                });
+            }
+
+            // Initialize with one empty group
+            addGroup();
 
             const equipmentSearchInput = document.getElementById('equipment-search');
             let searchTimeout = null;
@@ -364,16 +419,8 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 }, 500);
             });
 
-            function updateStaffRemoveButtons() {
-                const entries = staffContainer.querySelectorAll('.staff-entry');
-                entries.forEach((entry, index) => {
-                    const removeBtn = entry.querySelector('.remove-staff');
-                    if (entries.length === 1) {
-                        removeBtn.classList.add('hidden');
-                    } else {
-                        removeBtn.classList.remove('hidden');
-                    }
-                });
+            function updateStaffRemoveButtonsOld() {
+                // Not used anymore
             }
 
             function checkStepValidity(step) {
@@ -390,10 +437,18 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 } else if (step === 3) {
                     if (selectedEquipments.size === 0) return false;
                 } else if (step === 4) {
-                    const names = Array.from(document.querySelectorAll('.staff-name-input'))
-                                       .map(input => input.value.trim())
-                                       .filter(val => val !== '');
-                    if (names.length === 0) return false;
+                    const groups = document.querySelectorAll('.staff-group-card');
+                    if (groups.length === 0) return false;
+                    
+                    for (let group of groups) {
+                        const groupName = group.querySelector('.group-name-input').value.trim();
+                        if (!groupName) return false;
+                        
+                        const names = Array.from(group.querySelectorAll('.staff-name-input'))
+                                        .map(input => input.value.trim())
+                                        .filter(val => val !== '');
+                        if (names.length === 0) return false;
+                    }
                 } else if (step === 6) {
                     if (!officialSelect.getValue()) return false;
                 } else if (step === 7) {
@@ -626,13 +681,26 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     execution_exceeds_shift_time: formData.get('execution_exceeds_shift_time') ? 1 : 0,
                     energy_types: [],
                     equipments: [],
-                    staff: Array.from(document.querySelectorAll('.staff-name-input'))
-                                .map(input => input.value.trim())
-                                .filter(val => val !== ''),
+                    staff_groups: [],
                     area_manager_id: managerSelect.getValue(),
                     official_name: officialSelect.getValue(),
                     official_department: document.getElementById('official_department').value
                 };
+
+                // Get Staff Groups
+                document.querySelectorAll('.staff-group-card').forEach(groupCard => {
+                    const groupName = groupCard.querySelector('.group-name-input').value.trim();
+                    const members = Array.from(groupCard.querySelectorAll('.staff-name-input'))
+                                        .map(input => input.value.trim())
+                                        .filter(val => val !== '');
+                    
+                    if (groupName && members.length > 0) {
+                        data.staff_groups.push({
+                            group_name: groupName,
+                            members: members
+                        });
+                    }
+                });
 
                 // Get Energy Types
                 document.querySelectorAll('input[name="energy_types[]"]:checked').forEach(cb => {

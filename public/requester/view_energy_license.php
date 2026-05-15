@@ -126,7 +126,7 @@ $userName = $userData['name'] ?? 'N/A';
                         <!-- Staff Card -->
                         <div id="staff-card" class="bg-white p-6 rounded-lg shadow-md">
                             <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">طاقم العمل</h2>
-                            <div id="val-staff" class="flex flex-wrap gap-2 justify-start" dir="rtl"></div>
+                            <div id="val-staff" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-right" dir="rtl"></div>
                         </div>
 
                         <!-- Isolation Done Info Card -->
@@ -337,12 +337,37 @@ $userName = $userData['name'] ?? 'N/A';
 
             // Staff
             const staffContainer = document.getElementById('val-staff');
+            staffContainer.innerHTML = '';
             if (data.staff && data.staff.length > 0) {
+                // Group by group_name
+                const groups = {};
                 data.staff.forEach(member => {
-                    const span = document.createElement('span');
-                    span.className = 'px-4 py-2 bg-blue-50 border border-blue-100 rounded-md text-sm text-blue-800 font-medium';
-                    span.textContent = member.name;
-                    staffContainer.appendChild(span);
+                    const gName = member.group_name || 'طاقم العمل';
+                    if (!groups[gName]) groups[gName] = [];
+                    groups[gName].push(member.name);
+                });
+
+                Object.keys(groups).forEach(groupName => {
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'bg-gray-50 border border-gray-100 p-3 rounded-md print:p-1 print:mb-2 break-inside-avoid';
+                    
+                    const gTitle = document.createElement('h4');
+                    gTitle.className = 'text-sm font-bold text-[#0b6f76] mb-2 border-b border-gray-200 pb-1 print:text-[9pt] print:mb-1';
+                    gTitle.textContent = groupName;
+                    groupDiv.appendChild(gTitle);
+
+                    const membersDiv = document.createElement('div');
+                    membersDiv.className = 'flex flex-wrap gap-2';
+                    
+                    groups[groupName].forEach(name => {
+                        const span = document.createElement('span');
+                        span.className = 'px-3 py-1 bg-white border border-gray-100 rounded text-xs text-gray-700 font-medium print:text-[8pt] print:px-1.5 print:py-0.5';
+                        span.textContent = name;
+                        membersDiv.appendChild(span);
+                    });
+
+                    groupDiv.appendChild(membersDiv);
+                    staffContainer.appendChild(groupDiv);
                 });
             } else {
                 staffContainer.innerHTML = '<p class="text-gray-400 italic text-sm">لا يوجد طاقم عمل مسجل</p>';
