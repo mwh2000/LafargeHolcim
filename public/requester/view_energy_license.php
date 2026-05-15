@@ -103,6 +103,7 @@ $userName = $userData['name'] ?? 'N/A';
                                 <div><span class="text-gray-500">القسم:</span> <span id="val-section" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">السبب:</span> <span id="val-reason" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">تصريح العمل:</span> <span id="val-permit" class="font-medium"></span></div>
+                                <div><span class="text-gray-500">مرخص العزل:</span> <span id="val-created-by" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">طالب العزل:</span> <span id="val-requester" class="font-medium font-bold text-blue-600"></span></div>
                                 <div><span class="text-gray-500">مسؤول المنطقة:</span> <span id="val-am" class="font-medium"></span></div>
                                 <div><span class="text-gray-500">اسم العازل:</span> <span id="val-official" class="font-medium text-green-700"></span></div>
@@ -278,7 +279,8 @@ $userName = $userData['name'] ?? 'N/A';
             if (sectionEl) sectionEl.textContent = data.section_name;
             document.getElementById('val-reason').textContent = data.reason;
             document.getElementById('val-permit').textContent = data.work_permit;
-            document.getElementById('val-requester').textContent = data.creator_name;
+            document.getElementById('val-created-by').textContent = data.creator_name;
+            document.getElementById('val-requester').textContent = data.requester_name;
             document.getElementById('val-am').textContent = data.area_manager_name;
             document.getElementById('val-official').textContent = `${data.official_name} (${data.official_department})`;
 
