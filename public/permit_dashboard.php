@@ -35,11 +35,19 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
                 <!-- ================= FILTERS ================= -->
                 <div class="bg-white p-5 rounded-lg shadow mb-6 space-y-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">Permit Type</label>
+                            <select id="permit_type" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-[#0b6f76] focus:border-[#0b6f76]">
+                                <option value="energy_isolation">Energy Isolation</option>
+                                <option value="hot_work">Hot Work</option>
+                            </select>
+                        </div>
+
                         <div>
                             <label class="block text-sm text-gray-600 mb-1">From Date</label>
                             <input type="date" id="from_date"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-[#0b6f76] focus:border-[#0b6f76]">
                         </div>
 
                         <div>
@@ -62,7 +70,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 </div>
 
                 <!-- ================= CHART ================= -->
-                <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <div class="bg-white rounded-lg shadow p-6 mb-6" id="chartContainer">
                     <h2 class="text-lg font-semibold text-gray-700 mb-4 text-center">
                         Permits Status Overview
                     </h2>
@@ -85,11 +93,13 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
     <script>
         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
-        const API_URL = "../api/requester/energy_insulation.php";
+        const ENERGY_API_URL = "../api/requester/energy_insulation.php";
+        const HOT_WORK_API_URL = "../api/requester/hot_work_permit.php";
         let permitStatusChart = null;
 
         function getPermitsUrl(status = '') {
-            let base = 'permits.php';
+            const permitType = document.getElementById("permit_type").value;
+            let base = permitType === 'hot_work' ? 'hot_work_permits.php' : 'permits.php';
             const params = new URLSearchParams();
             const fromDate = document.getElementById("from_date").value;
             const toDate = document.getElementById("to_date").value;
@@ -144,6 +154,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
         async function loadStatistics() {
             try {
+                const permitType = document.getElementById("permit_type").value;
                 const fromDate = document.getElementById("from_date").value;
                 const toDate = document.getElementById("to_date").value;
 
@@ -152,40 +163,57 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 if (fromDate) params.append("from_date", fromDate);
                 if (toDate) params.append("to_date", toDate);
 
-                const res = await fetch(`${API_URL}?${params.toString()}`, {
+                const apiUrl = permitType === 'hot_work' ? HOT_WORK_API_URL : ENERGY_API_URL;
+
+                const res = await fetch(`${apiUrl}?${params.toString()}`, {
                     headers: { "Authorization": `Bearer ${TOKEN}` }
                 });
                 const result = await res.json();
                 if (!result.success) return;
 
                 const d = result.data;
-                renderStatusChart(d);
+                const statsContainer = document.getElementById("statsContainer");
+                const chartContainer = document.getElementById("chartContainer");
 
-                document.getElementById("statsContainer").innerHTML = `
-                    <div onclick="location.href='${getPermitsUrl()}'"
-                         class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-gray-400 hover:shadow-lg transition">
-                        <p class="text-sm text-gray-500">Total Permits</p>
-                        <p class="mt-2 text-2xl font-semibold text-gray-700">${d.total}</p>
-                    </div>
+                if (permitType === 'energy_isolation') {
+                    chartContainer.classList.remove("hidden");
+                    renderStatusChart(d);
 
-                    <div onclick="location.href='${getPermitsUrl('pending')}'"
-                         class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-yellow-400 hover:shadow-lg transition">
-                        <p class="text-sm text-gray-500">Open</p>
-                        <p class="mt-2 text-2xl font-semibold text-yellow-600">${d.pending}</p>
-                    </div>
+                    statsContainer.innerHTML = `
+                        <div onclick="location.href='${getPermitsUrl()}'"
+                             class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-gray-400 hover:shadow-lg transition">
+                            <p class="text-sm text-gray-500">Total Permits</p>
+                            <p class="mt-2 text-2xl font-semibold text-gray-700">${d.total}</p>
+                        </div>
 
-                    <div onclick="location.href='${getPermitsUrl('active_isolation')}'"
-                         class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-blue-400 hover:shadow-lg transition">
-                        <p class="text-sm text-gray-500">Active Isolation</p>
-                        <p class="mt-2 text-2xl font-semibold text-blue-600">${d.active_isolation}</p>
-                    </div>
+                        <div onclick="location.href='${getPermitsUrl('pending')}'"
+                             class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-yellow-400 hover:shadow-lg transition">
+                            <p class="text-sm text-gray-500">Open</p>
+                            <p class="mt-2 text-2xl font-semibold text-yellow-600">${d.pending}</p>
+                        </div>
 
-                    <div onclick="location.href='${getPermitsUrl('completed')}'"
-                         class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-green-400 hover:shadow-lg transition">
-                        <p class="text-sm text-gray-500">Completed</p>
-                        <p class="mt-2 text-2xl font-semibold text-green-600">${d.completed}</p>
-                    </div>
-                `;
+                        <div onclick="location.href='${getPermitsUrl('active_isolation')}'"
+                             class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-blue-400 hover:shadow-lg transition">
+                            <p class="text-sm text-gray-500">Active Isolation</p>
+                            <p class="mt-2 text-2xl font-semibold text-blue-600">${d.active_isolation}</p>
+                        </div>
+
+                        <div onclick="location.href='${getPermitsUrl('completed')}'"
+                             class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-green-400 hover:shadow-lg transition">
+                            <p class="text-sm text-gray-500">Completed</p>
+                            <p class="mt-2 text-2xl font-semibold text-green-600">${d.completed}</p>
+                        </div>
+                    `;
+                } else if (permitType === 'hot_work') {
+                    chartContainer.classList.add("hidden");
+                    statsContainer.innerHTML = `
+                        <div onclick="location.href='${getPermitsUrl()}'"
+                             class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-gray-400 hover:shadow-lg transition col-span-1 sm:col-span-2 lg:col-span-4">
+                            <p class="text-sm text-gray-500">Total Permits (Hot Work)</p>
+                            <p class="mt-2 text-2xl font-semibold text-gray-700">${d.total}</p>
+                        </div>
+                    `;
+                }
 
                 // Toggle Clear Button
                 const hasFilters = fromDate || toDate;
@@ -198,8 +226,10 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
         document.addEventListener("DOMContentLoaded", () => {
             loadStatistics();
+            document.getElementById("permit_type").addEventListener("change", loadStatistics);
             document.getElementById("applyFilters").addEventListener("click", loadStatistics);
             document.getElementById("clearFilters").addEventListener("click", () => {
+                document.getElementById("permit_type").value = "energy_isolation";
                 document.getElementById("from_date").value = "";
                 document.getElementById("to_date").value = "";
                 loadStatistics();

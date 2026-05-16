@@ -30,6 +30,16 @@ try {
                 $res = $controller->getAssignees();
             } elseif ($action === 'show' && isset($_GET['id'])) {
                 $res = $controller->getPermit($_GET['id']);
+            } elseif ($action === 'getStatistics') {
+                $filters = $_GET;
+                $filters['user_id'] = $decoded->id;
+                $filters['role_id'] = $decoded->role_id;
+                $res = $controller->getStatistics($filters);
+            } elseif ($action === 'getAll') {
+                $filters = $_GET;
+                $filters['user_id'] = $decoded->id;
+                $filters['role_id'] = $decoded->role_id;
+                $res = $controller->getAll($filters);
             }
             break;
 

@@ -166,4 +166,98 @@ class HotWorkPermitController
             return ['success' => false, 'message' => 'Error fetching permit: ' . $e->getMessage()];
         }
     }
+
+    public function getStatistics($filters)
+    {
+        try {
+            $query = "SELECT COUNT(*) as total FROM hot_work_permit WHERE 1=1";
+            $params = [];
+
+            if (!empty($filters['from_date'])) {
+                $query .= " AND DATE(issuing_date_time) >= ?";
+                $params[] = $filters['from_date'];
+            }
+            if (!empty($filters['to_date'])) {
+                $query .= " AND DATE(issuing_date_time) <= ?";
+                $params[] = $filters['to_date'];
+            }
+
+            // Role-based filtering if needed (e.g. only show user's assigned permits unless they are admin/manager)
+            $userRole = (int)$filters['role_id'];
+            $userId = (int)$filters['user_id'];
+            
+            if (!in_array($userRole, [1, 6])) {
+                $query .= " AND (assigned_to = ? OR created_by = ?)";
+                $params[] = $userId;
+                $params[] = $userId;
+            }
+
+            $stmt = $this->db->prepare($query);
+            $stmt->execute($params);
+            $stats = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return ['success' => true, 'data' => ['total' => (int)$stats['total']]];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Failed to fetch statistics: ' . $e->getMessage()];
+        }
+    }
+
+    public function getAll($filters)
+    {
+        try {
+            $page = isset($filters['page']) ? (int)$filters['page'] : 1;
+            $limit = isset($filters['limit']) ? (int)$filters['limit'] : 10;
+            $offset = ($page - 1) * $limit;
+
+            $where = " WHERE 1=1";
+            $params = [];
+
+            if (!empty($filters['from_date'])) {
+                $where .= " AND DATE(h.issuing_date_time) >= ?";
+                $params[] = $filters['from_date'];
+            }
+            if (!empty($filters['to_date'])) {
+                $where .= " AND DATE(h.issuing_date_time) <= ?";
+                $params[] = $filters['to_date'];
+            }
+
+            // Role-based filtering
+            $userRole = (int)$filters['role_id'];
+            $userId = (int)$filters['user_id'];
+            
+            if (!in_array($userRole, [1, 6])) {
+                $where .= " AND (h.assigned_to = ? OR h.created_by = ?)";
+                $params[] = $userId;
+                $params[] = $userId;
+            }
+
+            // Get total count
+            $countQuery = "SELECT COUNT(*) as total FROM hot_work_permit h $where";
+            $countStmt = $this->db->prepare($countQuery);
+            $countStmt->execute($params);
+            $total = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+            $query = "SELECT h.*, u.name as assigned_to_name, c.name as creator_name
+                      FROM hot_work_permit h
+                      LEFT JOIN users u ON h.assigned_to = u.id
+                      LEFT JOIN users c ON h.created_by = c.id
+                      $where
+                      ORDER BY h.id DESC
+                      LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
+
+            $stmt = $this->db->prepare($query);
+            $stmt->execute($params);
+            $permits = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return ['success' => true, 'data' => [
+                'permits' => $permits,
+                'total' => $total,
+                'page' => $page,
+                'limit' => $limit,
+                'total_pages' => ceil($total / $limit)
+            ]];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Failed to fetch permits: ' . $e->getMessage()];
+        }
+    }
 }
