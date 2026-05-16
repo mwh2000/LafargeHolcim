@@ -537,4 +537,54 @@ class EnergyInsulationController
             return $this->respond(false, 'Failed to fetch licenses: ' . $e->getMessage(), null, ['code' => 500], 500);
         }
     }
+
+    public function updateStaffGroups(int $licenseId, array $staffGroups, int $userId)
+    {
+        try {
+            // Verify permission: Allow created_by or area_manager_id to edit
+            $stmt = $this->conn->prepare("SELECT created_by, area_manager_id FROM energy_insulation_license WHERE id = ?");
+            $stmt->execute([$licenseId]);
+            $license = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$license) {
+                return $this->respond(false, 'License not found', null, ['code' => 404], 404);
+            }
+
+            if ($license['created_by'] != $userId && $license['area_manager_id'] != $userId) {
+                return $this->respond(false, 'Unauthorized to edit this license staff groups', null, ['code' => 403], 403);
+            }
+
+            $this->conn->beginTransaction();
+
+            // Delete existing staff and groups
+            $this->conn->prepare("DELETE FROM energy_insulation_staff WHERE license_id = ?")->execute([$licenseId]);
+            $this->conn->prepare("DELETE FROM energy_insulation_staff_group WHERE license_id = ?")->execute([$licenseId]);
+
+            // Insert new Staff Groups
+            if (!empty($staffGroups)) {
+                $groupStmt = $this->conn->prepare("INSERT INTO energy_insulation_staff_group (name, license_id) VALUES (?, ?)");
+                $staffStmt = $this->conn->prepare("INSERT INTO energy_insulation_staff (license_id, name, group_id) VALUES (?, ?, ?)");
+                
+                foreach ($staffGroups as $group) {
+                    if (empty($group['group_name'])) continue;
+                    
+                    $groupStmt->execute([$group['group_name'], $licenseId]);
+                    $groupId = $this->conn->lastInsertId();
+                    
+                    if (!empty($group['members'])) {
+                        foreach ($group['members'] as $staffName) {
+                            if (empty(trim($staffName))) continue;
+                            $staffStmt->execute([$licenseId, $staffName, $groupId]);
+                        }
+                    }
+                }
+            }
+
+            $this->conn->commit();
+            return $this->respond(true, 'تم تحديث طاقم العمل بنجاح');
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            return $this->respond(false, 'Failed to update staff groups: ' . $e->getMessage(), null, ['code' => 500], 500);
+        }
+    }
 }

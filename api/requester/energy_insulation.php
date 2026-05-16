@@ -71,6 +71,8 @@ try {
                 $res = $controller->removeIsolationAction((int)$input['license_id'], $decoded->id);
             } elseif ($action === 'reject') {
                 $res = $controller->rejectLicense((int)$input['license_id'], $input['reason'] ?? '', $decoded->id);
+            } elseif ($action === 'updateStaffGroups') {
+                $res = $controller->updateStaffGroups((int)$input['license_id'], $input['staff_groups'] ?? [], $decoded->id);
             } else {
                 $input['created_by'] = $decoded->id;
                 $res = $controller->createLicense($input);
