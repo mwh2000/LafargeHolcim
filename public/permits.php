@@ -40,7 +40,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <option value="">All Status</option>
                             <option value="pending">Open</option>
                             <option value="active_isolation">Active Isolation</option>
-                            <option value="completed">Completed (Isolation Removed)</option>
+                            <option value="completed">Completed</option>
                             <option value="rejected">Rejected</option>
                         </select>
                     </div>
@@ -91,7 +91,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 'pending': 'Open',
                 'active_isolation': 'Active Isolation',
                 'rejected': 'Rejected',
-                'completed': 'Completed (Isolation Removed)'
+                'completed': 'Completed'
             };
             return map[status] || status;
         }

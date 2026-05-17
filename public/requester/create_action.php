@@ -46,8 +46,17 @@ require_once '../helpers/authCheck.php';
                     <form id="createActionForm" enctype="multipart/form-data"
                         class="max-w-5xl mx-auto grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 p-4 sm:p-6">
 
-                        <!-- Group -->
-
+                        <!-- Good Practice Switch -->
+                        <div class="col-span-1 sm:col-span-2 lg:col-span-3 flex items-center justify-between bg-green-50 p-4 rounded-md border border-green-200 mb-4">
+                            <div>
+                                <h3 class="text-lg font-medium text-green-800">Good Practice</h3>
+                                <p class="text-sm text-green-600">Enable to record a good practice instead of an action.</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="goodPracticeSwitch" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                            </label>
+                        </div>
 
                         <!-- Start Date -->
                         <div class="col-span-1">
@@ -291,6 +300,7 @@ require_once '../helpers/authCheck.php';
                         const API_USERS = "../../api/requester/users.php?action=all";
                         const API_TYPES = "../../api/requester/types.php";
                         const API_CREATE = "../../api/requester/actions.php?action=create";
+                        const API_CREATE_GOOD_PRACTICE = "../../api/requester/good_practice.php";
                         const ID = "<?= $_COOKIE['user_id'] ?? '' ?>";
                         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
 
@@ -304,7 +314,49 @@ require_once '../helpers/authCheck.php';
                             type: document.getElementById("type"),
                             imageInput: document.getElementById("image"),
                             imagePreview: document.getElementById("imagePreview"),
+                            goodPracticeSwitch: document.getElementById("goodPracticeSwitch"),
                         };
+
+                        /* =========================
+                         * 🔹 Toggle Fields Logic
+                         * ========================= */
+                        function toggleGoodPracticeFields() {
+                            const isGoodPractice = el.goodPracticeSwitch.checked;
+                            const allFieldsContainers = el.form.querySelectorAll('.col-span-1:not(.sm\\:col-span-2), .col-span-full');
+                            
+                            allFieldsContainers.forEach(container => {
+                                // Keep these visible
+                                const hasStartDate = container.querySelector('#start_date');
+                                const hasAssignedUser = container.querySelector('#assigned_user');
+                                const hasDescription = container.querySelector('#description');
+                                const hasImages = container.querySelector('#images');
+                                const hasImagePreview = container.id === 'imagePreview';
+                                const hasSubmitBtn = container.querySelector('#submitBtn');
+
+                                if (hasStartDate || hasAssignedUser || hasDescription || hasImages || hasImagePreview || hasSubmitBtn) {
+                                    return; // keep visible
+                                }
+
+                                // Toggle others
+                                if (isGoodPractice) {
+                                    container.style.display = 'none';
+                                } else {
+                                    container.style.display = '';
+                                }
+                            });
+
+                            // Action field is in a col-span-3, need to hide it explicitly
+                            const actionContainer = el.form.querySelector('label[for="action"]').parentElement;
+                            if (isGoodPractice) {
+                                actionContainer.style.display = 'none';
+                            } else {
+                                actionContainer.style.display = '';
+                            }
+                        }
+
+                        if (el.goodPracticeSwitch) {
+                            el.goodPracticeSwitch.addEventListener('change', toggleGoodPracticeFields);
+                        }
 
 
                         /* =========================
@@ -404,28 +456,37 @@ require_once '../helpers/authCheck.php';
                             el.submitBtn.disabled = true;
                             el.submitBtn.textContent = "Submitting...";
 
+                            const isGoodPractice = el.goodPracticeSwitch && el.goodPracticeSwitch.checked;
                             const formData = new FormData();
-                            formData.append("type_id", document.getElementById("type").value);
-                            formData.append("location", document.getElementById("location").value);
-                            formData.append("related_topics", document.getElementById("related_topics").value);
+                            
+                            if (isGoodPractice) {
+                                formData.append("start_date", document.getElementById("start_date").value);
+                                formData.append("assigned_user_id", document.getElementById("assigned_user").value);
+                                formData.append("description", document.getElementById("description").value);
+                            } else {
+                                formData.append("type_id", document.getElementById("type").value);
+                                formData.append("location", document.getElementById("location").value);
+                                formData.append("related_topics", document.getElementById("related_topics").value);
 
-                            const incidentClassificationEl =
-                                document.getElementById("incident_classfication");
+                                const incidentClassificationEl =
+                                    document.getElementById("incident_classfication");
 
-                            if (incidentClassificationEl && incidentClassificationEl.value !== "") {
-                                formData.append("incident_classfication", incidentClassificationEl.value);
+                                if (incidentClassificationEl && incidentClassificationEl.value !== "") {
+                                    formData.append("incident_classfication", incidentClassificationEl.value);
+                                }
+
+                                formData.append("incident", document.getElementById("incident").value);
+                                formData.append("visit_duration", document.getElementById("visit_duration").value);
+                                formData.append("environment", document.getElementById("environment").value);
+                                formData.append("area_visited", document.getElementById("area_visited").value);
+                                formData.append("description", document.getElementById("description").value);
+                                formData.append("action", document.getElementById("action").value);
+                                formData.append("priority", document.getElementById("priority").value);
+                                formData.append("assigned_user_id", document.getElementById("assigned_user").value);
+                                formData.append("start_date", document.getElementById("start_date").value);
+                                formData.append("expiry_date", document.getElementById("expiry_date").value);
                             }
 
-                            formData.append("incident", document.getElementById("incident").value);
-                            formData.append("visit_duration", document.getElementById("visit_duration").value);
-                            formData.append("environment", document.getElementById("environment").value);
-                            formData.append("area_visited", document.getElementById("area_visited").value);
-                            formData.append("description", document.getElementById("description").value);
-                            formData.append("action", document.getElementById("action").value);
-                            formData.append("priority", document.getElementById("priority").value);
-                            formData.append("assigned_user_id", document.getElementById("assigned_user").value);
-                            formData.append("start_date", document.getElementById("start_date").value);
-                            formData.append("expiry_date", document.getElementById("expiry_date").value);
                             const imagesInput = document.getElementById("images");
                             [...imagesInput.files].forEach(file => {
                                 formData.append("images[]", file);
@@ -434,7 +495,8 @@ require_once '../helpers/authCheck.php';
                             formData.append("created_by", ID);
 
                             try {
-                                const res = await fetch(API_CREATE, {
+                                const targetAPI = isGoodPractice ? API_CREATE_GOOD_PRACTICE : API_CREATE;
+                                const res = await fetch(targetAPI, {
                                     method: "POST",
                                     headers: {
                                         Authorization: `Bearer ${TOKEN}`
@@ -448,13 +510,24 @@ require_once '../helpers/authCheck.php';
                                 Swal.fire({
                                     icon: "success",
                                     title: "Success",
-                                    text: "Action created successfully!",
+                                    text: isGoodPractice ? "Good practice created successfully!" : "Action created successfully!",
                                     timer: 2000,
                                     showConfirmButton: false
                                 });
 
-                                el.form.reset();
-                                el.assignedUser.tomselect.clear();
+                                setTimeout(() => {
+                                    if (isGoodPractice) {
+                                        const newId = data.good_practice?.data?.id;
+                                        if (newId) {
+                                            window.location.href = `../good_practice.php?id=${newId}`;
+                                        }
+                                    } else {
+                                        const newId = data.action?.data?.id;
+                                        if (newId) {
+                                            window.location.href = `../action.php?id=${newId}`;
+                                        }
+                                    }
+                                }, 2000);
 
                             } catch (err) {
                                 Toastify({
