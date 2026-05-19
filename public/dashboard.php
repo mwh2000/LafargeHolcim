@@ -39,7 +39,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 <div class="bg-white p-5 rounded-lg shadow mb-6 space-y-4">
 
                     <!-- التواريخ -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm text-gray-600 mb-1">From Date</label>
                             <input type="date" id="from_date"
@@ -50,6 +50,15 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <label class="block text-sm text-gray-600 mb-1">To Date</label>
                             <input type="date" id="to_date"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">View</label>
+                            <select id="data_view"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                                <option value="actions">Actions</option>
+                                <option value="good_practice">Good practice</option>
+                            </select>
                         </div>
                     </div>
 
@@ -119,7 +128,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 </div>
 
                 <!-- ================= CHART ================= -->
-                <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <div id="chartContainer" class="bg-white rounded-lg shadow p-6 mb-6">
                     <h2 class="text-lg font-semibold text-gray-700 mb-4">
                         Actions Status Overview
                     </h2>
@@ -398,9 +407,44 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
 
 
+        async function loadGoodPracticeCount() {
+            try {
+                const response = await fetch(`../api/requester/good_practice.php?action=getAll&page=1&limit=1`, {
+                    headers: {
+                        "Authorization": `Bearer ${TOKEN}`
+                    }
+                });
+                const result = await response.json();
+                if (!result.success) {
+                    Swal.fire("Error", result.message || "Failed to fetch good practices count", "error");
+                    return;
+                }
+
+                const total = result.data.pagination?.total_records ?? 0;
+                const chartContainerEl = document.getElementById("chartContainer");
+                if (chartContainerEl) chartContainerEl.classList.add("hidden");
+                document.getElementById("statsContainer").innerHTML = `
+                    <div onclick="location.href='good_practices.php'"
+                         class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-gray-400 hover:shadow-lg transition col-span-1 sm:col-span-2 lg:col-span-4">
+                        <p class="text-sm text-gray-500">Total Good Practices</p>
+                        <p class="mt-2 text-2xl font-semibold text-gray-700">${total}</p>
+                    </div>
+                `;
+            } catch (err) {
+                console.error(err);
+                Swal.fire("Error", "Unexpected error occurred", "error");
+            }
+        }
+
         /* ================= LOAD STATISTICS ================= */
         async function loadStatistics() {
             try {
+                const dataView = document.getElementById("data_view").value;
+                if (dataView === 'good_practice') {
+                    await loadGoodPracticeCount();
+                    return;
+                }
+
                 const fromDate = document.getElementById("from_date").value;
                 const toDate = document.getElementById("to_date").value;
                 const typeCategory = getSelectedValues(document.getElementById("type_category"));
@@ -445,6 +489,8 @@ require_once __DIR__ . '/helpers/authCheck.php';
                     return;
                 }
 
+                const chartContainerEl = document.getElementById("chartContainer");
+                if (chartContainerEl) chartContainerEl.classList.remove("hidden");
                 const d = result.data;
                 renderStatusChart(d);
 
@@ -487,6 +533,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
             initStaticSelects(); // تهيئة الحقول الثابتة
             loadStatistics();
 
+            document.getElementById("data_view").addEventListener("change", loadStatistics);
             document.getElementById("applyFilters").addEventListener("click", loadStatistics);
         });
     </script>

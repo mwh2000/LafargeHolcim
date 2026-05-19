@@ -41,7 +41,6 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <select id="permit_type" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-[#0b6f76] focus:border-[#0b6f76]">
                                 <option value="energy_isolation">Energy Isolation</option>
                                 <option value="hot_work">Hot Work</option>
-                                <option value="good_practice">Good practice</option>
                             </select>
                         </div>
 
@@ -127,7 +126,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                     backgroundColor: [
                         '#fbbf24', // yellow
                         '#3b82f6', // blue
-                        '#10b981'  // green
+                        '#10b981' // green
                     ],
                     hoverOffset: 6
                 }]
@@ -147,7 +146,9 @@ require_once __DIR__ . '/helpers/authCheck.php';
                     maintainAspectRatio: false,
                     cutout: '65%',
                     plugins: {
-                        legend: { position: 'bottom' }
+                        legend: {
+                            position: 'bottom'
+                        }
                     }
                 }
             });
@@ -167,7 +168,9 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 const apiUrl = permitType === 'hot_work' ? HOT_WORK_API_URL : ENERGY_API_URL;
 
                 const res = await fetch(`${apiUrl}?${params.toString()}`, {
-                    headers: { "Authorization": `Bearer ${TOKEN}` }
+                    headers: {
+                        "Authorization": `Bearer ${TOKEN}`
+                    }
                 });
                 const result = await res.json();
                 if (!result.success) return;
@@ -227,11 +230,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
         document.addEventListener("DOMContentLoaded", () => {
             loadStatistics();
-            document.getElementById("permit_type").addEventListener("change", (e) => {
-                if (e.target.value === 'good_practice') {
-                    window.location.href = 'good_practices.php';
-                    return;
-                }
+            document.getElementById("permit_type").addEventListener("change", () => {
                 loadStatistics();
             });
             document.getElementById("applyFilters").addEventListener("click", loadStatistics);
