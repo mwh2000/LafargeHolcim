@@ -41,6 +41,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <select id="permit_type" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-[#0b6f76] focus:border-[#0b6f76]">
                                 <option value="energy_isolation">Energy Isolation</option>
                                 <option value="hot_work">Hot Work</option>
+                                <option value="good_practice">Good practice</option>
                             </select>
                         </div>
 
@@ -226,7 +227,13 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
         document.addEventListener("DOMContentLoaded", () => {
             loadStatistics();
-            document.getElementById("permit_type").addEventListener("change", loadStatistics);
+            document.getElementById("permit_type").addEventListener("change", (e) => {
+                if (e.target.value === 'good_practice') {
+                    window.location.href = 'good_practices.php';
+                    return;
+                }
+                loadStatistics();
+            });
             document.getElementById("applyFilters").addEventListener("click", loadStatistics);
             document.getElementById("clearFilters").addEventListener("click", () => {
                 document.getElementById("permit_type").value = "energy_isolation";

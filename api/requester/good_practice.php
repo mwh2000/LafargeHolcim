@@ -31,10 +31,14 @@ try {
 
     switch ($method) {
         case 'GET':
-            if (isset($_GET['id'])) {
+            if ($action === 'getAll') {
+                $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+                $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 10;
+                $res = $controller->getAll($page, $limit);
+            } elseif (isset($_GET['id'])) {
                 $res = $controller->getById((int) $_GET['id']);
             } else {
-                $res = ['success' => false, 'message' => 'Missing ID'];
+                $res = ['success' => false, 'message' => 'Missing ID or action'];
             }
             break;
 

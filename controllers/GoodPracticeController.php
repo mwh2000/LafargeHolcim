@@ -128,6 +128,47 @@ class GoodPracticeController
         return $this->respond(true, 'Good practice retrieved successfully', $goodPractice);
     }
 
+    /** ✅ Get All Good Practices (Paginated) */
+    public function getAll(int $page = 1, int $limit = 10)
+    {
+        $offset = ($page - 1) * $limit;
+
+        // Total count
+        $countStmt = $this->conn->query("SELECT COUNT(*) FROM good_practice");
+        $total = $countStmt->fetchColumn();
+
+        // Fetch records
+        $stmt = $this->conn->prepare("
+            SELECT 
+                gp.*, 
+                u.name AS assigned_user_name,
+                u2.name AS created_by_name
+            FROM good_practice gp
+            LEFT JOIN users u ON gp.assigned_user_id = u.id
+            LEFT JOIN users u2 ON gp.created_by = u2.id
+            ORDER BY gp.created_at DESC
+            LIMIT :limit OFFSET :offset
+        ");
+        
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $totalPages = ceil($total / $limit);
+
+        return $this->respond(true, 'Good practices retrieved successfully', [
+            'records' => $records,
+            'pagination' => [
+                'current_page' => $page,
+                'total_pages' => $totalPages,
+                'total_records' => $total,
+                'limit' => $limit
+            ]
+        ]);
+    }
+
     /** 🔹 Private: Upload helper */
     private function uploadFile(?array $file, array $allowedExtensions, string $targetDir)
     {
