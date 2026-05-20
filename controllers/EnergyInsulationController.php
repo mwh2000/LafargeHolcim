@@ -25,8 +25,8 @@ class EnergyInsulationController
                 INSERT INTO energy_insulation_license (
                     equipment_name, equipment_no, date, reason, license_expiry, 
                     execution_exceeds_shift_time, work_permit, equipment_section_id, 
-                    created_by, requester_name, requester_section, status, exact_location, end_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    created_by, requester_name, requester_section, status, exact_location, end_at, am_approved_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
             ");
 
             $stmt->execute([
@@ -41,7 +41,7 @@ class EnergyInsulationController
                 $data['created_by'] ?? null,
                 $data['requester_name'] ?? null,
                 $data['requester_section'] ?? null,
-                'pending',
+                'active_isolation',
                 $data['exact_location'] ?? null,
                 null
             ]);
@@ -98,13 +98,26 @@ class EnergyInsulationController
             // Send Notification and Email to Area Manager
             if ($this->notificationController && !empty($data['area_manager_id'])) {
                 $title = "رخصة عزل طاقة جديدة - New Energy Insulation License";
-                $body = "تم إنشاء رخصة عزل طاقة جديدة للمعدة: " . ($data['equipment_name'] ?? 'N/A');
+                $body = "تم إنشاء رخصة عزل طاقة وتم العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A');
                 $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
                 
                 $this->notificationController->sendNotification($title, $body, [$data['area_manager_id']], $url, $data['created_by']);
                 
                 if ($this->emailController) {
                     $this->emailController->sendEmail($title, $body, [$data['area_manager_id']]);
+                }
+            }
+
+            // Send Notification and Email to Creator
+            if ($this->notificationController && !empty($data['created_by'])) {
+                $titleCreator = "تم العزل - Isolation Active";
+                $bodyCreator = "تم تأكيد العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A');
+                $urlCreator = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
+                
+                $this->notificationController->sendNotification($titleCreator, $bodyCreator, [$data['created_by']], $urlCreator, $data['created_by']);
+                
+                if ($this->emailController) {
+                    $this->emailController->sendEmail($titleCreator, $bodyCreator, [$data['created_by']]);
                 }
             }
 

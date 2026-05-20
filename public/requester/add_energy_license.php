@@ -241,7 +241,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                         <div class="mt-8 flex justify-between border-t pt-4">
                             <button type="button" id="prevBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hidden">السابق</button>
                             <button type="button" id="nextBtn" class="px-6 py-2 bg-[#0b6f76] text-white rounded-md ml-auto">التالي</button>
-                            <button type="submit" id="submitBtn" class="px-6 py-2 bg-green-600 text-white rounded-md ml-auto hidden">إرسال الرخصة</button>
+                            <button type="submit" id="submitBtn" class="px-6 py-2 bg-green-600 text-white rounded-md ml-auto hidden">تم العزل</button>
                         </div>
                     </form>
                 </div>
@@ -724,7 +724,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
                 try {
                     submitBtn.disabled = true;
-                    submitBtn.textContent = 'جاري الإرسال...';
+                    submitBtn.textContent = 'جاري تأكيد العزل...';
 
                     const res = await fetch('../../api/requester/energy_insulation.php', {
                         method: 'POST',
@@ -746,7 +746,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     Swal.fire('خطأ', err.message || 'حدث خطأ ما', 'error');
                 } finally {
                     submitBtn.disabled = false;
-                    submitBtn.textContent = 'إرسال الرخصة';
+                    submitBtn.textContent = 'تم العزل';
                 }
             });
         });
