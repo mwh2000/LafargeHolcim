@@ -38,21 +38,33 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KCML / SLV | رخصة عزل الطاقة  Energy Isolation</title>
+    <title>KCML / SLV | رخصة عزل الطاقة Energy Isolation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
     <style>
-        .step-content { display: none; }
-        .step-content.active { display: block; }
-        .step-indicator.active { color: #0b6f76; font-weight: bold; border-bottom: 2px solid #0b6f76; }
-        
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        .step-indicator.active {
+            color: #0b6f76;
+            font-weight: bold;
+            border-bottom: 2px solid #0b6f76;
+        }
+
         /* Disabled button styles */
-        #nextBtn:disabled, #submitBtn:disabled {
+        #nextBtn:disabled,
+        #submitBtn:disabled {
             background-color: #d1d5db !important;
             color: #9ca3af !important;
             cursor: not-allowed;
@@ -60,6 +72,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
         }
     </style>
 </head>
+
 <body class="bg-gray-50">
     <?php renderNavbar('رخصة عزل الطاقة'); ?>
     <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]">
@@ -68,7 +81,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
         <div class="flex-1 flex flex-col sm:ml-64 transition-all">
             <main class="flex-1 overflow-y-auto p-8 md:pl-12">
                 <div class="max-w-4xl mx-auto">
-                    <h1 class="text-2xl font-semibold text-gray-700 mb-6">رخصة عزل الطاقة  Energy Isolation</h1>
+                    <h1 class="text-2xl font-semibold text-gray-700 mb-6">رخصة عزل الطاقة Energy Isolation</h1>
 
                     <!-- Progress Bar -->
                     <div class="flex justify-between mb-8 border-b pb-2 text-[10px] md:text-sm">
@@ -78,11 +91,12 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                         <div class="step-indicator px-2 transition-all duration-300" data-step="4">طاقم العمل</div>
                         <div class="step-indicator px-2 transition-all duration-300" data-step="5">السلامة</div>
                         <div class="step-indicator px-2 transition-all duration-300" data-step="6">اسم العازل</div>
-                        <div class="step-indicator px-2 transition-all duration-300" data-step="7">المسؤول</div>
+                        <div class="step-indicator px-2 transition-all duration-300" data-step="7">الموافقات</div>
+                        <div class="step-indicator px-2 transition-all duration-300" data-step="8">المسؤول</div>
                     </div>
 
                     <form id="licenseForm" class="bg-white p-6 rounded-lg shadow-md">
-                        
+
                         <!-- Step 1: Basic Information -->
                         <div class="step-content active" data-step="1">
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">إنشاء رخصة</h2>
@@ -138,7 +152,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                     <label class="block text-sm font-medium text-green-700 mb-1">اسم المعدة</label>
                                     <input type="text" name="equipment_name" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
-                                
+
                                 <div class="flex items-center mt-6">
                                     <input type="checkbox" name="execution_exceeds_shift_time" id="exceeds" class="mr-2">
                                     <label for="exceeds" class="text-sm font-medium text-gray-700">التنفيذ يتجاوز وقت المناوبة</label>
@@ -170,7 +184,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                         <!-- Step 3: Equipment Selection -->
                         <div class="step-content" data-step="3">
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">المعدات المراد عزلها</h2>
-                            
+
                             <!-- Search Bar -->
                             <div class="mb-4 relative">
                                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
@@ -228,8 +242,14 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                             </div>
                         </div>
 
-                        <!-- Step 7: Area Manager Selection -->
+                        <!-- Step 7: Approvals (included from separate file) -->
                         <div class="step-content" data-step="7">
+                            <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">الموافقات على عزل المعدة</h2>
+                            <?php include __DIR__ . '/approvals_options.php'; ?>
+                        </div>
+
+                        <!-- Step 7: Area Manager Selection -->
+                        <div class="step-content" data-step="8">
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">مسؤول المنطقة</h2>
                             <div>
                                 <label class="block text-sm font-medium text-green-700 mb-2">اختر مسؤول المنطقة</label>
@@ -252,7 +272,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             let currentStep = 1;
-            const totalSteps = 7;
+            const totalSteps = 8;
             const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
 
             // Equipment search and pagination state
@@ -268,9 +288,9 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
             const contents = document.querySelectorAll('.step-content');
 
             // Initialize TomSelect for Manager
-            let managerSelect = new TomSelect('#manager_selection', { 
-                persist: false, 
-                create: false, 
+            let managerSelect = new TomSelect('#manager_selection', {
+                persist: false,
+                create: false,
                 placeholder: 'اختر المسؤول...',
                 onChange: () => updateButtonStates()
             });
@@ -425,7 +445,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
             function checkStepValidity(step) {
                 const currentContent = document.querySelector(`.step-content[data-step="${step}"]`);
-                
+
                 if (step === 1) {
                     const requiredInputs = currentContent.querySelectorAll('input[required], select[required]');
                     for (let input of requiredInputs) {
@@ -439,22 +459,26 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 } else if (step === 4) {
                     const groups = document.querySelectorAll('.staff-group-card');
                     if (groups.length === 0) return false;
-                    
+
                     for (let group of groups) {
                         const groupName = group.querySelector('.group-name-input').value.trim();
                         if (!groupName) return false;
-                        
+
                         const names = Array.from(group.querySelectorAll('.staff-name-input'))
-                                        .map(input => input.value.trim())
-                                        .filter(val => val !== '');
+                            .map(input => input.value.trim())
+                            .filter(val => val !== '');
                         if (names.length === 0) return false;
                     }
                 } else if (step === 6) {
                     if (!officialSelect.getValue()) return false;
                 } else if (step === 7) {
+                    // Require all approval checkboxes to be selected (UI-only)
+                    const approvalsChecked = currentContent.querySelectorAll('input[name="approvals[]"]:checked').length;
+                    if (approvalsChecked !== 5) return false;
+                } else if (step === 8) {
                     if (!managerSelect.getValue()) return false;
                 }
-                
+
                 return true;
             }
 
@@ -490,10 +514,10 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 if (currentStep === 3) {
                     loadEquipments().then(() => updateButtonStates());
                 }
-                if (currentStep >= 4) {
+                if (currentStep >= 7) {
                     loadEligibleUsers().then(() => updateButtonStates());
                 }
-                
+
                 updateButtonStates();
             }
 
@@ -518,7 +542,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 const sectionId = document.getElementById('equipment_section_id').value;
                 const container = document.getElementById('equipment-container');
                 const paginationContainer = document.getElementById('equipment-pagination');
-                
+
                 if (!sectionId) {
                     container.innerHTML = '<p class="text-red-500">يرجى العودة للخطوة الأولى واختيار القسم.</p>';
                     paginationContainer.innerHTML = '';
@@ -538,14 +562,20 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 container.innerHTML = '<p class="text-center py-4">جاري تحميل المعدات...</p>';
                 try {
                     const res = await fetch(`../../api/requester/energy_insulation.php?action=getEquipmentsBySection&section_id=${sectionId}&search=${encodeURIComponent(equipmentSearch)}&page=${equipmentPage}`, {
-                        headers: { 'Authorization': `Bearer ${TOKEN}` }
+                        headers: {
+                            'Authorization': `Bearer ${TOKEN}`
+                        }
                     });
                     const result = await res.json();
-                    
+
                     if (result.success) {
-                        const { equipments, total_pages, page } = result.data;
+                        const {
+                            equipments,
+                            total_pages,
+                            page
+                        } = result.data;
                         container.innerHTML = '';
-                        
+
                         if (equipments.length === 0) {
                             container.innerHTML = '<p class="text-yellow-600 text-center py-4">لم يتم العثور على معدات.</p>';
                             paginationContainer.innerHTML = '';
@@ -555,11 +585,11 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                         equipments.forEach(eq => {
                             const div = document.createElement('div');
                             div.className = 'flex items-center gap-4 p-3 border rounded-md bg-white hover:bg-gray-50 transition-colors cursor-pointer';
-                            
+
                             const isChecked = selectedEquipments.has(eq.id.toString());
-                            const imageHtml = eq.image 
-                                ? `<img src="../../public/${eq.image}" class="w-16 h-16 object-cover rounded border shadow-sm" alt="${eq.name}">` 
-                                : `<div class="w-16 h-16 bg-gray-100 rounded border flex items-center justify-center text-[10px] text-gray-400">No Image</div>`;
+                            const imageHtml = eq.image ?
+                                `<img src="../../public/${eq.image}" class="w-16 h-16 object-cover rounded border shadow-sm" alt="${eq.name}">` :
+                                `<div class="w-16 h-16 bg-gray-100 rounded border flex items-center justify-center text-[10px] text-gray-400">No Image</div>`;
 
                             div.innerHTML = `
                                 <input type="checkbox" value="${eq.id}" class="eq-checkbox h-5 w-5 text-[#0b6f76] rounded" ${isChecked ? 'checked' : ''}>
@@ -568,12 +598,15 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                 </div>
                                 ${imageHtml}
                             `;
-                            
+
                             // Checkbox change logic
                             const cb = div.querySelector('.eq-checkbox');
                             const toggleSelection = () => {
                                 if (cb.checked) {
-                                    selectedEquipments.set(eq.id.toString(), { id: eq.id, name: eq.name });
+                                    selectedEquipments.set(eq.id.toString(), {
+                                        id: eq.id,
+                                        name: eq.name
+                                    });
                                 } else {
                                     selectedEquipments.delete(eq.id.toString());
                                 }
@@ -647,12 +680,17 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
                 try {
                     const res = await fetch('../../api/requester/energy_insulation.php?action=getEligibleUsers', {
-                        headers: { 'Authorization': `Bearer ${TOKEN}` }
+                        headers: {
+                            'Authorization': `Bearer ${TOKEN}`
+                        }
                     });
                     const data = await res.json();
                     if (data.success) {
                         data.data.forEach(user => {
-                            managerSelect.addOption({ value: user.id, text: user.name });
+                            managerSelect.addOption({
+                                value: user.id,
+                                text: user.name
+                            });
                         });
                         managerSelect.refreshOptions(false);
                     }
@@ -663,7 +701,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
+
                 const formData = new FormData(form);
                 const data = {
                     equipment_name: formData.get('equipment_name'),
@@ -671,9 +709,9 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     equipment_section_id: formData.get('equipment_section_id'),
                     date: formData.get('date'),
                     reason: formData.get('reason'),
-                    license_expiry: document.getElementById('license_expiry_select').value === 'manual' 
-                                    ? document.getElementById('license_expiry_manual').value.trim() 
-                                    : document.getElementById('license_expiry_select').value,
+                    license_expiry: document.getElementById('license_expiry_select').value === 'manual' ?
+                        document.getElementById('license_expiry_manual').value.trim() :
+                        document.getElementById('license_expiry_select').value,
                     work_permit: formData.get('work_permit'),
                     exact_location: formData.get('exact_location'),
                     requester_name: formData.get('requester_name'),
@@ -691,9 +729,9 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 document.querySelectorAll('.staff-group-card').forEach(groupCard => {
                     const groupName = groupCard.querySelector('.group-name-input').value.trim();
                     const members = Array.from(groupCard.querySelectorAll('.staff-name-input'))
-                                        .map(input => input.value.trim())
-                                        .filter(val => val !== '');
-                    
+                        .map(input => input.value.trim())
+                        .filter(val => val !== '');
+
                     if (groupName && members.length > 0) {
                         data.staff_groups.push({
                             group_name: groupName,
@@ -709,7 +747,10 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
                 // Get Equipments from selectedEquipments Map
                 selectedEquipments.forEach((eq, id) => {
-                    data.equipments.push({ id: id, no: eq.name });
+                    data.equipments.push({
+                        id: id,
+                        no: eq.name
+                    });
                 });
 
                 if (data.energy_types.length === 0) {
@@ -752,4 +793,5 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
         });
     </script>
 </body>
+
 </html>

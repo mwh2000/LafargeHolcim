@@ -19,6 +19,7 @@ $userName = $userData['name'] ?? 'N/A';
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,31 +31,143 @@ $userName = $userData['name'] ?? 'N/A';
     <style>
         /* Print Styles */
         @media print {
-            body { background: white !important; font-size: 9pt; margin: 0; padding: 0.2in; }
-            .dashboard-container { background: white !important; min-height: auto !important; padding: 0 !important; margin: 0 !important; width: 100% !important; flex: none !important; }
-            .flex-1 { flex: none !important; margin: 0 !important; padding: 0 !important; width: 100% !important; overflow: visible !important; }
-            main { padding: 0 !important; margin: 0 !important; width: 100% !important; }
-            .sm\:ml-64 { margin-left: 0 !important; width: 100% !important; }
-            .sidebar, nav, .navbar, #sidebar, .no-print, button, select, #am-approval-section, #io-review-section, #sl-review-section { display: none !important; }
-            .bg-white { border: 1px solid #e5e7eb !important; shadow: none !important; box-shadow: none !important; margin-bottom: 0.25rem !important; padding: 0.5rem !important; }
-            .shadow-md, .shadow-lg { box-shadow: none !important; }
-            #content { display: block !important; visibility: visible !important; opacity: 1 !important; transform: none !important; }
-            .print-header { display: block !important; border-bottom: 2px solid #0b6f76; margin-bottom: 0.5rem; padding-bottom: 0.25rem; text-align: center; }
-            .print-header img { height: 40px; margin: 0 auto 5px; display: block; }
-            .print-header h1 { font-size: 14pt; color: #0b6f76; font-weight: bold; }
-            .max-w-4xl { max-width: 100% !important; width: 100% !important; margin: 0 !important; }
-            h2 { font-size: 11pt !important; margin-bottom: 0.2rem !important; padding-bottom: 0.2rem !important; }
-            .grid { gap: 0.25rem !important; }
-            .grid-cols-1.md\:grid-cols-2 { grid-template-columns: repeat(2, 1fr) !important; }
-            .space-y-6 > * + * { margin-top: 0.25rem !important; }
-            #val-equipments { grid-template-cols: repeat(2, minmax(0, 1fr)) !important; gap: 0.25rem !important; }
-            #val-equipments img { height: 30px !important; width: 30px !important; }
-            #val-equipments div p { font-size: 8pt !important; }
-            .print-only { display: block !important; }
+            body {
+                background: white !important;
+                font-size: 9pt;
+                margin: 0;
+                padding: 0.2in;
+            }
+
+            .dashboard-container {
+                background: white !important;
+                min-height: auto !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                flex: none !important;
+            }
+
+            .flex-1 {
+                flex: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                overflow: visible !important;
+            }
+
+            main {
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+            }
+
+            .sm\:ml-64 {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+
+            .sidebar,
+            nav,
+            .navbar,
+            #sidebar,
+            .no-print,
+            button,
+            select,
+            #am-approval-section,
+            #io-review-section,
+            #sl-review-section {
+                display: none !important;
+            }
+
+            .bg-white {
+                border: 1px solid #e5e7eb !important;
+                shadow: none !important;
+                box-shadow: none !important;
+                margin-bottom: 0.25rem !important;
+                padding: 0.5rem !important;
+            }
+
+            .shadow-md,
+            .shadow-lg {
+                box-shadow: none !important;
+            }
+
+            #content {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                transform: none !important;
+            }
+
+            .print-header {
+                display: block !important;
+                border-bottom: 2px solid #0b6f76;
+                margin-bottom: 0.5rem;
+                padding-bottom: 0.25rem;
+                text-align: center;
+            }
+
+            .print-header img {
+                height: 40px;
+                margin: 0 auto 5px;
+                display: block;
+            }
+
+            .print-header h1 {
+                font-size: 14pt;
+                color: #0b6f76;
+                font-weight: bold;
+            }
+
+            .max-w-4xl {
+                max-width: 100% !important;
+                width: 100% !important;
+                margin: 0 !important;
+            }
+
+            h2 {
+                font-size: 11pt !important;
+                margin-bottom: 0.2rem !important;
+                padding-bottom: 0.2rem !important;
+            }
+
+            .grid {
+                gap: 0.25rem !important;
+            }
+
+            .grid-cols-1.md\:grid-cols-2 {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            .space-y-6>*+* {
+                margin-top: 0.25rem !important;
+            }
+
+            #val-equipments {
+                grid-template-cols: repeat(2, minmax(0, 1fr)) !important;
+                gap: 0.25rem !important;
+            }
+
+            #val-equipments img {
+                height: 30px !important;
+                width: 30px !important;
+            }
+
+            #val-equipments div p {
+                font-size: 8pt !important;
+            }
+
+            .print-only {
+                display: block !important;
+            }
         }
-        .print-only { display: none; }
+
+        .print-only {
+            display: none;
+        }
     </style>
 </head>
+
 <body class="bg-gray-50">
     <?php renderNavbar('تفاصيل رخصة عزل الطاقة'); ?>
     <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]">
@@ -65,7 +178,7 @@ $userName = $userData['name'] ?? 'N/A';
                 <div class="max-w-4xl mx-auto">
                     <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-6 no-print">
                         <h1 class="text-xl md:text-2xl font-semibold text-gray-700 text-right order-1 md:order-2">تفاصيل رخصة عزل الطاقة</h1>
-                        
+
                         <div class="flex flex-wrap items-center gap-3 order-2 md:order-1">
                             <button id="pdfDownloadBtn" onclick="window.print()" class="hidden flex items-center gap-2 bg-white border border-red-500 text-red-600 px-3 py-1.5 md:px-4 md:py-2 rounded-md hover:bg-red-50 transition text-sm md:text-base font-medium shadow-sm">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -140,15 +253,15 @@ $userName = $userData['name'] ?? 'N/A';
 
                         <!-- Isolation Done Info Card -->
                         <div id="isolation-done-card" class="hidden bg-white p-6 rounded-lg shadow-md border-t-4 border-green-600 mt-6">
-                             <h2 class="text-lg font-bold text-green-700 mb-4 border-b pb-2 text-right" dir="rtl">تم العزل</h2>
-                             <div class="space-y-4 text-right" dir="rtl">
-                                 <p class="text-sm text-gray-700 font-medium">تمت المصادقة على العزل</p>
-                                 <div class="flex flex-col gap-1">
-                                     <span class="text-[10px] text-gray-400 flex">بواسطة مسؤول العزل ✔
-                                     </span>
-                                     <span id="val-iso-done-by" class="text-sm font-bold text-green-800"></span>
-                                 </div>
-                             </div>
+                            <h2 class="text-lg font-bold text-green-700 mb-4 border-b pb-2 text-right" dir="rtl">تم العزل</h2>
+                            <div class="space-y-4 text-right" dir="rtl">
+                                <p class="text-sm text-gray-700 font-medium">تمت المصادقة على العزل</p>
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-[10px] text-gray-400 flex">بواسطة مسؤول العزل ✔
+                                    </span>
+                                    <span id="val-iso-done-by" class="text-sm font-bold text-green-800"></span>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Isolation Removed Info Card -->
@@ -169,7 +282,7 @@ $userName = $userData['name'] ?? 'N/A';
                             <h2 class="text-lg font-bold text-green-800 mb-4 text-right" dir="rtl">طلب رفع العزل - <?= $userName ?></h2>
                             <div class="space-y-4 text-right" dir="rtl">
                                 <p class="text-sm text-green-700">تم الانتهاء من العمل على المعده وتم ازالة كافة الاقفال الشخصية الخاصه للمجموعه وتم تنصيب كافة الواقيات وتنظيف المكان</p>
-                                
+
                                 <label class="flex items-center gap-3 justify-start cursor-pointer group" dir="rtl">
                                     <input type="checkbox" id="permitWorkCb" class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
                                     <span class="text-sm font-medium text-gray-700 group-hover:text-green-700 transition-colors">اطلب رفع العزل بعد ان تم التأكيد ان جميع العاملين خارج المعدة</span>
@@ -192,7 +305,7 @@ $userName = $userData['name'] ?? 'N/A';
                             <div class="text-right" dir="rtl">
                                 <h2 class="text-lg font-bold text-[#0b6f76] mb-1 text-right" dir="rtl">طلب رفع العزل - <span id="val-remover-name"></span></h2>
                                 <p class="text-sm text-[#0b6f76] mb-2">تم الانتهاء من العمل على المعده وتم ازالة كافة الاقفال الشخصية الخاصه للمجموعه وتم تنصيب كافة الواقيات وتنظيف المكان</p>
-                                
+
                                 <div class="space-y-1">
                                     <div class="flex items-center gap-3 justify-start" dir="rtl">
                                         <input type="checkbox" class="w-4 h-4 text-[#0b6f76] border-gray-300 rounded" onclick="return false;">
@@ -204,7 +317,7 @@ $userName = $userData['name'] ?? 'N/A';
                                         <span class="text-sm font-medium text-gray-700">اطلب ازالة قفل القسم من صندوق العزل</span>
                                     </div>
                                 </div>
-                                
+
                                 <p class="text-sm font-bold text-gray-700 italic mt-4 text-xs">تمت المصادقة على العزل</p>
                             </div>
                         </div>
@@ -227,7 +340,7 @@ $userName = $userData['name'] ?? 'N/A';
                 </button>
                 <h3 class="text-lg font-bold text-[#0b6f76]">تعديل طاقم العمل</h3>
             </div>
-            
+
             <!-- Modal Body -->
             <div class="p-6 overflow-y-auto flex-1 bg-gray-50/50" id="edit-staff-groups-container">
                 <!-- Dynamic groups go here -->
@@ -279,7 +392,9 @@ $userName = $userData['name'] ?? 'N/A';
         async function loadLicenseData() {
             try {
                 const res = await fetch(`${API_BASE}?action=show&id=${LICENSE_ID}`, {
-                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                    headers: {
+                        'Authorization': `Bearer ${TOKEN}`
+                    }
                 });
                 const result = await res.json();
 
@@ -287,7 +402,7 @@ $userName = $userData['name'] ?? 'N/A';
                     currentLicenseData = result.data;
                     const data = result.data;
                     displayData(data);
-                    
+
                     // Show AM actions if pending and user is the assigned AM
                     if (data.status === 'pending' && data.area_manager_id == CURRENT_USER_ID) {
                         document.getElementById('am-action-section').classList.remove('hidden');
@@ -368,9 +483,9 @@ $userName = $userData['name'] ?? 'N/A';
             data.equipments.forEach(eq => {
                 const div = document.createElement('div');
                 div.className = 'flex items-center gap-3 p-2 border rounded-md bg-gray-50';
-                const img = eq.image 
-                    ? `<img src="../../public/${eq.image}" class="w-12 h-12 object-cover rounded">` 
-                    : `<div class="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-[10px] text-gray-400">No Image</div>`;
+                const img = eq.image ?
+                    `<img src="../../public/${eq.image}" class="w-12 h-12 object-cover rounded">` :
+                    `<div class="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-[10px] text-gray-400">No Image</div>`;
                 div.innerHTML = `
                     ${img}
                     <div>
@@ -396,7 +511,7 @@ $userName = $userData['name'] ?? 'N/A';
                 Object.keys(groups).forEach(groupName => {
                     const groupDiv = document.createElement('div');
                     groupDiv.className = 'bg-gray-50 border border-gray-100 p-3 rounded-md print:p-1 print:mb-2 break-inside-avoid';
-                    
+
                     const gTitle = document.createElement('h4');
                     gTitle.className = 'text-sm font-bold text-[#0b6f76] mb-2 border-b border-gray-200 pb-1 print:text-[9pt] print:mb-1';
                     gTitle.textContent = groupName;
@@ -404,7 +519,7 @@ $userName = $userData['name'] ?? 'N/A';
 
                     const membersDiv = document.createElement('div');
                     membersDiv.className = 'flex flex-wrap gap-2';
-                    
+
                     groups[groupName].forEach(name => {
                         const span = document.createElement('span');
                         span.className = 'px-3 py-1 bg-white border border-gray-100 rounded text-xs text-gray-700 font-medium print:text-[8pt] print:px-1.5 print:py-0.5';
@@ -446,8 +561,8 @@ $userName = $userData['name'] ?? 'N/A';
                 }
             }
 
-            // Show PDF download button after isolation is done (active_isolation or completed)
-            if (data.status === 'active_isolation' || data.status === 'completed') {
+            // Show PDF download button only after isolation is removed (completed)
+            if (data.status === 'completed') {
                 document.getElementById('pdfDownloadBtn').classList.remove('hidden');
             }
 
@@ -490,7 +605,9 @@ $userName = $userData['name'] ?? 'N/A';
             });
 
             if (result.isConfirmed) {
-                submitAction('amDone', { license_id: LICENSE_ID });
+                submitAction('amDone', {
+                    license_id: LICENSE_ID
+                });
             }
         });
 
@@ -507,7 +624,9 @@ $userName = $userData['name'] ?? 'N/A';
             });
 
             if (result.isConfirmed) {
-                submitAction('removeIsolation', { license_id: LICENSE_ID });
+                submitAction('removeIsolation', {
+                    license_id: LICENSE_ID
+                });
             }
         });
 
@@ -538,7 +657,7 @@ $userName = $userData['name'] ?? 'N/A';
         function openEditStaffModal() {
             const container = document.getElementById('edit-staff-groups-container');
             container.innerHTML = '';
-            
+
             if (currentLicenseData && currentLicenseData.staff && currentLicenseData.staff.length > 0) {
                 // Group the existing staff by group_name
                 const groups = {};
@@ -563,7 +682,7 @@ $userName = $userData['name'] ?? 'N/A';
         }
 
         document.getElementById('editStaffBtn').addEventListener('click', openEditStaffModal);
-        
+
         function createEditStaffInput(name = '') {
             return `
                 <div class="edit-staff-entry flex gap-2 mb-2">
@@ -581,7 +700,7 @@ $userName = $userData['name'] ?? 'N/A';
             const container = document.getElementById('edit-staff-groups-container');
             const groupDiv = document.createElement('div');
             groupDiv.className = 'edit-staff-group-card bg-white border border-gray-200 p-5 rounded-lg shadow-sm relative mb-4';
-            
+
             let membersHtml = '';
             members.forEach(name => {
                 membersHtml += createEditStaffInput(name);
@@ -662,9 +781,9 @@ $userName = $userData['name'] ?? 'N/A';
             groups.forEach(groupCard => {
                 const groupName = groupCard.querySelector('.edit-group-name-input').value.trim();
                 const members = Array.from(groupCard.querySelectorAll('.edit-staff-name-input'))
-                                    .map(input => input.value.trim())
-                                    .filter(val => val !== '');
-                
+                    .map(input => input.value.trim())
+                    .filter(val => val !== '');
+
                 if (!groupName || members.length === 0) {
                     isValid = false;
                 } else {
@@ -713,4 +832,5 @@ $userName = $userData['name'] ?? 'N/A';
         });
     </script>
 </body>
+
 </html>
