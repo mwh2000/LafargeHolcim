@@ -567,7 +567,7 @@ $userName = $userData['name'] ?? 'N/A';
             }
 
             // Edit Staff Button Logic
-            if (CURRENT_USER_ID == data.created_by || CURRENT_USER_ID == data.area_manager_id) {
+            if (CURRENT_USER_ID == data.created_by) {
                 document.getElementById('editStaffBtn').classList.remove('hidden');
             }
         }

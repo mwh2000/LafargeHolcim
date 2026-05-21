@@ -68,11 +68,11 @@ class EnergyInsulationController
             if (!empty($data['staff_groups'])) {
                 $groupStmt = $this->conn->prepare("INSERT INTO energy_insulation_staff_group (name, license_id) VALUES (?, ?)");
                 $staffStmt = $this->conn->prepare("INSERT INTO energy_insulation_staff (license_id, name, group_id) VALUES (?, ?, ?)");
-                
+
                 foreach ($data['staff_groups'] as $group) {
                     $groupStmt->execute([$group['group_name'], $licenseId]);
                     $groupId = $this->conn->lastInsertId();
-                    
+
                     if (!empty($group['members'])) {
                         foreach ($group['members'] as $staffName) {
                             $staffStmt->execute([$licenseId, $staffName, $groupId]);
@@ -100,9 +100,9 @@ class EnergyInsulationController
                 $title = "رخصة عزل طاقة جديدة - New Energy Insulation License";
                 $body = "تم إنشاء رخصة عزل طاقة وتم العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A');
                 $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
-                
+
                 $this->notificationController->sendNotification($title, $body, [$data['area_manager_id']], $url, $data['created_by']);
-                
+
                 if ($this->emailController) {
                     $this->emailController->sendEmail($title, $body, [$data['area_manager_id']]);
                 }
@@ -113,9 +113,9 @@ class EnergyInsulationController
                 $titleCreator = "تم العزل - Isolation Active";
                 $bodyCreator = "تم تأكيد العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A');
                 $urlCreator = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
-                
+
                 $this->notificationController->sendNotification($titleCreator, $bodyCreator, [$data['created_by']], $urlCreator, $data['created_by']);
-                
+
                 if ($this->emailController) {
                     $this->emailController->sendEmail($titleCreator, $bodyCreator, [$data['created_by']]);
                 }
@@ -139,7 +139,7 @@ class EnergyInsulationController
     public function getEquipmentsBySection(int $sectionId, string $search = '', int $page = 1, int $limit = 10)
     {
         $offset = ($page - 1) * $limit;
-        
+
         $query = "SELECT id, name, image FROM equipments WHERE section_id = ?";
         $params = [$sectionId];
 
@@ -160,7 +160,7 @@ class EnergyInsulationController
         $total = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
 
         $query .= " LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
-        
+
         $stmt = $this->conn->prepare($query);
         $stmt->execute($params);
         $equipments = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -251,9 +251,9 @@ class EnergyInsulationController
                 $title = "رخصة عزل طاقة بانتظار مراجعتك - Energy Insulation License Pending Review";
                 $body = "تم تعيينك كمسؤول عزل للرخصة الخاصة بالمعدة: " . ($license['equipment_name'] ?? 'N/A');
                 $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
-                
+
                 $this->notificationController->sendNotification($title, $body, [$officerId], $url, $updatedBy);
-                
+
                 if ($this->emailController) {
                     $this->emailController->sendEmail($title, $body, [$officerId]);
                 }
@@ -287,9 +287,9 @@ class EnergyInsulationController
                 $title = "رخصة عزل طاقة بانتظار تأكيدك - Energy Insulation License Pending Confirmation";
                 $body = "تم عزل جميع المعدات  عزل الطاقه المطلوبة  من قبل مسوول العزل وهي بإنتظار تأكيدك على الرخصة";
                 $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
-                
+
                 $this->notificationController->sendNotification($title, $body, [$shiftLeaderId], $url, $updatedBy);
-                
+
                 if ($this->emailController) {
                     $this->emailController->sendEmail($title, $body, [$shiftLeaderId]);
                 }
@@ -319,10 +319,10 @@ class EnergyInsulationController
                 $title = "رخصة عزل طاقة مكتملة - Energy Insulation License Completed";
                 $body = "تم إكمال إجراءات رخصة عزل الطاقة للمعدة: " . ($license['equipment_name'] ?? 'N/A');
                 $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
-                
+
                 $recipients = [$license['created_by'], $license['area_manager_id']];
                 $this->notificationController->sendNotification($title, $body, $recipients, $url, $updatedBy);
-                
+
                 if ($this->emailController) {
                     $this->emailController->sendEmail($title, $body, $recipients);
                 }
@@ -353,9 +353,9 @@ class EnergyInsulationController
                     $title = "تم العزل - Isolation Active";
                     $body = "قام مسؤول العزل بتأكيد العزل للمعدة: " . ($license['equipment_name'] ?? 'N/A');
                     $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
-                    
+
                     $this->notificationController->sendNotification($title, $body, [$license['created_by']], $url, $userId);
-                    
+
                     if ($this->emailController) {
                         $this->emailController->sendEmail($title, $body, [$license['created_by']]);
                     }
@@ -389,9 +389,9 @@ class EnergyInsulationController
                     $title = "تم رفع العزل - Isolation Removed";
                     $body = "قام طالب الرخصة برفع العزل للمعدة: " . ($license['equipment_name'] ?? 'N/A');
                     $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
-                    
+
                     $this->notificationController->sendNotification($title, $body, [$license['area_manager_id']], $url, $userId);
-                    
+
                     if ($this->emailController) {
                         $this->emailController->sendEmail($title, $body, [$license['area_manager_id']]);
                     }
@@ -428,9 +428,9 @@ class EnergyInsulationController
                 $title = "رخصة عزل طاقة مرفوضة - Energy Insulation License Rejected";
                 $body = "تم رفض رخصة عزل الطاقة للمعدة: " . ($license['equipment_name'] ?? 'N/A') . ". السبب: " . $reason;
                 $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
-                
+
                 $this->notificationController->sendNotification($title, $body, [$license['created_by']], $url, $rejectedBy);
-                
+
                 if ($this->emailController) {
                     $this->emailController->sendEmail($title, $body, [$license['created_by']]);
                 }
@@ -449,9 +449,9 @@ class EnergyInsulationController
                         SUM(CASE WHEN status = 'active_isolation' THEN 1 ELSE 0 END) as active_isolation,
                         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
                       FROM energy_insulation_license WHERE 1=1";
-            
+
             $params = [];
-            
+
             if (!empty($filters['from_date'])) {
                 $query .= " AND date >= ?";
                 $params[] = $filters['from_date'];
@@ -464,7 +464,7 @@ class EnergyInsulationController
             // Role-based filtering
             $userRole = (int)$filters['role_id'];
             $userId = (int)$filters['user_id'];
-            
+
             if (!in_array($userRole, [1, 6])) {
                 // Roles 7, 3, 5 see only permits assigned to them as Area Manager
                 // Or if they created it.
@@ -497,7 +497,7 @@ class EnergyInsulationController
 
             $where = " WHERE 1=1";
             $params = [];
-            
+
             if (!empty($filters['status'])) {
                 $where .= " AND l.status = ?";
                 $params[] = $filters['status'];
@@ -514,7 +514,7 @@ class EnergyInsulationController
             // Role-based filtering
             $userRole = (int)$filters['role_id'];
             $userId = (int)$filters['user_id'];
-            
+
             if (!in_array($userRole, [1, 6])) {
                 $where .= " AND (l.area_manager_id = ? OR l.created_by = ?)";
                 $params[] = $userId;
@@ -563,7 +563,7 @@ class EnergyInsulationController
                 return $this->respond(false, 'License not found', null, ['code' => 404], 404);
             }
 
-            if ($license['created_by'] != $userId && $license['area_manager_id'] != $userId) {
+            if ($license['created_by'] != $userId) {
                 return $this->respond(false, 'Unauthorized to edit this license staff groups', null, ['code' => 403], 403);
             }
 
@@ -577,13 +577,13 @@ class EnergyInsulationController
             if (!empty($staffGroups)) {
                 $groupStmt = $this->conn->prepare("INSERT INTO energy_insulation_staff_group (name, license_id) VALUES (?, ?)");
                 $staffStmt = $this->conn->prepare("INSERT INTO energy_insulation_staff (license_id, name, group_id) VALUES (?, ?, ?)");
-                
+
                 foreach ($staffGroups as $group) {
                     if (empty($group['group_name'])) continue;
-                    
+
                     $groupStmt->execute([$group['group_name'], $licenseId]);
                     $groupId = $this->conn->lastInsertId();
-                    
+
                     if (!empty($group['members'])) {
                         foreach ($group['members'] as $staffName) {
                             if (empty(trim($staffName))) continue;
