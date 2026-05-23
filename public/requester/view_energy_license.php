@@ -99,6 +99,10 @@ $userName = $userData['name'] ?? 'N/A';
                 transform: none !important;
             }
 
+            .print-table-header {
+                display: table-header-group !important;
+            }
+
             .print-header {
                 display: block !important;
                 border-bottom: 2px solid #0b6f76;
@@ -194,135 +198,148 @@ $userName = $userData['name'] ?? 'N/A';
                         </div>
                     </div>
 
-                    <!-- Print Header (Hidden on screen) -->
-                    <div class="print-header hidden">
-                        <img src="../../public/images/logo.png" alt="Logo">
-                        <h1>رخصة عزل الطاقة - Energy Insulation License</h1>
-                    </div>
-
-                    <div id="loading" class="text-center py-10">
-                        <p class="text-gray-500">جاري تحميل البيانات...</p>
-                    </div>
-
-                    <div id="content" class="hidden space-y-6">
-                        <!-- Basic Info Card -->
-                        <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-[#0b6f76]">
-                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">معلومات عامة</h2>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">
-                                <div><span class="text-gray-500">رقم الرخصة:</span> <span id="val-no" class="font-medium"></span></div>
-                                <div><span class="text-gray-500">التاريخ:</span> <span id="val-date" class="font-medium"></span></div>
-                                <div><span class="text-gray-500">الموقع:</span> <span id="val-location" class="font-medium"></span></div>
-                                <div><span class="text-gray-500">اسم المعدة:</span> <span id="val-eq-name" class="font-medium"></span></div>
-                                <div><span class="text-gray-500">القسم:</span> <span id="val-section" class="font-medium"></span></div>
-                                <div><span class="text-gray-500">السبب:</span> <span id="val-reason" class="font-medium"></span></div>
-                                <div><span class="text-gray-500">تصريح العمل:</span> <span id="val-permit" class="font-medium"></span></div>
-                                <div><span class="text-gray-500">مرخص العزل:</span> <span id="val-created-by" class="font-medium"></span></div>
-                                <div><span class="text-gray-500">طالب العزل:</span> <span id="val-requester" class="font-medium font-bold text-blue-600"></span></div>
-                                <div><span class="text-gray-500">مسؤول المنطقة:</span> <span id="val-am" class="font-medium"></span></div>
-                                <div><span class="text-gray-500">اسم العازل:</span> <span id="val-official" class="font-medium text-green-700"></span></div>
-                                <div id="am-approved-container" class="hidden"><span class="text-gray-500">تاريخ تأكيد العزل:</span> <span id="val-am-approved-at" class="font-medium text-blue-600"></span></div>
-                                <div id="end-at-container" class="hidden"><span class="text-gray-500">تاريخ رفع العزل:</span> <span id="val-end-at" class="font-medium text-green-600"></span></div>
-                            </div>
-                        </div>
-
-                        <!-- Energy Types Card -->
-                        <div class="bg-white p-6 rounded-lg shadow-md">
-                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">أنواع الطاقة المعزولة</h2>
-                            <div id="val-energy-types" class="flex flex-wrap gap-2 justify-start" dir="rtl"></div>
-                        </div>
-
-                        <!-- Equipments Card -->
-                        <div class="bg-white p-6 rounded-lg shadow-md">
-                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">اسم المعدة المراد عزلها</h2>
-                            <div id="val-equipments" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-start" dir="rtl"></div>
-                        </div>
-
-                        <!-- Staff Card -->
-                        <div id="staff-card" class="bg-white p-6 rounded-lg shadow-md">
-                            <div class="flex justify-between items-center mb-4 border-b pb-2">
-                                <button id="editStaffBtn" class="hidden no-print text-sm flex items-center gap-1 text-[#0b6f76] hover:text-[#085a60] font-medium transition-colors bg-[#0b6f76]/10 px-3 py-1.5 rounded-md hover:bg-[#0b6f76]/20">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                    تعديل
-                                </button>
-                                <h2 class="text-lg font-bold text-[#0b6f76] text-right" dir="rtl">طاقم العمل</h2>
-                            </div>
-                            <div id="val-staff" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-right" dir="rtl"></div>
-                        </div>
-
-                        <!-- Isolation Done Info Card -->
-                        <div id="isolation-done-card" class="hidden bg-white p-6 rounded-lg shadow-md border-t-4 border-green-600 mt-6">
-                            <h2 class="text-lg font-bold text-green-700 mb-4 border-b pb-2 text-right" dir="rtl">تم العزل</h2>
-                            <div class="space-y-4 text-right" dir="rtl">
-                                <p class="text-sm text-gray-700 font-medium">تمت المصادقة على العزل</p>
-                                <div class="flex flex-col gap-1">
-                                    <span class="text-[10px] text-gray-400 flex">بواسطة مسؤول العزل ✔
-                                    </span>
-                                    <span id="val-iso-done-by" class="text-sm font-bold text-green-800"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Isolation Removed Info Card -->
-
-
-
-                        <!-- AM Done Section -->
-                        <div id="am-action-section" class="hidden bg-yellow-50 p-6 rounded-lg shadow-md border border-yellow-200">
-                            <h2 class="text-lg font-bold text-yellow-800 mb-4 text-right" dir="rtl">إجراءات مسؤول العزل</h2>
-                            <div class="space-y-4 text-right" dir="rtl">
-                                <p class="text-sm text-yellow-700">تمت المصادقة على العزل</p>
-                                <button id="amDoneBtn" class="w-full bg-[#0b6f76] text-white py-3 rounded-md hover:bg-[#085a60] transition font-bold text-lg">Done / تم العزل</button>
-                            </div>
-                        </div>
-
-                        <!-- Requester Removal Section -->
-                        <div id="requester-action-section" class="hidden bg-green-50 p-6 rounded-lg shadow-md border border-green-200">
-                            <h2 class="text-lg font-bold text-green-800 mb-4 text-right" dir="rtl">طلب رفع العزل - <?= $userName ?></h2>
-                            <div class="space-y-4 text-right" dir="rtl">
-                                <p class="text-sm text-green-700">تم الانتهاء من العمل على المعده وتم ازالة كافة الاقفال الشخصية الخاصه للمجموعه وتم تنصيب كافة الواقيات وتنظيف المكان</p>
-
-                                <label class="flex items-center gap-3 justify-start cursor-pointer group" dir="rtl">
-                                    <input type="checkbox" id="permitWorkCb" class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
-                                    <span class="text-sm font-medium text-gray-700 group-hover:text-green-700 transition-colors">اطلب رفع العزل بعد ان تم التأكيد ان جميع العاملين خارج المعدة</span>
-                                </label>
-
-                                <label class="flex items-center gap-3 justify-start cursor-pointer group" dir="rtl">
-                                    <input type="checkbox" id="removeSectionLockCb" class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
-                                    <span class="text-sm font-medium text-gray-700 group-hover:text-green-700 transition-colors">اطلب ازالة قفل القسم من صندوق العزل</span>
-                                </label>
-
-                                <button id="removeIsolationBtn" disabled class="w-full bg-green-600 text-white py-3 rounded-md hover:bg-green-700 transition font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed">
-                                    رفع العزل
-                                </button>
-                            </div>
-                        </div>
-
-
-                        <!-- Print Completion Confirmation (Visible in PDF when completed) -->
-                        <div id="print-completion-card" class="hidden print-only bg-white border border-gray-200 rounded-lg p-3 mt-2">
-                            <div class="text-right" dir="rtl">
-                                <h2 class="text-lg font-bold text-[#0b6f76] mb-1 text-right" dir="rtl">طلب رفع العزل - <span id="val-remover-name"></span></h2>
-                                <p class="text-sm text-[#0b6f76] mb-2">تم الانتهاء من العمل على المعده وتم ازالة كافة الاقفال الشخصية الخاصه للمجموعه وتم تنصيب كافة الواقيات وتنظيف المكان</p>
-
-                                <div class="space-y-1">
-                                    <div class="flex items-center gap-3 justify-start" dir="rtl">
-                                        <input type="checkbox" class="w-4 h-4 text-[#0b6f76] border-gray-300 rounded" onclick="return false;">
-                                        <span class="text-sm font-medium text-gray-700">اطلب رفع العزل بعد ان تم التأكيد ان جميع العاملين خارج المعدة</span>
+                    <!-- Print Header (Repeats on each page) -->
+                    <table class="w-full">
+                        <thead class="print-table-header hidden">
+                            <tr>
+                                <th>
+                                    <div class="print-header">
+                                        <img src="../../public/images/logo.png" alt="Logo">
+                                        <h1>رخصة عزل الطاقة - Energy Insulation License</h1>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div id="loading" class="text-center py-10">
+                                        <p class="text-gray-500">جاري تحميل البيانات...</p>
                                     </div>
 
-                                    <div class="flex items-center gap-3 justify-start" dir="rtl">
-                                        <input type="checkbox" class="w-4 h-4 text-[#0b6f76] border-gray-300 rounded" onclick="return false;">
-                                        <span class="text-sm font-medium text-gray-700">اطلب ازالة قفل القسم من صندوق العزل</span>
+                                    <div id="content" class="hidden space-y-6">
+                                        <!-- Basic Info Card -->
+                                        <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-[#0b6f76]">
+                                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">معلومات عامة</h2>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">
+                                                <div><span class="text-gray-500">رقم الرخصة:</span> <span id="val-no" class="font-medium"></span></div>
+                                                <div><span class="text-gray-500">التاريخ:</span> <span id="val-date" class="font-medium"></span></div>
+                                                <div><span class="text-gray-500">الموقع:</span> <span id="val-location" class="font-medium"></span></div>
+                                                <div><span class="text-gray-500">اسم المعدة:</span> <span id="val-eq-name" class="font-medium"></span></div>
+                                                <div><span class="text-gray-500">القسم:</span> <span id="val-section" class="font-medium"></span></div>
+                                                <div><span class="text-gray-500">السبب:</span> <span id="val-reason" class="font-medium"></span></div>
+                                                <div><span class="text-gray-500">تصريح العمل:</span> <span id="val-permit" class="font-medium"></span></div>
+                                                <div><span class="text-gray-500">مرخص العزل:</span> <span id="val-created-by" class="font-medium"></span></div>
+                                                <div><span class="text-gray-500">طالب العزل:</span> <span id="val-requester" class="font-medium font-bold text-blue-600"></span></div>
+                                                <div><span class="text-gray-500">مسؤول المنطقة:</span> <span id="val-am" class="font-medium"></span></div>
+                                                <div><span class="text-gray-500">اسم العازل:</span> <span id="val-official" class="font-medium text-green-700"></span></div>
+                                                <div id="am-approved-container" class="hidden"><span class="text-gray-500">تاريخ تأكيد العزل:</span> <span id="val-am-approved-at" class="font-medium text-blue-600"></span></div>
+                                                <div id="end-at-container" class="hidden"><span class="text-gray-500">تاريخ رفع العزل:</span> <span id="val-end-at" class="font-medium text-green-600"></span></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Energy Types Card -->
+                                        <div class="bg-white p-6 rounded-lg shadow-md">
+                                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">أنواع الطاقة المعزولة</h2>
+                                            <div id="val-energy-types" class="flex flex-wrap gap-2 justify-start" dir="rtl"></div>
+                                        </div>
+
+                                        <!-- Equipments Card -->
+                                        <div class="bg-white p-6 rounded-lg shadow-md">
+                                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">اسم المعدة المراد عزلها</h2>
+                                            <div id="val-equipments" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-start" dir="rtl"></div>
+                                        </div>
+
+                                        <!-- Staff Card -->
+                                        <div id="staff-card" class="bg-white p-6 rounded-lg shadow-md">
+                                            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                                                <button id="editStaffBtn" class="hidden no-print text-sm flex items-center gap-1 text-[#0b6f76] hover:text-[#085a60] font-medium transition-colors bg-[#0b6f76]/10 px-3 py-1.5 rounded-md hover:bg-[#0b6f76]/20">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    </svg>
+                                                    تعديل
+                                                </button>
+                                                <h2 class="text-lg font-bold text-[#0b6f76] text-right" dir="rtl">طاقم العمل</h2>
+                                            </div>
+                                            <div id="val-staff" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-right" dir="rtl"></div>
+                                        </div>
+
+                                        <!-- Isolation Done Info Card -->
+                                        <div id="isolation-done-card" class="hidden bg-white p-6 rounded-lg shadow-md border-t-4 border-green-600 mt-6">
+                                            <h2 class="text-lg font-bold text-green-700 mb-4 border-b pb-2 text-right" dir="rtl">تم العزل</h2>
+                                            <div class="space-y-4 text-right" dir="rtl">
+                                                <p class="text-sm text-gray-700 font-medium">تمت المصادقة على العزل</p>
+                                                <div class="flex flex-col gap-1">
+                                                    <span class="text-[10px] text-gray-400 flex">بواسطة مرخص العزل ✔
+                                                    </span>
+                                                    <span id="val-iso-done-by" class="text-sm font-bold text-green-800"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Isolation Removed Info Card -->
+
+
+
+                                        <!-- AM Done Section -->
+                                        <div id="am-action-section" class="hidden bg-yellow-50 p-6 rounded-lg shadow-md border border-yellow-200">
+                                            <h2 class="text-lg font-bold text-yellow-800 mb-4 text-right" dir="rtl">إجراءات مسؤول العزل</h2>
+                                            <div class="space-y-4 text-right" dir="rtl">
+                                                <p class="text-sm text-yellow-700">تمت المصادقة على العزل</p>
+                                                <button id="amDoneBtn" class="w-full bg-[#0b6f76] text-white py-3 rounded-md hover:bg-[#085a60] transition font-bold text-lg">Done / تم العزل</button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Requester Removal Section -->
+                                        <div id="requester-action-section" class="hidden bg-green-50 p-6 rounded-lg shadow-md border border-green-200">
+                                            <h2 class="text-lg font-bold text-green-800 mb-4 text-right" dir="rtl">طلب رفع العزل - <?= $userName ?></h2>
+                                            <div class="space-y-4 text-right" dir="rtl">
+                                                <p class="text-sm text-green-700">تم الانتهاء من العمل على المعده وتم ازالة كافة الاقفال الشخصية الخاصه للمجموعه وتم تنصيب كافة الواقيات وتنظيف المكان</p>
+
+                                                <label class="flex items-center gap-3 justify-start cursor-pointer group" dir="rtl">
+                                                    <input type="checkbox" id="permitWorkCb" class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                                                    <span class="text-sm font-medium text-gray-700 group-hover:text-green-700 transition-colors">اطلب رفع العزل بعد ان تم التأكيد ان جميع العاملين خارج المعدة</span>
+                                                </label>
+
+                                                <label class="flex items-center gap-3 justify-start cursor-pointer group" dir="rtl">
+                                                    <input type="checkbox" id="removeSectionLockCb" class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                                                    <span class="text-sm font-medium text-gray-700 group-hover:text-green-700 transition-colors">اطلب ازالة قفل القسم من صندوق العزل</span>
+                                                </label>
+
+                                                <button id="removeIsolationBtn" disabled class="w-full bg-green-600 text-white py-3 rounded-md hover:bg-green-700 transition font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                                                    رفع العزل
+                                                </button>
+                                            </div>
+                                        </div>
+
+
+                                        <!-- Print Completion Confirmation (Visible in PDF when completed) -->
+                                        <div id="print-completion-card" class="hidden bg-white border border-gray-200 rounded-lg p-3 mt-2">
+                                            <div class="text-right" dir="rtl">
+                                                <h2 class="text-lg font-bold text-[#0b6f76] mb-1 text-right" dir="rtl">طلب رفع العزل - <span id="val-remover-name"></span></h2>
+                                                <p class="text-sm text-[#0b6f76] mb-2">تم الانتهاء من العمل على المعده وتم ازالة كافة الاقفال الشخصية الخاصه للمجموعه وتم تنصيب كافة الواقيات وتنظيف المكان</p>
+
+                                                <div class="space-y-1">
+                                                    <div class="flex items-center gap-3 justify-start" dir="rtl">
+                                                        <input type="checkbox" class="w-4 h-4 text-[#0b6f76] border-gray-300 rounded" onclick="return false;" checked>
+                                                        <span class="text-sm font-medium text-gray-700">اطلب رفع العزل بعد ان تم التأكيد ان جميع العاملين خارج المعدة</span>
+                                                    </div>
+
+                                                    <div class="flex items-center gap-3 justify-start" dir="rtl">
+                                                        <input type="checkbox" class="w-4 h-4 text-[#0b6f76] border-gray-300 rounded" onclick="return false;" checked>
+                                                        <span class="text-sm font-medium text-gray-700">اطلب ازالة قفل القسم من صندوق العزل</span>
+                                                    </div>
+                                                </div>
+
+                                                <p class="text-sm font-bold text-gray-700 italic mt-4 text-xs">تمت المصادقة على العزل</p>
+                                            </div>
+                                        </div>
+
                                     </div>
-                                </div>
-
-                                <p class="text-sm font-bold text-gray-700 italic mt-4 text-xs">تمت المصادقة على العزل</p>
-                            </div>
-                        </div>
-
-                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </main>
         </div>
@@ -464,9 +481,9 @@ $userName = $userData['name'] ?? 'N/A';
             if (data.status === 'pending') {
                 statusByEl.textContent = `بواسطة: ${data.creator_name || 'N/A'}`;
             } else if (data.status === 'active_isolation' || data.status === 'completed' || data.status === 'rejected') {
-                statusByEl.textContent = `بواسطة: ${data.area_manager_name || 'N/A'}`;
+                statusByEl.textContent = `بواسطة: ${data.creator_name || 'N/A'}`;
             } else if (data.status === 'approved_by_am') {
-                statusByEl.textContent = `بواسطة: ${data.area_manager_name || 'N/A'}`;
+                statusByEl.textContent = `بواسطة: ${data.creator_name || 'N/A'}`;
             }
 
             // Energy Types
@@ -539,7 +556,7 @@ $userName = $userData['name'] ?? 'N/A';
                 const isoDoneCard = document.getElementById('isolation-done-card');
                 if (isoDoneCard) {
                     isoDoneCard.classList.remove('hidden');
-                    document.getElementById('val-iso-done-by').textContent = data.area_manager_name || 'N/A';
+                    document.getElementById('val-iso-done-by').textContent = data.creator_name || 'N/A';
                 }
             }
 
