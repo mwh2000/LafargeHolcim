@@ -426,8 +426,16 @@ $userName = $userData['name'] ?? 'N/A';
                     }
 
                     // Show Requester actions if active_isolation and user is creator
-                    if (data.status === 'active_isolation' && data.created_by == CURRENT_USER_ID) {
-                        document.getElementById('requester-action-section').classList.remove('hidden');
+                    const requesterSection = document.getElementById('requester-action-section');
+                    if (requesterSection) {
+                        if (data.status === 'active_isolation' && data.created_by == CURRENT_USER_ID) {
+                            // show on screen but hide from print/PDF until isolation is actually removed
+                            requesterSection.classList.remove('hidden');
+                            requesterSection.classList.add('no-print');
+                        } else {
+                            requesterSection.classList.add('hidden');
+                            requesterSection.classList.remove('no-print');
+                        }
                     }
 
                     if (data.am_approved_at) {
@@ -569,17 +577,19 @@ $userName = $userData['name'] ?? 'N/A';
                 }
             }
 
-            // Print Completion Section
+            // Print Completion Section (only show when fully completed)
+            const pcCard = document.getElementById('print-completion-card');
             if (data.status === 'completed' && CURRENT_USER_ROLE != '3') {
-                const pcCard = document.getElementById('print-completion-card');
                 if (pcCard) {
                     pcCard.classList.remove('hidden');
                     document.getElementById('val-remover-name').textContent = data.creator_name;
                 }
+            } else {
+                if (pcCard) pcCard.classList.add('hidden');
             }
 
-            // Show PDF download button only after isolation is removed (completed)
-            if (data.status === 'completed') {
+            // Show PDF download button only after isolation is removed (completed) or when pending (before isolation is done)
+            if (data.status === 'completed' || data.status === 'active_isolation') {
                 document.getElementById('pdfDownloadBtn').classList.remove('hidden');
             }
 
