@@ -97,14 +97,18 @@ class EnergyInsulationController
 
             // Send Notification and Email to Area Manager
             if ($this->notificationController && !empty($data['area_manager_id'])) {
-                $title = "رخصة عزل طاقة جديدة - New Energy Insulation License";
+                $title = "تم انشاء رخصة العزل من قبل المرخص";
                 $body = "تم إنشاء رخصة عزل طاقة وتم العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A');
                 $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
+                // implementing the URL to view the license details
+                $emailBody = "تم إنشاء رخصة عزل طاقة وتم العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A') .
+                    "<br><br>" .
+                    "<a href='" . $url . "'>اضغط هنا لعرض الرخصة</a>";
 
                 $this->notificationController->sendNotification($title, $body, [$data['area_manager_id']], $url, $data['created_by']);
 
                 if ($this->emailController) {
-                    $this->emailController->sendEmail($title, $body, [$data['area_manager_id']]);
+                    $this->emailController->sendEmail($title, $emailBody, [$data['area_manager_id']]);
                 }
             }
 
@@ -386,9 +390,12 @@ class EnergyInsulationController
             if ($success) {
                 // Send Notification and Email to Area Manager
                 if ($this->notificationController && !empty($license['area_manager_id'])) {
-                    $title = "تم رفع العزل - Isolation Removed";
+                    $title = "قام المرخص برفع العزل";
                     $body = "قام طالب الرخصة برفع العزل للمعدة: " . ($license['equipment_name'] ?? 'N/A');
                     $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
+                    $emailBody = "قام طالب الرخصة برفع العزل للمعدة: " . ($license['equipment_name'] ?? 'N/A') .
+                        "<br><br>" .
+                        "<a href='" . $url . "'>اضغط هنا لعرض الرخصة</a>";
 
                     $this->notificationController->sendNotification($title, $body, [$license['area_manager_id']], $url, $userId);
 

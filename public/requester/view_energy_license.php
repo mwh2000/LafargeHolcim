@@ -331,7 +331,7 @@ $userName = $userData['name'] ?? 'N/A';
                                                     </div>
                                                 </div>
 
-                                                <p class="text-sm font-bold text-gray-700 italic mt-4 text-xs">تمت المصادقة على العزل</p>
+                                                <p class="text-sm font-bold text-gray-700 italic mt-4 text-xs">تمت المصادقة على رفع العزل</p>
                                             </div>
                                         </div>
 
