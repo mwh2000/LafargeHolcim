@@ -218,9 +218,9 @@ class EnergyInsulationController
         $equipStmt->execute([$id]);
         $license['equipments'] = $equipStmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Get Staff
+        // Get Staff including their group info (group id and is_done)
         $staffStmt = $this->conn->prepare("
-            SELECT s.name, sg.name as group_name
+            SELECT s.name, sg.name as group_name, sg.id as group_id, IFNULL(sg.is_done, 0) as group_is_done
             FROM energy_insulation_staff s
             LEFT JOIN energy_insulation_staff_group sg ON s.group_id = sg.id
             WHERE s.license_id = ?
@@ -228,7 +228,44 @@ class EnergyInsulationController
         $staffStmt->execute([$id]);
         $license['staff'] = $staffStmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Additionally include groups summary (optional) for convenience
+        $groupStmt = $this->conn->prepare("SELECT id, name, IFNULL(is_done,0) as is_done FROM energy_insulation_staff_group WHERE license_id = ?");
+        $groupStmt->execute([$id]);
+        $license['staff_groups'] = $groupStmt->fetchAll(PDO::FETCH_ASSOC);
+
         return $this->respond(true, 'License retrieved successfully', $license);
+    }
+
+    /**
+     * Toggle the is_done flag for a staff group. Only license creator may toggle.
+     */
+    public function toggleGroupDone(int $groupId, int $licenseId, int $userId, int $isDone)
+    {
+        try {
+            // Verify license and permission
+            $stmt = $this->conn->prepare("SELECT created_by FROM energy_insulation_license WHERE id = ?");
+            $stmt->execute([$licenseId]);
+            $license = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$license) {
+                return $this->respond(false, 'License not found', null, ['code' => 404], 404);
+            }
+
+            if ($license['created_by'] != $userId) {
+                return $this->respond(false, 'Unauthorized to update this group', null, ['code' => 403], 403);
+            }
+
+            $stmt = $this->conn->prepare("UPDATE energy_insulation_staff_group SET is_done = ? WHERE id = ? AND license_id = ?");
+            $success = $stmt->execute([(int)$isDone, $groupId, $licenseId]);
+
+            if ($success) {
+                return $this->respond(true, 'Group status updated successfully', ['group_id' => $groupId, 'is_done' => (int)$isDone]);
+            }
+
+            return $this->respond(false, 'Failed to update group status', null, ['code' => 500], 500);
+        } catch (Exception $e) {
+            return $this->respond(false, 'Error: ' . $e->getMessage(), null, ['code' => 500], 500);
+        }
     }
 
     public function getIsolationOfficers()

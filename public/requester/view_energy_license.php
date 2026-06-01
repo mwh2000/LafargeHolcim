@@ -234,7 +234,7 @@ $userName = $userData['name'] ?? 'N/A';
                                                 <div><span class="text-gray-500">مسؤول المنطقة:</span> <span id="val-am" class="font-medium"></span></div>
                                                 <div><span class="text-gray-500">اسم العازل:</span> <span id="val-official" class="font-medium text-green-700"></span></div>
                                                 <div id="am-approved-container" class="hidden"><span class="text-gray-500">تاريخ تأكيد العزل:</span> <span id="val-am-approved-at" class="font-medium text-blue-600"></span></div>
-                                                <div id="end-at-container" class="hidden"><span class="text-gray-500">تاريخ رفع العزل:</span> <span id="val-end-at" class="font-medium text-green-600"></span></div>
+
                                             </div>
                                         </div>
 
@@ -331,7 +331,8 @@ $userName = $userData['name'] ?? 'N/A';
                                                     </div>
                                                 </div>
 
-                                                <p class="text-sm font-bold text-gray-700 italic mt-4 text-xs">تمت المصادقة على رفع العزل</p>
+                                                <p class="text-sm font-bold text-gray-700 italic mt-4 text-xs">تمت المصادقة على رفع العزل بواسطة: <span id="val-remover-confirm-name"></span></p>
+                                                <div id="end-at-container" class="hidden"><span class="text-gray-500 text-xs">تاريخ رفع العزل:</span> <span id="val-end-at" class="font-medium text-xs text-green-600"></span></div>
                                             </div>
                                         </div>
 
@@ -465,6 +466,7 @@ $userName = $userData['name'] ?? 'N/A';
             document.getElementById('val-permit').textContent = data.work_permit;
             document.getElementById('val-created-by').textContent = data.creator_name;
             document.getElementById('val-requester').textContent = data.requester_name;
+            document.getElementById('val-remover-confirm-name').textContent = data.requester_name;
             document.getElementById('val-am').textContent = data.area_manager_name;
             document.getElementById('val-official').textContent = `${data.official_name} (${data.official_department})`;
 
@@ -525,27 +527,69 @@ $userName = $userData['name'] ?? 'N/A';
             const staffContainer = document.getElementById('val-staff');
             staffContainer.innerHTML = '';
             if (data.staff && data.staff.length > 0) {
-                // Group by group_name
-                const groups = {};
+                // Build groups map with metadata (id, is_done)
+                const groupsMap = {};
                 data.staff.forEach(member => {
                     const gName = member.group_name || 'طاقم العمل';
-                    if (!groups[gName]) groups[gName] = [];
-                    groups[gName].push(member.name);
+                    if (!groupsMap[gName]) groupsMap[gName] = {
+                        members: [],
+                        id: member.group_id || null,
+                        is_done: member.group_is_done ? 1 : 0
+                    };
+                    groupsMap[gName].members.push(member.name);
                 });
 
-                Object.keys(groups).forEach(groupName => {
+                Object.keys(groupsMap).forEach(groupName => {
+                    const g = groupsMap[groupName];
                     const groupDiv = document.createElement('div');
+                    groupDiv.setAttribute('data-group-id', g.id || '');
                     groupDiv.className = 'bg-gray-50 border border-gray-100 p-3 rounded-md print:p-1 print:mb-2 break-inside-avoid';
+                    //if checked, add green border
+                    if (g.is_done) {
+                        groupDiv.classList.add('bg-green-50', 'border-green-300');
+                    }
+
+                    // Header row: group name (right) and checkbox+label (left)
+                    const headerRow = document.createElement('div');
+                    headerRow.className = 'flex justify-between items-center mb-2';
+                    headerRow.setAttribute('dir', 'rtl');
 
                     const gTitle = document.createElement('h4');
-                    gTitle.className = 'text-sm font-bold text-[#0b6f76] mb-2 border-b border-gray-200 pb-1 print:text-[9pt] print:mb-1';
+                    gTitle.className = 'text-sm font-bold text-[#0b6f76] mb-0 print:text-[9pt]';
                     gTitle.textContent = groupName;
-                    groupDiv.appendChild(gTitle);
+
+                    const leftContainer = document.createElement('div');
+
+                    // Show interactive checkbox only to license creator
+                    if (CURRENT_USER_ID == data.created_by && g.id) {
+                        // if not checked, add .no-print to hide from print/PDF until checked
+                        if (!g.is_done) {
+                            leftContainer.classList.add('no-print');
+                        }
+                        leftContainer.innerHTML = `
+                            <label class="flex items-center gap-3 cursor-pointer" dir="rtl">
+                                <input type="checkbox" onchange="onGroupDoneChange(${g.id}, this)" class="no-print group-done-cb w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500" ${g.is_done ? 'checked' : ''}>
+                                <span class="text-sm font-medium text-gray-700">تم اكمال العمل</span>
+                            </label>
+                        `;
+                    } else {
+                        // read-only view
+                        leftContainer.innerHTML = `
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" class="w-4 h-4 text-green-600 border-gray-300 rounded" onclick="return false;" ${g.is_done ? 'checked' : ''}>
+                                <span class="text-sm text-gray-600">تم اكمال العمل</span>
+                            </div>
+                        `;
+                    }
+
+                    headerRow.appendChild(gTitle);
+                    headerRow.appendChild(leftContainer);
+                    groupDiv.appendChild(headerRow);
 
                     const membersDiv = document.createElement('div');
                     membersDiv.className = 'flex flex-wrap gap-2';
 
-                    groups[groupName].forEach(name => {
+                    g.members.forEach(name => {
                         const span = document.createElement('span');
                         span.className = 'px-3 py-1 bg-white border border-gray-100 rounded text-xs text-gray-700 font-medium print:text-[8pt] print:px-1.5 print:py-0.5';
                         span.textContent = name;
@@ -676,6 +720,46 @@ $userName = $userData['name'] ?? 'N/A';
                     Swal.fire('خطأ', result.message, 'error');
                 }
             } catch (e) {
+                Swal.fire('خطأ', 'حدث خطأ غير متوقع', 'error');
+            }
+        }
+
+        // Toggle group is_done via API
+        async function onGroupDoneChange(groupId, el) {
+            if (!groupId) return;
+            const checked = el.checked;
+            try {
+                const res = await fetch(`${API_BASE}?action=toggleGroupDone`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${TOKEN}`
+                    },
+                    body: JSON.stringify({
+                        group_id: groupId,
+                        license_id: LICENSE_ID,
+                        is_done: checked ? 1 : 0
+                    })
+                });
+                const result = await res.json();
+                if (!result.success) {
+                    el.checked = !checked;
+                    Swal.fire('خطأ', result.message || 'لم يتم التحديث', 'error');
+                } else {
+                    // update data-group-id bg color based on new is_done value
+                    const groupDiv = el.closest('[data-group-id]');
+                    if (groupDiv) {
+                        if (checked) {
+                            groupDiv.classList.add('bg-green-50', 'border-green-300');
+                            groupDiv.classList.remove('bg-gray-50');
+                        } else {
+                            groupDiv.classList.add('bg-gray-50');
+                            groupDiv.classList.remove('bg-green-50', 'border-green-300');
+                        }
+                    }
+                }
+            } catch (e) {
+                el.checked = !checked;
                 Swal.fire('خطأ', 'حدث خطأ غير متوقع', 'error');
             }
         }

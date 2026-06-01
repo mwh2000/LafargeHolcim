@@ -73,6 +73,8 @@ try {
                 $res = $controller->rejectLicense((int)$input['license_id'], $input['reason'] ?? '', $decoded->id);
             } elseif ($action === 'updateStaffGroups') {
                 $res = $controller->updateStaffGroups((int)$input['license_id'], $input['staff_groups'] ?? [], $decoded->id);
+            } elseif ($action === 'toggleGroupDone') {
+                $res = $controller->toggleGroupDone((int)($input['group_id'] ?? 0), (int)($input['license_id'] ?? 0), $decoded->id, (int)($input['is_done'] ?? 0));
             } else {
                 $input['created_by'] = $decoded->id;
                 $res = $controller->createLicense($input);
