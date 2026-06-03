@@ -30,7 +30,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
                 <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
                     <h1 class="text-2xl font-semibold text-gray-700">Permits List</h1>
-                    
+
                     <div class="flex flex-wrap gap-2 items-center">
                         <button id="resetFilters"
                             class="hidden text-gray-500 hover:text-gray-700 px-4 py-2 text-sm font-medium">
@@ -43,7 +43,11 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <option value="completed">Completed</option>
                             <option value="rejected">Rejected</option>
                         </select>
-                    </div>
+                    <select id="sectionFilter" class="border px-4 py-2 rounded-md text-sm">
+    <option value="">All Sections</option>
+    <!-- Add more section options as needed -->
+</select>
+</div>
                 </div>
 
                 <div class="bg-white shadow-md rounded-lg overflow-x-auto">
@@ -56,7 +60,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                                 <th class="px-6 py-3">Area Manager</th>
                                 <th class="px-6 py-3">Created Date</th>
                                 <th class="px-6 py-3 text-blue-600">Isolation confirmation</th>
-                                <th class="px-6 py-3 text-green-600">Isolation removal</th>
+                                <th class="px-6 py-3 text-green-600">Isolation close</th>
                                 <th class="px-6 py-3">Status</th>
                                 <th class="px-6 py-3 text-right">Actions</th>
                             </tr>
@@ -85,6 +89,32 @@ require_once __DIR__ . '/helpers/authCheck.php';
     <script>
         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
         const API_URL = "../api/requester/energy_insulation.php";
+        const API_URL_SECTIONS = "../api/admin/equipment_sections.php";
+
+        // Fetch equipment sections for the section filter dropdown
+        async function fetchSections() {
+            try {
+                const params = new URLSearchParams();
+                params.set('action', 'all');
+                const response = await fetch(`${API_URL_SECTIONS}?${params.toString()}`, {
+                    headers: { "Authorization": `Bearer ${TOKEN}` }
+                });
+                const result = await response.json();
+                if (!result.success) throw new Error(result.message);
+                const sections = result.data.sections || [];
+                const select = document.getElementById('sectionFilter');
+                // Clear existing options except the first placeholder
+                select.innerHTML = '<option value="">All Sections</option>';
+                sections.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.name;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                console.error('Failed to load sections:', e);
+            }
+        }
 
         function getStatusText(status) {
             const map = {
@@ -113,12 +143,16 @@ require_once __DIR__ . '/helpers/authCheck.php';
             currentPage = page;
             const params = new URLSearchParams(window.location.search);
             params.set("action", "getAll");
+            params.set("section", document.getElementById('sectionFilter').value);
+            params.set("status", document.getElementById('statusFilter').value);
             params.set("page", currentPage);
             params.set("limit", PAGE_LIMIT);
 
             try {
                 const response = await fetch(`${API_URL}?${params.toString()}`, {
-                    headers: { "Authorization": `Bearer ${TOKEN}` }
+                    headers: {
+                        "Authorization": `Bearer ${TOKEN}`
+                    }
                 });
                 const result = await response.json();
                 if (!result.success) throw new Error(result.message);
@@ -132,9 +166,12 @@ require_once __DIR__ . '/helpers/authCheck.php';
         }
 
         function updatePaginationControls(data) {
-            const { page, total_pages } = data;
+            const {
+                page,
+                total_pages
+            } = data;
             document.getElementById('pageInfo').textContent = `Page ${page} of ${total_pages || 1}`;
-            
+
             const prevBtn = document.getElementById('prevPage');
             const nextBtn = document.getElementById('nextPage');
 
@@ -184,6 +221,20 @@ require_once __DIR__ . '/helpers/authCheck.php';
             const params = new URLSearchParams(window.location.search);
             if (e.target.value) params.set('status', e.target.value);
             else params.delete('status');
+            // Update section filter param if present
+            const sectionVal = document.getElementById('sectionFilter').value;
+            if (sectionVal) params.set('section', sectionVal);
+            else params.delete('section');
+            window.location.search = params.toString();
+        });
+        document.getElementById('sectionFilter').addEventListener('change', e => {
+            const params = new URLSearchParams(window.location.search);
+            if (e.target.value) params.set('section', e.target.value);
+            else params.delete('section');
+            // Preserve status param
+            const statusVal = document.getElementById('statusFilter').value;
+            if (statusVal) params.set('status', statusVal);
+            else params.delete('status');
             window.location.search = params.toString();
         });
 
@@ -191,15 +242,20 @@ require_once __DIR__ . '/helpers/authCheck.php';
             window.location.href = 'permits.php';
         });
 
-        document.addEventListener("DOMContentLoaded", () => {
+        // Initialize filters and load data
+        document.addEventListener("DOMContentLoaded", async () => {
             const params = new URLSearchParams(window.location.search);
             const status = params.get('status');
+            const section = params.get('section');
             document.getElementById('statusFilter').value = status || '';
-            
-            if (status) {
+            document.getElementById('sectionFilter').value = section || '';
+            if (status || section) {
                 document.getElementById('resetFilters').classList.remove('hidden');
             }
-
+            // Load sections first, then restore selected section and fetch permits
+            await fetchSections();
+            // Ensure the selected section persists after options are loaded
+            document.getElementById('sectionFilter').value = section || '';
             fetchPermits();
         });
     </script>

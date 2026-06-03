@@ -49,7 +49,7 @@ try {
                 $filters['user_id'] = $decoded->id;
                 $filters['role_id'] = $decoded->role_id;
                 $res = $controller->getStatistics($filters);
-            } elseif ($action === 'getAll') {
+            } elseif ($action === 'getAll' || $action === null) {
                 $filters = $_GET;
                 $filters['user_id'] = $decoded->id;
                 $filters['role_id'] = $decoded->role_id;
@@ -80,13 +80,12 @@ try {
                 $res = $controller->createLicense($input);
             }
             break;
-
-        default:
-            $res = ['success' => false, 'message' => 'Method Not Allowed'];
-            http_response_code(405);
-            break;
     }
 
+    if ($res === null) {
+        $res = ['success' => false, 'message' => 'Invalid request'];
+        http_response_code(400);
+    }
     sendJson($res);
 } catch (Exception $e) {
     http_response_code(500);
