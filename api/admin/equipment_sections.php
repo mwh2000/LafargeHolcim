@@ -16,7 +16,7 @@ $jwtHandler = new JWTHandler($config['jwt_secret']);
 
 $auth = new AuthMiddleware();
 $decoded = $auth->verifyToken();
-$auth->requireRoles($decoded, ['admin', 'manager', 'area_manager']);
+$auth->requireRoles($decoded, ['requester', 'safety', 'area_manager', 'manager', 'plant manager', 'shift leader and issurs']);
 
 $equipmentSectionController = new EquipmentSectionController($conn);
 
