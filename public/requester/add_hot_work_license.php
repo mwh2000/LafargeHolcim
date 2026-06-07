@@ -30,6 +30,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -39,15 +40,33 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
     <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
     <style>
-        .step-content { display: none; }
-        .step-content.active { display: block; }
-        .step-indicator.active { color: #0b6f76; font-weight: bold; border-bottom: 2px solid #0b6f76; }
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        .step-indicator.active {
+            color: #0b6f76;
+            font-weight: bold;
+            border-bottom: 2px solid #0b6f76;
+        }
+
         /* Hide scrollbar for Chrome, Safari and Opera */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
         /* Hide scrollbar for IE, Edge and Firefox */
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
+
 <body class="bg-gray-50">
     <?php renderNavbar('رخصة العمل الساخن'); ?>
     <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]">
@@ -58,7 +77,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 <div class="max-w-4xl mx-auto">
                     <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                         <h1 class="text-xl md:text-2xl font-semibold text-gray-700">رخصة العمل الساخن (Hot Work Permit)</h1>
-                        <span class="text-sm text-red-600 md:text-base">رقم الطوارئ ( 07806444440 )</span>
+                        <span class="text-sm text-red-600 md:text-base">رقم الإطفاء ( 07806444440 )</span>
                     </div>
                     <p class="text-lg text-red-700 mb-6">الاعمال الساخنة تشمل اعمال اللحام والجلغ والقطع</p>
 
@@ -73,7 +92,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     </div>
 
                     <form id="hotWorkForm" class="bg-white p-6 rounded-lg shadow-md">
-                        
+
                         <!-- Step 1: Basic Information -->
                         <div class="step-content active" data-step="1">
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم الأول: المعلومات الأساسية</h2>
@@ -99,7 +118,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                     <input type="text" name="equipment_used" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-green-700 mb-1">تاريخ  اصدار الرخصه</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">تاريخ اصدار الرخصه</label>
                                     <input type="datetime-local" name="task_start_datetime" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
@@ -206,7 +225,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                         <div class="step-content" data-step="5">
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم الخامس: المطابقة والموافقة</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <?php 
+                                <?php
                                 $userData = json_decode($_COOKIE['user_data'] ?? '{}', true);
                                 $currentUserName = $userData['name'] ?? '';
                                 $roles = [
@@ -215,17 +234,17 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                     ['id' => 'fire_sentry', 'label' => 'مراقب النار (Fire Sentry)'],
                                     ['id' => 'ptw_issuer', 'label' => 'مخول التصريح (PTW Issuer)']
                                 ];
-                                foreach ($roles as $role): 
+                                foreach ($roles as $role):
                                     $isIssuer = ($role['id'] === 'ptw_issuer');
                                 ?>
                                     <div class="p-4 border rounded-lg bg-gray-50">
                                         <label class="block text-sm font-medium text-green-700 mb-1"><?= $role['label'] ?></label>
-                                        <input type="text" 
-                                               name="approval_name_<?= $role['id'] ?>" 
-                                               value="<?= $isIssuer ? $currentUserName : '' ?>"
-                                               <?= $isIssuer ? 'readonly' : '' ?>
-                                               placeholder="الاسم الكامل" 
-                                               class="w-full px-3 py-2 border rounded-md mb-2 focus:ring-[#0b6f76] outline-none <?= $isIssuer ? 'bg-gray-100 cursor-not-allowed' : '' ?>">
+                                        <input type="text"
+                                            name="approval_name_<?= $role['id'] ?>"
+                                            value="<?= $isIssuer ? $currentUserName : '' ?>"
+                                            <?= $isIssuer ? 'readonly' : '' ?>
+                                            placeholder="الاسم الكامل"
+                                            class="w-full px-3 py-2 border rounded-md mb-2 focus:ring-[#0b6f76] outline-none <?= $isIssuer ? 'bg-gray-100 cursor-not-allowed' : '' ?>">
                                         <label class="flex items-center gap-2 cursor-pointer">
                                             <input type="checkbox" name="approval_status_<?= $role['id'] ?>" value="1" class="w-5 h-5 text-[#0b6f76] rounded">
                                             <span class="text-xs font-medium text-gray-700">تمت المطابقة والموافقة</span>
@@ -271,16 +290,16 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
             const contents = document.querySelectorAll('.step-content');
 
             // Initialize TomSelect for Assignee
-            let assigneeSelect = new TomSelect('#assigned_to', { 
-                persist: false, 
-                create: false, 
+            let assigneeSelect = new TomSelect('#assigned_to', {
+                persist: false,
+                create: false,
                 placeholder: 'اختر المسؤول...',
                 onChange: () => updateButtonStates()
             });
 
             function checkStepValidity(step) {
                 const currentContent = document.querySelector(`.step-content[data-step="${step}"]`);
-                
+
                 if (step === 1) {
                     const requiredInputs = currentContent.querySelectorAll('input[required]');
                     for (let input of requiredInputs) {
@@ -309,7 +328,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 } else if (step === 6) {
                     if (!assigneeSelect.getValue()) return false;
                 }
-                
+
                 return true;
             }
 
@@ -317,7 +336,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 const isValid = checkStepValidity(currentStep);
                 nextBtn.disabled = !isValid;
                 submitBtn.disabled = !isValid;
-                
+
                 // Update highestStepReached based on current step's validity
                 if (isValid) {
                     if (currentStep >= highestStepReached) {
@@ -375,14 +394,20 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 if (checkStepValidity(currentStep)) {
                     currentStep++;
                     updateUI();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
                 }
             });
 
             prevBtn.addEventListener('click', () => {
                 currentStep--;
                 updateUI();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
             });
 
             indicators.forEach(indicator => {
@@ -401,12 +426,17 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
                 try {
                     const res = await fetch('../../api/requester/hot_work_permit.php?action=getAssignees', {
-                        headers: { 'Authorization': `Bearer ${TOKEN}` }
+                        headers: {
+                            'Authorization': `Bearer ${TOKEN}`
+                        }
                     });
                     const data = await res.json();
                     if (data.success) {
                         data.data.forEach(user => {
-                            assigneeSelect.addOption({ value: user.id, text: user.name });
+                            assigneeSelect.addOption({
+                                value: user.id,
+                                text: user.name
+                            });
                         });
                         assigneeSelect.refreshOptions(false);
                     }
@@ -417,7 +447,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
+
                 const formData = new FormData(form);
                 const data = {
                     permit_no: formData.get('permit_no'),
@@ -446,18 +476,18 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
                 // Collection of Control Measures
                 <?php foreach ($controlMeasures as $index => $measure): ?>
-                data.control_measures.push({
-                    text: formData.get('control_measure_text_<?= $index ?>'),
-                    status: formData.get('control_measure_status_<?= $index ?>') || 'غير متاح'
-                });
+                    data.control_measures.push({
+                        text: formData.get('control_measure_text_<?= $index ?>'),
+                        status: formData.get('control_measure_status_<?= $index ?>') || 'غير متاح'
+                    });
                 <?php endforeach; ?>
 
                 // Collection of Performers Check
                 <?php foreach ($performersCheck as $index => $check): ?>
-                data.performers_check.push({
-                    text: formData.get('performer_check_text_<?= $index ?>'),
-                    answer: formData.get('performer_check_answer_<?= $index ?>') || 'غير متاح'
-                });
+                    data.performers_check.push({
+                        text: formData.get('performer_check_text_<?= $index ?>'),
+                        answer: formData.get('performer_check_answer_<?= $index ?>') || 'غير متاح'
+                    });
                 <?php endforeach; ?>
 
                 // Collection of Approvals
@@ -518,5 +548,5 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
         });
     </script>
 </body>
-</html>
 
+</html>
