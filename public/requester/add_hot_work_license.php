@@ -117,8 +117,8 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                     </label>
                                 </div>
                                 <div id="critical_manager_container" style="display:none;">
-                                    <label class="block text-sm font-medium text-green-700 mb-1">إسناد لـ Manager</label>
-                                    <select id="critical_manager_id" name="critical_manager_id" class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]"></select>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">موافقة قسم السلامة</label>
+                                    <select id="critical_manager_id" name="critical_manager_id" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]"></select>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">الموقع الدقيق</label>
@@ -319,7 +319,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
             let criticalManagerSelect = new TomSelect('#critical_manager_id', {
                 persist: false,
                 create: false,
-                placeholder: 'اختر المدير...'
+                placeholder: 'اختر موافقة القسم...'
             });
 
             const isCriticalCheckbox = document.getElementById('is_critical');
@@ -462,9 +462,9 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 const currentContent = document.querySelector(`.step-content[data-step="${step}"]`);
 
                 if (step === 1) {
-                    const requiredInputs = currentContent.querySelectorAll('input[required]');
-                    for (let input of requiredInputs) {
-                        if (!input.value.trim()) return false;
+                    const requiredFields = currentContent.querySelectorAll('input[required], select[required], textarea[required]');
+                    for (let field of requiredFields) {
+                        if (!field.value.trim()) return false;
                     }
                 } else if (step === 2) {
                     const checkedCount = currentContent.querySelectorAll('input[name="additional_permits_selected[]"]:checked').length;
@@ -499,7 +499,9 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 submitBtn.disabled = !isValid;
 
                 // Update highestStepReached based on current step's validity
-                if (isValid) {
+                if (isCriticalCheckbox.checked && !resumeMode) {
+                    highestStepReached = 1;
+                } else if (isValid) {
                     if (currentStep >= highestStepReached) {
                         highestStepReached = currentStep + 1;
                     }
