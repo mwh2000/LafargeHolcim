@@ -134,7 +134,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">وقت انتهاء الرخصه</label>
-                                    <input type="text" name="finishing_time" placeholder="مثال: 04:00 PM" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
+                                    <input type="datetime-local" name="finishing_time" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                             </div>
                         </div>
@@ -444,7 +444,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                             document.querySelector('input[name="supervisor"]').value = p.supervisor || '';
                             document.querySelector('input[name="equipment_used"]').value = p.equipment_used || '';
                             if (p.task_start_datetime) document.querySelector('input[name="task_start_datetime"]').value = p.task_start_datetime.replace(' ', 'T');
-                            document.querySelector('input[name="finishing_time"]').value = p.finishing_time || '';
+                            if (p.finishing_time) document.querySelector('input[name="finishing_time"]').value = p.finishing_time.replace(' ', 'T');
 
                             // show steps 2-6 and ensure their controls are enabled
                             document.querySelectorAll('.step-content').forEach(c => c.style.display = '');
