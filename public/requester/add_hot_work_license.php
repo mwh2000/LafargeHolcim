@@ -107,7 +107,18 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">القسم</label>
-                                    <input type="text" name="location" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
+                                    <select id="location" name="location" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">رخصة عمل حرجة</label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" id="is_critical" name="is_critical" value="1" class="w-5 h-5 text-[#0b6f76] rounded">
+                                        <span class="text-sm">رخصة عمل حرجة</span>
+                                    </label>
+                                </div>
+                                <div id="critical_manager_container" style="display:none;">
+                                    <label class="block text-sm font-medium text-green-700 mb-1">إسناد لـ Manager</label>
+                                    <select id="critical_manager_id" name="critical_manager_id" class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]"></select>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">الموقع الدقيق</label>
@@ -276,11 +287,18 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             let currentStep = 1;
             let highestStepReached = 1;
             const totalSteps = 6;
             const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
+
+            const group1 = [
+                'كسارة', 'طحونة مواد', 'الافران', 'طواحين الاسمنت', 'التعبئة', 'محطة الاساله', 'اخرى'
+            ];
+            const group2 = [
+                'خزانات الوقود', 'محطة تفريغ النفط', 'انابيب نقل الوقود', 'مشعل الرئيسي', 'المشعل الثانوي', 'مخازن الاصباغ والمواد الكيمياوية', 'خزانات الغاز'
+            ];
 
             const form = document.getElementById('hotWorkForm');
             const prevBtn = document.getElementById('prevBtn');
@@ -296,6 +314,149 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 placeholder: 'اختر المسؤول...',
                 onChange: () => updateButtonStates()
             });
+
+            // Critical manager select (TomSelect)
+            let criticalManagerSelect = new TomSelect('#critical_manager_id', {
+                persist: false,
+                create: false,
+                placeholder: 'اختر المدير...'
+            });
+
+            const isCriticalCheckbox = document.getElementById('is_critical');
+            const criticalManagerContainer = document.getElementById('critical_manager_container');
+            const locationSelect = document.getElementById('location');
+
+            let resumeMode = false;
+
+            function setPointerEventsForStep1(enabled) {
+                document.querySelectorAll('.step-content[data-step="1"] select').forEach(el => {
+                    if (enabled) {
+                        el.style.pointerEvents = '';
+                        el.style.background = '';
+                    } else {
+                        el.style.pointerEvents = 'none';
+                        el.style.background = '#f3f4f6';
+                    }
+                });
+            }
+
+            function disableNonStep1Controls(disable) {
+                document.querySelectorAll('.step-content').forEach(c => {
+                    if (c.dataset.step !== '1') {
+                        c.querySelectorAll('input,select,textarea').forEach(el => {
+                            el.disabled = disable;
+                        });
+                    }
+                });
+            }
+
+            function populateLocation(isCritical) {
+                const list = isCritical ? group2 : group1;
+                locationSelect.innerHTML = '';
+                list.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item;
+                    opt.textContent = item;
+                    locationSelect.appendChild(opt);
+                });
+            }
+
+            // initial populate (normal)
+            populateLocation(false);
+
+            isCriticalCheckbox.addEventListener('change', async (e) => {
+                const checked = e.target.checked;
+                populateLocation(checked);
+                if (checked) {
+                    criticalManagerContainer.style.display = 'block';
+                    if (!resumeMode) {
+                        // hide steps 2-6 and disable their controls so validation won't block
+                        document.querySelectorAll('.step-content').forEach(c => {
+                            if (c.dataset.step !== '1') c.style.display = 'none';
+                        });
+                        disableNonStep1Controls(true);
+                        nextBtn.textContent = 'إرسال الرخصة الحرجة';
+                        // load managers
+                        try {
+                            const res = await fetch('../../api/requester/hot_work_permit.php?action=getManagers', {
+                                headers: {
+                                    'Authorization': `Bearer ${TOKEN}`
+                                }
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                                criticalManagerSelect.clearOptions();
+                                data.data.forEach(m => criticalManagerSelect.addOption({
+                                    value: m.id,
+                                    text: m.name
+                                }));
+                                criticalManagerSelect.refreshOptions(false);
+                            }
+                        } catch (err) {
+                            console.error('Failed to load managers', err);
+                        }
+                    } else {
+                        // resume mode: keep steps visible and enabled
+                        document.querySelectorAll('.step-content').forEach(c => c.style.display = '');
+                        disableNonStep1Controls(false);
+                        nextBtn.textContent = 'التالي';
+                    }
+                } else {
+                    criticalManagerContainer.style.display = 'none';
+                    document.querySelectorAll('.step-content').forEach(c => c.style.display = '');
+                    disableNonStep1Controls(false);
+                    nextBtn.textContent = 'التالي';
+                }
+            });
+
+            // If editing/resuming (id param), load permit and prepare resume mode
+            const urlParams = new URLSearchParams(window.location.search);
+            const editId = urlParams.get('id');
+            if (editId) {
+                try {
+                    const res = await fetch(`../../api/requester/hot_work_permit.php?action=show&id=${editId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${TOKEN}`
+                        }
+                    });
+                    const jr = await res.json();
+                    if (jr.success) {
+                        const p = jr.data;
+                        // If critical and pending_creator, enable resume mode
+                        if (p.is_critical && p.critical_status === 'pending_creator') {
+                            // enable resume mode: indicate critical but allow steps 2-6 to be edited
+                            resumeMode = true;
+                            isCriticalCheckbox.checked = true;
+                            populateLocation(true);
+                            criticalManagerContainer.style.display = 'block';
+
+                            // lock step 1 inputs (readonly) but keep them enabled for submission
+                            document.querySelectorAll('.step-content[data-step="1"] input, .step-content[data-step="1"] textarea').forEach(el => {
+                                el.readOnly = true;
+                            });
+                            // for selects, prevent pointer events but keep enabled so their values are submitted
+                            setPointerEventsForStep1(false);
+
+                            // populate basic fields
+                            document.querySelector('input[name="permit_no"]').value = p.permit_no || '';
+                            document.querySelector('input[name="company_name"]').value = p.company_name || '';
+                            document.getElementById('location').value = p.location || '';
+                            document.querySelector('input[name="supervisor"]').value = p.supervisor || '';
+                            document.querySelector('input[name="equipment_used"]').value = p.equipment_used || '';
+                            if (p.task_start_datetime) document.querySelector('input[name="task_start_datetime"]').value = p.task_start_datetime.replace(' ', 'T');
+                            document.querySelector('input[name="finishing_time"]').value = p.finishing_time || '';
+
+                            // show steps 2-6 and ensure their controls are enabled
+                            document.querySelectorAll('.step-content').forEach(c => c.style.display = '');
+                            disableNonStep1Controls(false);
+                            currentStep = 2;
+                            updateUI();
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to load permit for edit', e);
+                }
+            }
 
             function checkStepValidity(step) {
                 const currentContent = document.querySelector(`.step-content[data-step="${step}"]`);
@@ -391,6 +552,11 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
             }
 
             nextBtn.addEventListener('click', () => {
+                if (isCriticalCheckbox.checked && !resumeMode) {
+                    // submit immediately for critical permits (only if not resuming)
+                    form.requestSubmit();
+                    return;
+                }
                 if (checkStepValidity(currentStep)) {
                     currentStep++;
                     updateUI();
@@ -449,6 +615,65 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 e.preventDefault();
 
                 const formData = new FormData(form);
+
+                // If critical (and not resuming), send minimal payload to create a critical permit
+                if (isCriticalCheckbox.checked && !resumeMode) {
+                    const payload = {
+                        permit_no: formData.get('permit_no'),
+                        company_name: formData.get('company_name'),
+                        location: formData.get('location'),
+                        supervisor: formData.get('supervisor'),
+                        equipment_used: formData.get('equipment_used'),
+                        task_start_datetime: formData.get('task_start_datetime'),
+                        finishing_time: formData.get('finishing_time'),
+                        is_critical: 1,
+                        critical_manager_id: criticalManagerSelect.getValue(),
+                        critical_status: 'pending_manager'
+                    };
+
+                    try {
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = 'جاري الإرسال...';
+
+                        const res = await fetch('../../api/requester/hot_work_permit.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${TOKEN}`
+                            },
+                            body: JSON.stringify(payload)
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'تم بنجاح',
+                                text: result.message,
+                                confirmButtonText: 'حسناً',
+                                confirmButtonColor: '#0b6f76'
+                            }).then(() => {
+                                const redirectId = result.id || editId;
+                                window.location.href = `view_hot_work_license.php?id=${redirectId}`;
+                            });
+                        } else {
+                            throw new Error(result.message);
+                        }
+                    } catch (err) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطأ',
+                            text: err.message || 'حدث خطأ ما',
+                            confirmButtonText: 'حسناً',
+                            confirmButtonColor: '#0b6f76'
+                        });
+                    } finally {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'إرسال الرخصة';
+                    }
+
+                    return;
+                }
+
                 const data = {
                     permit_no: formData.get('permit_no'),
                     company_name: formData.get('company_name'),
@@ -457,7 +682,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     equipment_used: formData.get('equipment_used'),
                     task_start_datetime: formData.get('task_start_datetime'),
                     finishing_time: formData.get('finishing_time'),
-                    assigned_to: formData.get('assigned_to'),
+                    assigned_to: assigneeSelect.getValue(),
                     work_description: formData.get('work_description'),
                     additional_permits: [],
                     control_measures: [],
@@ -510,13 +735,26 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     submitBtn.disabled = true;
                     submitBtn.textContent = 'جاري الإرسال...';
 
-                    const res = await fetch('../../api/requester/hot_work_permit.php', {
+                    // Determine API endpoint and payload based on mode
+                    let url = '../../api/requester/hot_work_permit.php';
+                    let payload = data;
+
+                    if (resumeMode) {
+                        // When completing a critical permit, use complete action
+                        url += '?action=complete';
+                        payload = {
+                            ...data,
+                            permit_id: editId
+                        };
+                    }
+
+                    const res = await fetch(url, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${TOKEN}`
                         },
-                        body: JSON.stringify(data)
+                        body: JSON.stringify(payload)
                     });
                     const result = await res.json();
                     if (result.success) {

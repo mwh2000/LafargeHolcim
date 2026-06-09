@@ -14,7 +14,7 @@ $conn = $database->getConnection();
 $auth = new AuthMiddleware();
 $decoded = $auth->verifyToken();
 // Allow requester, area_manager, manager etc.
-$auth->requireRoles($decoded, ['requester', 'safety', 'area_manager', 'manager', 'shift leader and issurs', 'مسؤل العزل']);
+$auth->requireRoles($decoded, ['requester', 'safety', 'area_manager', 'manager', 'shift leader and issurs', 'مسؤل العزل', 'plant manager']);
 
 $controller = new HotWorkPermitController($conn);
 
@@ -28,6 +28,10 @@ try {
         case 'GET':
             if ($action === 'getAssignees') {
                 $res = $controller->getAssignees();
+            } elseif ($action === 'getManagers') {
+                $res = $controller->getManagers();
+            } elseif ($action === 'getSupervisors') {
+                $res = $controller->getSupervisors();
             } elseif ($action === 'show' && isset($_GET['id'])) {
                 $res = $controller->getPermit($_GET['id']);
             } elseif ($action === 'getStatistics') {
@@ -46,7 +50,21 @@ try {
         case 'POST':
             $input = json_decode(file_get_contents("php://input"), true) ?? [];
             $input['created_by'] = $decoded->id;
-            $res = $controller->createPermit($input);
+            // route by action
+            if ($action === 'assignSupervisor') {
+                // manager assigns supervisor
+                $permitId = $input['permit_id'] ?? null;
+                $supervisorId = $input['supervisor_id'] ?? null;
+                $res = $controller->assignSupervisor($permitId, $decoded->id, $supervisorId);
+            } elseif ($action === 'markDone') {
+                $permitId = $input['permit_id'] ?? null;
+                $res = $controller->markDoneBySupervisor($permitId, $decoded->id);
+            } elseif ($action === 'complete') {
+                $permitId = $input['permit_id'] ?? null;
+                $res = $controller->completePermit($permitId, $input);
+            } else {
+                $res = $controller->createPermit($input);
+            }
             break;
 
         default:

@@ -19,6 +19,7 @@ $userName = $userData['name'] ?? 'N/A';
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,26 +28,76 @@ $userName = $userData['name'] ?? 'N/A';
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         @media print {
-            body { background: white !important; }
-            .dashboard-container { background: white !important; margin: 0 !important; padding: 0 !important; }
-            .sidebar, nav, .navbar, #sidebar, .no-print, button { display: none !important; }
-            main { padding: 0 !important; margin: 0 !important; width: 100% !important; }
-            .sm\:ml-64 { margin-left: 0 !important; width: 100% !important; }
+            body {
+                background: white !important;
+            }
+
+            .dashboard-container {
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .sidebar,
+            nav,
+            .navbar,
+            #sidebar,
+            .no-print,
+            button {
+                display: none !important;
+            }
+
+            main {
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+            }
+
+            .sm\:ml-64 {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+
+            /* Hide empty sections in print */
+            .bg-white {
+                break-inside: avoid;
+            }
+
+            .bg-white[style*="display: none"] {
+                display: none !important;
+            }
 
             /* Table Header repeating trick */
-            .print-table { width: 100%; border-collapse: collapse; }
-            .print-header-space { height: 100px; }
-            .print-header-container { display: table-header-group; }
-            
+            .print-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            .print-header-space {
+                height: 100px;
+            }
+
+            .print-header-container {
+                display: table-header-group;
+            }
+
             /* Grids for space saving */
-            .grid-cols-1.md\:grid-cols-2 { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 0.5rem !important; }
-            
-            #val-control-measures, #val-performers-check {
+            .grid-cols-1.md\:grid-cols-2 {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.5rem !important;
+            }
+
+            #val-control-measures,
+            #val-performers-check {
                 display: grid !important;
                 grid-template-columns: repeat(2, 1fr) !important;
                 gap: 0.25rem !important;
             }
-            .space-y-2 > * + * { margin-top: 0 !important; }
+
+            .space-y-2>*+* {
+                margin-top: 0 !important;
+            }
 
             #val-approvals {
                 display: grid !important;
@@ -55,23 +106,44 @@ $userName = $userData['name'] ?? 'N/A';
             }
 
             /* Table compression */
-            td, th { padding: 0.2rem !important; font-size: 9pt !important; }
-            
+            td,
+            th {
+                padding: 0.2rem !important;
+                font-size: 9pt !important;
+            }
+
             /* Print Header Styling */
-            .print-header { border-bottom: 2px solid #0b6f76; margin-bottom: 0.5rem; padding-bottom: 0.25rem; text-align: center; width: 100%; }
-            .print-header img { height: 40px; margin: 0 auto 5px; display: block; }
-            .print-header h1 { font-size: 14pt; color: #0b6f76; font-weight: bold; }
+            .print-header {
+                border-bottom: 2px solid #0b6f76;
+                margin-bottom: 0.5rem;
+                padding-bottom: 0.25rem;
+                text-align: center;
+                width: 100%;
+            }
+
+            .print-header img {
+                height: 40px;
+                margin: 0 auto 5px;
+                display: block;
+            }
+
+            .print-header h1 {
+                font-size: 14pt;
+                color: #0b6f76;
+                font-weight: bold;
+            }
         }
     </style>
 </head>
+
 <body class="bg-gray-50 font-sans">
     <?php renderNavbar('تفاصيل رخصة العمل الساخن'); ?>
     <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]">
         <?php renderSidebar('hot_work'); ?>
 
         <div class="flex-1 flex flex-col sm:ml-64 transition-all">
-            <main class="flex-1 overflow-y-auto p-4 md:p-8">
-                <div class="max-w-4xl mx-auto">
+            <main class="flex-1 overflow-y-auto p-4 md:p-8 w-full">
+                <div class="w-full mx-auto">
                     <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-6 no-print">
                         <h1 class="text-xl md:text-2xl font-semibold text-gray-700 text-right order-1 md:order-2">تفاصيل رخصة العمل الساخن (Hot Work Permit)</h1>
                         <button onclick="window.print()" class="flex items-center gap-2 bg-white border border-[#0b6f76] text-[#0b6f76] px-4 py-2 rounded-md hover:bg-[#0b6f76] hover:text-white transition shadow-sm order-2 md:order-1">
@@ -82,7 +154,7 @@ $userName = $userData['name'] ?? 'N/A';
                         </button>
                     </div>
 
-                    <table class="print-table">
+                    <table class="print-table w-full bg-transparent border-collapse">
                         <thead class="print-header-container">
                             <tr>
                                 <td>
@@ -102,69 +174,76 @@ $userName = $userData['name'] ?? 'N/A';
                                     </div>
 
                                     <div id="content" class="hidden space-y-6">
-                        <!-- القسم الأول: المعلومات الأساسية -->
-                        <div class="bg-white p-6 rounded-lg shadow-md">
-                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">المعلومات الأساسية</h2>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">
-                                <div><span class="text-gray-500">رقم الرخصة:</span> <span id="val-permit-no" class="font-medium text-gray-800"></span></div>
-                                <div><span class="text-gray-500">تاريخ الإصدار:</span> <span id="val-issuing-date" class="font-medium text-gray-800"></span></div>
-                                <div><span class="text-gray-500">اسم طالب الرخصه:</span> <span id="val-company" class="font-medium text-gray-800"></span></div>
-                                <div><span class="text-gray-500">القسم:</span> <span id="val-location" class="font-medium text-gray-800"></span></div>
-                                <div><span class="text-gray-500">الموقع الدقيق:</span> <span id="val-supervisor" class="font-medium text-gray-800"></span></div>
-                                <div><span class="text-gray-500">المعدة المستخدمة:</span> <span id="val-equipment" class="font-medium text-gray-800"></span></div>
-                                <div><span class="text-gray-500">تاريخ  اصدار الرخصه:</span> <span id="val-start" class="font-medium text-blue-600"></span></div>
-                                <div><span class="text-gray-500">وقت انتهاء الرخصه:</span> <span id="val-finish" class="font-medium text-green-600"></span></div>
-                                <div><span class="text-gray-500">تم الإنشاء بواسطة:</span> <span id="val-creator" class="font-medium text-gray-800"></span></div>
-                                <div><span class="text-gray-500">مسند إلى (Assigned To):</span> <span id="val-assigned" class="font-bold text-[#0b6f76]"></span></div>
-                            </div>
-                        </div>
+                                        <!-- Critical status and actions -->
+                                        <div id="critical_status_container" class="bg-white p-4 rounded-lg shadow-md hidden text-right no-print">
+                                            <div class="flex items-center justify-between">
+                                                <div id="critical_status_badge" class="font-bold"></div>
+                                                <div id="critical_actions" class="flex gap-2"></div>
+                                            </div>
+                                        </div>
+                                        <!-- القسم الأول: المعلومات الأساسية -->
+                                        <div class="bg-white p-6 rounded-lg shadow-md">
+                                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">المعلومات الأساسية</h2>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">
+                                                <div><span class="text-gray-500">رقم الرخصة:</span> <span id="val-permit-no" class="font-medium text-gray-800"></span></div>
+                                                <div><span class="text-gray-500">تاريخ الإصدار:</span> <span id="val-issuing-date" class="font-medium text-gray-800"></span></div>
+                                                <div><span class="text-gray-500">اسم طالب الرخصه:</span> <span id="val-company" class="font-medium text-gray-800"></span></div>
+                                                <div><span class="text-gray-500">القسم:</span> <span id="val-location" class="font-medium text-gray-800"></span></div>
+                                                <div><span class="text-gray-500">الموقع الدقيق:</span> <span id="val-supervisor" class="font-medium text-gray-800"></span></div>
+                                                <div><span class="text-gray-500">المعدة المستخدمة:</span> <span id="val-equipment" class="font-medium text-gray-800"></span></div>
+                                                <div><span class="text-gray-500">تاريخ اصدار الرخصه:</span> <span id="val-start" class="font-medium text-blue-600"></span></div>
+                                                <div><span class="text-gray-500">وقت انتهاء الرخصه:</span> <span id="val-finish" class="font-medium text-green-600"></span></div>
+                                                <div><span class="text-gray-500">تم الإنشاء بواسطة:</span> <span id="val-creator" class="font-medium text-gray-800"></span></div>
+                                                <div><span class="text-gray-500">مسند إلى (Assigned To):</span> <span id="val-assigned" class="font-bold text-[#0b6f76]"></span></div>
+                                            </div>
+                                        </div>
 
-                        <!-- القسم الثاني: التصاريح الإضافية -->
-                        <div class="bg-white p-6 rounded-lg shadow-md">
-                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">التصاريح الإضافية المرفقة</h2>
-                            <div class="overflow-x-auto" dir="rtl">
-                                <table class="w-full text-right border-collapse text-sm">
-                                    <thead>
-                                        <tr class="bg-gray-50">
-                                            <th class="p-2 border">اسم التصريح</th>
-                                            <th class="p-2 border">رقم التصريح</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="val-additional-permits">
-                                        <!-- Data will be injected here -->
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="mt-4 pt-4 border-t">
-                                <span class="text-gray-500 block mb-1 text-right" dir="rtl">وصف العمل (Work Description):</span>
-                                <div id="val-work-description" class="p-3 bg-gray-50 rounded border text-gray-800 whitespace-pre-wrap text-right" dir="rtl"></div>
-                            </div>
-                            <p id="no-additional-permits" class="text-sm text-gray-500 hidden mt-2">لا توجد تصاريح إضافية محددة.</p>
-                        </div>
+                                        <!-- القسم الثاني: التصاريح الإضافية -->
+                                        <div class="bg-white p-6 rounded-lg shadow-md">
+                                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">التصاريح الإضافية المرفقة</h2>
+                                            <div class="overflow-x-auto" dir="rtl">
+                                                <table class="w-full text-right border-collapse text-sm">
+                                                    <thead>
+                                                        <tr class="bg-gray-50">
+                                                            <th class="p-2 border">اسم التصريح</th>
+                                                            <th class="p-2 border">رقم التصريح</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="val-additional-permits">
+                                                        <!-- Data will be injected here -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <div class="mt-4 pt-4 border-t">
+                                                <span class="text-gray-500 block mb-1 text-right" dir="rtl">وصف العمل (Work Description):</span>
+                                                <div id="val-work-description" class="p-3 bg-gray-50 rounded border text-gray-800 whitespace-pre-wrap text-right" dir="rtl"></div>
+                                            </div>
+                                            <p id="no-additional-permits" class="text-sm text-gray-500 hidden mt-2">لا توجد تصاريح إضافية محددة.</p>
+                                        </div>
 
-                        <!-- القسم الثالث: إجراءات السيطرة -->
-                        <div class="bg-white p-6 rounded-lg shadow-md">
-                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">إجراءات السيطرة (Control Measures)</h2>
-                            <div class="space-y-2 text-sm text-right" dir="rtl" id="val-control-measures">
-                                <!-- Data will be injected here -->
-                            </div>
-                        </div>
+                                        <!-- القسم الثالث: إجراءات السيطرة -->
+                                        <div class="bg-white p-6 rounded-lg shadow-md">
+                                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">إجراءات السيطرة (Control Measures)</h2>
+                                            <div class="space-y-2 text-sm text-right" dir="rtl" id="val-control-measures">
+                                                <!-- Data will be injected here -->
+                                            </div>
+                                        </div>
 
-                        <!-- القسم الرابع: منفذي الأعمال -->
-                        <div class="bg-white p-6 rounded-lg shadow-md">
-                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">منفذي الأعمال الساخنة (Performers Check)</h2>
-                            <div class="space-y-2 text-sm text-right" dir="rtl" id="val-performers-check">
-                                <!-- Data will be injected here -->
-                            </div>
-                        </div>
+                                        <!-- القسم الرابع: منفذي الأعمال -->
+                                        <div class="bg-white p-6 rounded-lg shadow-md">
+                                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">منفذي الأعمال الساخنة (Performers Check)</h2>
+                                            <div class="space-y-2 text-sm text-right" dir="rtl" id="val-performers-check">
+                                                <!-- Data will be injected here -->
+                                            </div>
+                                        </div>
 
-                        <!-- القسم الخامس: المطابقة والموافقة -->
-                        <div class="bg-white p-6 rounded-lg shadow-md">
-                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">المطابقة والموافقة (Approvals)</h2>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-right" dir="rtl" id="val-approvals">
-                                <!-- Data will be injected here -->
-                            </div>
-                        </div>
+                                        <!-- القسم الخامس: المطابقة والموافقة -->
+                                        <div class="bg-white p-6 rounded-lg shadow-md">
+                                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">المطابقة والموافقة (Approvals)</h2>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-right" dir="rtl" id="val-approvals">
+                                                <!-- Data will be injected here -->
+                                            </div>
+                                        </div>
 
                                     </div>
                                 </td>
@@ -179,6 +258,8 @@ $userName = $userData['name'] ?? 'N/A';
     <script>
         const PERMIT_ID = "<?= $permitId ?>";
         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
+        const USER_ID = <?= (int)$userId ?>;
+        const USER_ROLE = <?= (int)$userRole ?>;
         const API_BASE = "../../api/requester/hot_work_permit.php";
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -188,7 +269,9 @@ $userName = $userData['name'] ?? 'N/A';
         async function loadPermitData() {
             try {
                 const res = await fetch(`${API_BASE}?action=show&id=${PERMIT_ID}`, {
-                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                    headers: {
+                        'Authorization': `Bearer ${TOKEN}`
+                    }
                 });
                 const result = await res.json();
 
@@ -219,9 +302,122 @@ $userName = $userData['name'] ?? 'N/A';
             document.getElementById('val-creator').textContent = data.creator_name || '-';
             document.getElementById('val-assigned').textContent = data.assigned_to_name || '-';
 
+            // Critical status handling
+            if (data.is_critical && parseInt(data.is_critical) === 1) {
+                document.getElementById('critical_status_container').classList.remove('hidden');
+                const status = data.critical_status || 'pending_manager';
+                let badgeText = '';
+                if (status === 'pending_manager') badgeText = 'في انتظار إسناد المدير';
+                else if (status === 'pending_supervisor') badgeText = 'في انتظار إنجاز المشرف';
+                else if (status === 'pending_creator') badgeText = 'جاهز للاستكمال من قبل المالك';
+                else if (status === 'completed') badgeText = 'مكتمل';
+                else badgeText = status;
+
+                const badge = document.getElementById('critical_status_badge');
+                badge.textContent = badgeText;
+
+                const actions = document.getElementById('critical_actions');
+                actions.innerHTML = '';
+
+                // Manager view: if pending_manager and current user is critical_manager
+                if (status === 'pending_manager' && USER_ID === parseInt(data.critical_manager_id || 0)) {
+                    // show supervisor select and assign button
+                    const sel = document.createElement('select');
+                    sel.id = 'assign_supervisor_select';
+                    sel.className = 'px-3 py-2 border rounded';
+                    actions.appendChild(sel);
+
+                    const btn = document.createElement('button');
+                    btn.className = 'px-3 py-2 bg-[#0b6f76] text-white rounded';
+                    btn.textContent = 'إسناد';
+                    actions.appendChild(btn);
+
+                    // load supervisors
+                    fetch(`${API_BASE}?action=getSupervisors`, {
+                            headers: {
+                                'Authorization': `Bearer ${TOKEN}`
+                            }
+                        })
+                        .then(r => r.json()).then(j => {
+                            if (j.success) {
+                                j.data.forEach(s => {
+                                    const o = document.createElement('option');
+                                    o.value = s.id;
+                                    o.textContent = s.name;
+                                    sel.appendChild(o);
+                                });
+                            }
+                        }).catch(() => {});
+
+                    btn.addEventListener('click', async () => {
+                        const supId = sel.value;
+                        if (!supId) return Swal.fire('خطأ', 'اختر مشرفاً', 'error');
+                        try {
+                            const res = await fetch(API_BASE + '?action=assignSupervisor', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${TOKEN}`
+                                },
+                                body: JSON.stringify({
+                                    permit_id: PERMIT_ID,
+                                    supervisor_id: supId
+                                })
+                            });
+                            const jr = await res.json();
+                            if (jr.success) {
+                                Swal.fire('تم', jr.message, 'success').then(() => location.reload());
+                            } else Swal.fire('خطأ', jr.message || 'فشل', 'error');
+                        } catch (e) {
+                            Swal.fire('خطأ', 'فشل الطلب', 'error');
+                        }
+                    });
+                }
+
+                // Supervisor view: if pending_supervisor and current user is critical_supervisor
+                if (status === 'pending_supervisor' && USER_ID === parseInt(data.critical_supervisor_id || 0)) {
+                    const btn = document.createElement('button');
+                    btn.className = 'px-3 py-2 bg-[#0b6f76] text-white rounded';
+                    btn.textContent = 'تأكيد الإنجاز (Done)';
+                    actions.appendChild(btn);
+                    btn.addEventListener('click', async () => {
+                        try {
+                            const res = await fetch(API_BASE + '?action=markDone', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${TOKEN}`
+                                },
+                                body: JSON.stringify({
+                                    permit_id: PERMIT_ID
+                                })
+                            });
+                            const jr = await res.json();
+                            if (jr.success) Swal.fire('تم', jr.message, 'success').then(() => location.reload());
+                            else Swal.fire('خطأ', jr.message || 'فشل', 'error');
+                        } catch (e) {
+                            Swal.fire('خطأ', 'فشل الطلب', 'error');
+                        }
+                    });
+                }
+
+                // Creator view: if pending_creator and current user is creator
+                if (status === 'pending_creator' && USER_ID === parseInt(data.created_by || 0)) {
+                    const btn = document.createElement('button');
+                    btn.className = 'px-3 py-2 bg-[#0b6f76] text-white rounded';
+                    btn.textContent = 'إكمال خطوات الرخصة';
+                    btn.addEventListener('click', () => {
+                        window.location.href = `add_hot_work_license.php?id=${PERMIT_ID}`;
+                    });
+                    actions.appendChild(btn);
+                }
+            }
+
             // Additional Permits
             const apContainer = document.getElementById('val-additional-permits');
+            const apSection = apContainer.closest('.bg-white');
             if (data.additional_permits && data.additional_permits.length > 0) {
+                apSection.style.display = 'block';
                 data.additional_permits.forEach(ap => {
                     const tr = document.createElement('tr');
                     tr.className = 'hover:bg-gray-50 transition-colors';
@@ -232,17 +428,18 @@ $userName = $userData['name'] ?? 'N/A';
                     apContainer.appendChild(tr);
                 });
             } else {
-                document.getElementById('no-additional-permits').classList.remove('hidden');
-                apContainer.parentElement.classList.add('hidden');
+                apSection.style.display = 'none';
             }
 
             // Control Measures
             const cmContainer = document.getElementById('val-control-measures');
+            const cmSection = cmContainer.closest('.bg-white');
             if (data.control_measures && data.control_measures.length > 0) {
+                cmSection.style.display = 'block';
                 data.control_measures.forEach((cm, index) => {
                     const div = document.createElement('div');
                     div.className = 'flex flex-col sm:flex-row justify-between p-3 border rounded-md bg-gray-50 gap-2';
-                    
+
                     let statusColor = 'text-gray-600';
                     if (cm.status === 'نعم') statusColor = 'text-[#0b6f76] font-bold';
                     else if (cm.status === 'كلا') statusColor = 'text-red-600 font-bold';
@@ -254,16 +451,18 @@ $userName = $userData['name'] ?? 'N/A';
                     cmContainer.appendChild(div);
                 });
             } else {
-                cmContainer.innerHTML = '<p class="text-gray-500">لا توجد بيانات</p>';
+                cmSection.style.display = 'none';
             }
 
             // Performers Check
             const pcContainer = document.getElementById('val-performers-check');
+            const pcSection = pcContainer.closest('.bg-white');
             if (data.performers_check && data.performers_check.length > 0) {
+                pcSection.style.display = 'block';
                 data.performers_check.forEach((pc, index) => {
                     const div = document.createElement('div');
                     div.className = 'flex flex-col sm:flex-row justify-between p-3 border rounded-md bg-gray-50 gap-2';
-                    
+
                     let answerColor = 'text-gray-600';
                     if (pc.answer === 'نعم') answerColor = 'text-[#0b6f76] font-bold';
                     else if (pc.answer === 'كلا') answerColor = 'text-red-600 font-bold';
@@ -275,20 +474,22 @@ $userName = $userData['name'] ?? 'N/A';
                     pcContainer.appendChild(div);
                 });
             } else {
-                pcContainer.innerHTML = '<p class="text-gray-500">لا توجد بيانات</p>';
+                pcSection.style.display = 'none';
             }
 
             // Approvals
             const appContainer = document.getElementById('val-approvals');
+            const appSection = appContainer.closest('.bg-white');
             if (data.approvals && data.approvals.length > 0) {
+                appSection.style.display = 'block';
                 data.approvals.forEach(app => {
                     const div = document.createElement('div');
                     div.className = 'p-4 border rounded-md bg-gray-50';
-                    
+
                     let isApproved = app.approval_status.includes('Approved');
                     let statusParts = app.approval_status.split(' - ');
                     let name = statusParts[0] || 'N/A';
-                    
+
                     div.innerHTML = `
                         <div class="text-gray-500 text-xs mb-1">${app.role_name}</div>
                         <div class="font-bold text-gray-800 mb-2">${name}</div>
@@ -301,9 +502,10 @@ $userName = $userData['name'] ?? 'N/A';
                     appContainer.appendChild(div);
                 });
             } else {
-                appContainer.innerHTML = '<p class="text-gray-500 col-span-2">لا توجد بيانات</p>';
+                appSection.style.display = 'none';
             }
         }
     </script>
 </body>
+
 </html>
