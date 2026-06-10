@@ -116,8 +116,8 @@ class HotWorkPermitController
                 $notificationController = new NotificationController($this->db);
                 if ($isCritical && $criticalManager) {
                     // For critical permits, notify the assigned manager
-                    $title = 'رخصة عمل ساخن حرجة جديدة بانتظار إسنادك';
-                    $body = 'تم إنشاء رخصة عمل حرجة برقم ' . $data['permit_no'] . ' وتنتظر إسناد المشرف من قبلك.';
+                    $title = 'تم انشاء رخصة الاعمال الساخنه الحرجة';
+                    $body = 'بأنتظار موافقة قسم السلامة لأكمال العمل';
                     $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
                     $notificationController->sendNotification($title, $body, [$criticalManager], $url, $data['created_by']);
                 } elseif (!$isCritical && !empty($data['assigned_to'])) {
@@ -222,7 +222,7 @@ class HotWorkPermitController
                 // ignore
             }
 
-            return ['success' => true, 'message' => 'Marked done by supervisor'];
+            return ['success' => true, 'message' => 'تمت الموافقة لانشاء رخصة العمل'];
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Failed to mark done: ' . $e->getMessage()];
         }
@@ -330,10 +330,13 @@ class HotWorkPermitController
     public function getPermit($id)
     {
         try {
-            $stmt = $this->db->prepare("SELECT h.*, u.name as assigned_to_name, c.name as creator_name
+            $stmt = $this->db->prepare("SELECT h.*, u.name as assigned_to_name, c.name as creator_name,
+                                                cm.name as critical_manager_name, cs.name as critical_supervisor_name
                                         FROM hot_work_permit h 
                                         LEFT JOIN users u ON h.assigned_to = u.id
                                         LEFT JOIN users c ON h.created_by = c.id
+                                        LEFT JOIN users cm ON h.critical_manager_id = cm.id
+                                        LEFT JOIN users cs ON h.critical_supervisor_id = cs.id
                                         WHERE h.id = ?");
             $stmt->execute([$id]);
             $permit = $stmt->fetch(PDO::FETCH_ASSOC);

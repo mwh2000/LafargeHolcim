@@ -195,6 +195,8 @@ $userName = $userData['name'] ?? 'N/A';
                                                 <div><span class="text-gray-500">وقت انتهاء الرخصه:</span> <span id="val-finish" class="font-medium text-green-600"></span></div>
                                                 <div><span class="text-gray-500">تم الإنشاء بواسطة:</span> <span id="val-creator" class="font-medium text-gray-800"></span></div>
                                                 <div><span class="text-gray-500">مسند إلى (Assigned To):</span> <span id="val-assigned" class="font-bold text-[#0b6f76]"></span></div>
+                                                <div><span class="text-gray-500" id="critical_manager_info">موافقة قسم سلامة:</span> <span id="critical_manager_name" class="font-bold text-[#0b6f76]"></span></div>
+                                                <div><span class="text-gray-500" id="critical_supervisor_info">موافقة مدير المصنع:</span> <span id="critical_supervisor_name" class="font-bold text-[#0b6f76]"></span></div>
                                             </div>
                                         </div>
 
@@ -307,14 +309,24 @@ $userName = $userData['name'] ?? 'N/A';
                 document.getElementById('critical_status_container').classList.remove('hidden');
                 const status = data.critical_status || 'pending_manager';
                 let badgeText = '';
-                if (status === 'pending_manager') badgeText = 'في انتظار إسناد المدير';
-                else if (status === 'pending_supervisor') badgeText = 'في انتظار إنجاز المشرف';
-                else if (status === 'pending_creator') badgeText = 'جاهز للاستكمال من قبل المالك';
+                if (status === 'pending_manager') badgeText = 'بأنتظار موافقة قسم السلامة';
+                else if (status === 'pending_supervisor') badgeText = 'بأنتظار موافقة مدير المصنع';
+                else if (status === 'pending_creator') badgeText = 'تمت الموافقة للعمل (جاهز للعمل)';
                 else if (status === 'completed') badgeText = 'مكتمل';
                 else badgeText = status;
 
                 const badge = document.getElementById('critical_status_badge');
                 badge.textContent = badgeText;
+
+                // Display critical manager and supervisor names
+                if (data.critical_manager_name) {
+                    document.getElementById('critical_manager_info').style.display = 'inline-block';
+                    document.getElementById('critical_manager_name').textContent = data.critical_manager_name;
+                }
+                if (data.critical_supervisor_name) {
+                    document.getElementById('critical_supervisor_info').style.display = 'inline-block';
+                    document.getElementById('critical_supervisor_name').textContent = data.critical_supervisor_name;
+                }
 
                 const actions = document.getElementById('critical_actions');
                 actions.innerHTML = '';
@@ -378,7 +390,7 @@ $userName = $userData['name'] ?? 'N/A';
                 if (status === 'pending_supervisor' && USER_ID === parseInt(data.critical_supervisor_id || 0)) {
                     const btn = document.createElement('button');
                     btn.className = 'px-3 py-2 bg-[#0b6f76] text-white rounded';
-                    btn.textContent = 'تأكيد الإنجاز (Done)';
+                    btn.textContent = 'Done';
                     actions.appendChild(btn);
                     btn.addEventListener('click', async () => {
                         try {
