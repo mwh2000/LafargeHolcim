@@ -693,14 +693,16 @@ $userName = $userData['name'] ?? 'N/A';
                         document.getElementById('am-action-section').classList.remove('hidden');
                     }
 
-                    // Show add/remove controls to assigned area manager
-                    if (data.area_manager_id == CURRENT_USER_ID) {
-                        const addEnergyBtn = document.getElementById('addEnergyTypesBtn');
-                        const addEquipBtn = document.getElementById('addEquipmentsBtn');
-                        if (addEnergyBtn) addEnergyBtn.classList.remove('hidden');
-                        if (addEquipBtn) addEquipBtn.classList.remove('hidden');
-                        if (addEnergyBtn) addEnergyBtn.addEventListener('click', openAddEnergyModal);
-                        if (addEquipBtn) addEquipBtn.addEventListener('click', openAddEquipmentsModal);
+                    // Show add/remove controls to all authorized users
+                    const addEnergyBtn = document.getElementById('addEnergyTypesBtn');
+                    const addEquipBtn = document.getElementById('addEquipmentsBtn');
+                    if (addEnergyBtn) {
+                        addEnergyBtn.classList.remove('hidden');
+                        addEnergyBtn.addEventListener('click', openAddEnergyModal);
+                    }
+                    if (addEquipBtn) {
+                        addEquipBtn.classList.remove('hidden');
+                        addEquipBtn.addEventListener('click', openAddEquipmentsModal);
                     }
 
                     // Show Requester actions if active_isolation and user is creator
@@ -781,18 +783,16 @@ $userName = $userData['name'] ?? 'N/A';
                 span.className = 'px-3 py-1 bg-gray-100 border rounded-full text-xs flex items-center gap-2';
                 span.setAttribute('data-energy-id', et.id);
                 span.innerHTML = `<span>${et.name}</span>`;
-                // if current user is area manager allow delete
-                if (data.area_manager_id == CURRENT_USER_ID) {
-                    const del = document.createElement('button');
-                    del.className = 'text-red-500 text-sm no-print';
-                    del.title = 'حذف';
-                    del.innerHTML = '✕';
-                    del.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        removeEnergyType(et.id);
-                    });
-                    span.appendChild(del);
-                }
+                // allow delete for all users
+                const del = document.createElement('button');
+                del.className = 'text-red-500 text-sm no-print';
+                del.title = 'حذف';
+                del.innerHTML = '✕';
+                del.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeEnergyType(et.id);
+                });
+                span.appendChild(del);
                 energyContainer.appendChild(span);
             });
 
@@ -814,19 +814,17 @@ $userName = $userData['name'] ?? 'N/A';
                     </div>
                 `;
                 div.appendChild(left);
-                if (data.area_manager_id == CURRENT_USER_ID) {
-                    const actions = document.createElement('div');
-                    actions.className = 'no-print';
-                    const delBtn = document.createElement('button');
-                    delBtn.className = 'text-red-500 px-2 py-1 rounded-md border';
-                    delBtn.textContent = 'حذف';
-                    delBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        removeEquipment(eq.id);
-                    });
-                    actions.appendChild(delBtn);
-                    div.appendChild(actions);
-                }
+                const actions = document.createElement('div');
+                actions.className = 'no-print';
+                const delBtn = document.createElement('button');
+                delBtn.className = 'text-red-500 px-2 py-1 rounded-md border';
+                delBtn.textContent = 'حذف';
+                delBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeEquipment(eq.id);
+                });
+                actions.appendChild(delBtn);
+                div.appendChild(actions);
                 eqContainer.appendChild(div);
             });
 
