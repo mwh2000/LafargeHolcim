@@ -241,13 +241,23 @@ $userName = $userData['name'] ?? 'N/A';
                                         <!-- Energy Types Card -->
                                         <div class="bg-white p-6 rounded-lg shadow-md">
                                             <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">أنواع الطاقة المعزولة</h2>
-                                            <div id="val-energy-types" class="flex flex-wrap gap-2 justify-start" dir="rtl"></div>
+                                            <div class="flex justify-between items-center mb-3">
+                                                <div id="val-energy-types" class="flex flex-wrap gap-2 justify-start" dir="rtl"></div>
+                                                <div class="no-print">
+                                                    <button id="addEnergyTypesBtn" class="hidden bg-white border px-3 py-1 rounded-md text-sm text-[#0b6f76]">إضافة</button>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <!-- Equipments Card -->
                                         <div class="bg-white p-6 rounded-lg shadow-md">
                                             <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">اسم المعدة المراد عزلها</h2>
-                                            <div id="val-equipments" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-start" dir="rtl"></div>
+                                            <div class="flex justify-between items-center mb-3">
+                                                <div id="val-equipments" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-start" dir="rtl"></div>
+                                                <div class="no-print">
+                                                    <button id="addEquipmentsBtn" class="hidden bg-white border px-3 py-1 rounded-md text-sm text-[#0b6f76]">إضافة</button>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <!-- Staff Card -->
@@ -346,6 +356,263 @@ $userName = $userData['name'] ?? 'N/A';
         </div>
     </div>
 
+    <script>
+        // Add/Remove Energy Types & Equipments - Area Manager actions
+        function openAddEnergyModal() {
+            const modal = document.getElementById('addEnergyModal');
+            const list = document.getElementById('add-energy-list');
+            list.innerHTML = '<p class="text-center py-4">جاري التحميل...</p>';
+            modal.classList.remove('hidden');
+
+            fetch(`${API_BASE}?action=getEnergyTypes`, {
+                    headers: {
+                        'Authorization': `Bearer ${TOKEN}`
+                    }
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (!res.success) throw new Error('فشل في جلب الأنواع');
+                    const types = res.data;
+                    list.innerHTML = '';
+                    types.forEach(t => {
+                        const id = t.id;
+                        const already = (currentLicenseData.energy_types || []).some(et => et.id == id);
+                        const row = document.createElement('div');
+                        row.className = 'flex items-center justify-between p-2 border-b';
+                        row.innerHTML = `<label class="flex items-center gap-2"><input type="checkbox" value="${id}" ${already ? 'disabled' : ''}> <span>${t.name}</span></label>`;
+                        list.appendChild(row);
+                    });
+                }).catch(e => {
+                    list.innerHTML = '<p class="text-red-500">خطأ في التحميل</p>';
+                });
+        }
+
+        function closeAddEnergyModal() {
+            document.getElementById('addEnergyModal').classList.add('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const submitAddEnergyBtn = document.getElementById('submitAddEnergyBtn');
+            if (submitAddEnergyBtn) submitAddEnergyBtn.addEventListener('click', async () => {
+                const checkboxes = Array.from(document.querySelectorAll('#add-energy-list input[type="checkbox"]:not(:disabled):checked'));
+                if (checkboxes.length === 0) {
+                    Swal.fire('تنبيه', 'اختر نوع طاقة واحد على الأقل', 'warning');
+                    return;
+                }
+                const ids = checkboxes.map(cb => parseInt(cb.value));
+                try {
+                    const res = await fetch(`${API_BASE}?action=addEnergyTypes`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${TOKEN}`
+                        },
+                        body: JSON.stringify({
+                            license_id: LICENSE_ID,
+                            energy_type_ids: ids
+                        })
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        Swal.fire('نجاح', result.message, 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('خطأ', result.message || 'فشل', 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('خطأ', 'حدث خطأ', 'error');
+                }
+            });
+
+            const submitAddEquipmentsBtn = document.getElementById('submitAddEquipmentsBtn');
+            if (submitAddEquipmentsBtn) submitAddEquipmentsBtn.addEventListener('click', async () => {
+                const checkboxes = Array.from(document.querySelectorAll('#add-equipments-list input[type="checkbox"]:not(:disabled):checked'));
+                if (checkboxes.length === 0) {
+                    Swal.fire('تنبيه', 'اختر معدة واحدة على الأقل', 'warning');
+                    return;
+                }
+                const ids = checkboxes.map(cb => parseInt(cb.value));
+                try {
+                    const res = await fetch(`${API_BASE}?action=addEquipments`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${TOKEN}`
+                        },
+                        body: JSON.stringify({
+                            license_id: LICENSE_ID,
+                            equipment_ids: ids
+                        })
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        Swal.fire('نجاح', result.message, 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('خطأ', result.message || 'فشل', 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('خطأ', 'حدث خطأ', 'error');
+                }
+            });
+        });
+
+        async function removeEnergyType(energyTypeId) {
+            const ok = await Swal.fire({
+                title: 'تأكيد',
+                text: 'هل تريد حذف نوع الطاقة؟',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'نعم'
+            });
+            if (!ok.isConfirmed) return;
+            try {
+                const res = await fetch(`${API_BASE}?action=removeEnergyType`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${TOKEN}`
+                    },
+                    body: JSON.stringify({
+                        license_id: LICENSE_ID,
+                        energy_type_id: energyTypeId
+                    })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    Swal.fire('نجاح', result.message, 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('خطأ', result.message || 'فشل', 'error');
+                }
+            } catch (e) {
+                Swal.fire('خطأ', 'حدث خطأ', 'error');
+            }
+        }
+
+        function openAddEquipmentsModal() {
+            const modal = document.getElementById('addEquipmentsModal');
+            const list = document.getElementById('add-equipments-list');
+            list.innerHTML = '<p class="text-center py-4">جاري التحميل...</p>';
+            modal.classList.remove('hidden');
+
+            const sectionId = currentLicenseData.equipment_section_id;
+            fetch(`${API_BASE}?action=getEquipmentsBySection&section_id=${sectionId}&limit=200`, {
+                    headers: {
+                        'Authorization': `Bearer ${TOKEN}`
+                    }
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (!res.success) throw new Error('فشل في جلب المعدات');
+                    const items = res.data.equipments || [];
+                    list.innerHTML = '';
+                    items.forEach(it => {
+                        const already = (currentLicenseData.equipments || []).some(eq => eq.id == it.id);
+                        const row = document.createElement('div');
+                        row.className = 'flex items-center justify-between p-2 border-b';
+                        row.innerHTML = `<label class="flex items-center gap-2"><input type="checkbox" value="${it.id}" ${already ? 'disabled' : ''}> <span>${it.name}</span></label>`;
+                        list.appendChild(row);
+                    });
+                }).catch(e => {
+                    list.innerHTML = '<p class="text-red-500">خطأ في التحميل</p>';
+                });
+        }
+
+        function closeAddEquipmentsModal() {
+            document.getElementById('addEquipmentsModal').classList.add('hidden');
+        }
+
+        document.getElementById('submitAddEquipmentsBtn').addEventListener('click', async () => {
+            const checkboxes = Array.from(document.querySelectorAll('#add-equipments-list input[type="checkbox"]:not(:disabled):checked'));
+            if (checkboxes.length === 0) {
+                Swal.fire('تنبيه', 'اختر معدة واحدة على الأقل', 'warning');
+                return;
+            }
+            const ids = checkboxes.map(cb => parseInt(cb.value));
+            try {
+                const res = await fetch(`${API_BASE}?action=addEquipments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${TOKEN}`
+                    },
+                    body: JSON.stringify({
+                        license_id: LICENSE_ID,
+                        equipment_ids: ids
+                    })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    Swal.fire('نجاح', result.message, 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('خطأ', result.message || 'فشل', 'error');
+                }
+            } catch (e) {
+                Swal.fire('خطأ', 'حدث خطأ', 'error');
+            }
+        });
+
+        async function removeEquipment(equipmentId) {
+            const ok = await Swal.fire({
+                title: 'تأكيد',
+                text: 'هل تريد حذف المعدة من هذه الرخصة؟',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'نعم'
+            });
+            if (!ok.isConfirmed) return;
+            try {
+                const res = await fetch(`${API_BASE}?action=removeEquipment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${TOKEN}`
+                    },
+                    body: JSON.stringify({
+                        license_id: LICENSE_ID,
+                        equipment_id: equipmentId
+                    })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    Swal.fire('نجاح', result.message, 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('خطأ', result.message || 'فشل', 'error');
+                }
+            } catch (e) {
+                Swal.fire('خطأ', 'حدث خطأ', 'error');
+            }
+        }
+    </script>
+
+    <!-- Add Energy Types Modal -->
+    <div id="addEnergyModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-lg">
+                <h3 class="text-lg font-bold text-[#0b6f76]">إضافة أنواع طاقة</h3>
+                <button type="button" onclick="closeAddEnergyModal()" class="text-gray-400 hover:text-red-500">✕</button>
+            </div>
+            <div class="p-4 overflow-y-auto" id="add-energy-list"></div>
+            <div class="p-4 border-t flex justify-end gap-3 bg-gray-50 rounded-b-lg">
+                <button id="submitAddEnergyBtn" class="px-4 py-2 bg-[#0b6f76] text-white rounded-md">إضافة</button>
+                <button type="button" onclick="closeAddEnergyModal()" class="px-4 py-2 bg-gray-200 rounded-md">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Equipments Modal -->
+    <div id="addEquipmentsModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-lg">
+                <h3 class="text-lg font-bold text-[#0b6f76]">إضافة معدات</h3>
+                <button type="button" onclick="closeAddEquipmentsModal()" class="text-gray-400 hover:text-red-500">✕</button>
+            </div>
+            <div class="p-4 overflow-y-auto" id="add-equipments-list"></div>
+            <div class="p-4 border-t flex justify-end gap-3 bg-gray-50 rounded-b-lg">
+                <button id="submitAddEquipmentsBtn" class="px-4 py-2 bg-[#0b6f76] text-white rounded-md">إضافة</button>
+                <button type="button" onclick="closeAddEquipmentsModal()" class="px-4 py-2 bg-gray-200 rounded-md">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Edit Staff Modal -->
     <div id="editStaffModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
@@ -426,6 +693,16 @@ $userName = $userData['name'] ?? 'N/A';
                         document.getElementById('am-action-section').classList.remove('hidden');
                     }
 
+                    // Show add/remove controls to assigned area manager
+                    if (data.area_manager_id == CURRENT_USER_ID) {
+                        const addEnergyBtn = document.getElementById('addEnergyTypesBtn');
+                        const addEquipBtn = document.getElementById('addEquipmentsBtn');
+                        if (addEnergyBtn) addEnergyBtn.classList.remove('hidden');
+                        if (addEquipBtn) addEquipBtn.classList.remove('hidden');
+                        if (addEnergyBtn) addEnergyBtn.addEventListener('click', openAddEnergyModal);
+                        if (addEquipBtn) addEquipBtn.addEventListener('click', openAddEquipmentsModal);
+                    }
+
                     // Show Requester actions if active_isolation and user is creator
                     const requesterSection = document.getElementById('requester-action-section');
                     if (requesterSection) {
@@ -498,10 +775,24 @@ $userName = $userData['name'] ?? 'N/A';
 
             // Energy Types
             const energyContainer = document.getElementById('val-energy-types');
+            energyContainer.innerHTML = '';
             data.energy_types.forEach(et => {
                 const span = document.createElement('span');
-                span.className = 'px-3 py-1 bg-gray-100 border rounded-full text-xs';
-                span.textContent = et.name;
+                span.className = 'px-3 py-1 bg-gray-100 border rounded-full text-xs flex items-center gap-2';
+                span.setAttribute('data-energy-id', et.id);
+                span.innerHTML = `<span>${et.name}</span>`;
+                // if current user is area manager allow delete
+                if (data.area_manager_id == CURRENT_USER_ID) {
+                    const del = document.createElement('button');
+                    del.className = 'text-red-500 text-sm no-print';
+                    del.title = 'حذف';
+                    del.innerHTML = '✕';
+                    del.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        removeEnergyType(et.id);
+                    });
+                    span.appendChild(del);
+                }
                 energyContainer.appendChild(span);
             });
 
@@ -509,17 +800,33 @@ $userName = $userData['name'] ?? 'N/A';
             const eqContainer = document.getElementById('val-equipments');
             data.equipments.forEach(eq => {
                 const div = document.createElement('div');
-                div.className = 'flex items-center gap-3 p-2 border rounded-md bg-gray-50';
+                div.className = 'flex items-center gap-3 p-2 border rounded-md bg-gray-50 justify-between';
+                const left = document.createElement('div');
+                left.className = 'flex items-center gap-3';
                 const img = eq.image ?
                     `<img src="../../public/${eq.image}" class="w-12 h-12 object-cover rounded">` :
                     `<div class="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-[10px] text-gray-400">No Image</div>`;
-                div.innerHTML = `
+                left.innerHTML = `
                     ${img}
                     <div>
                         <p class="text-xs font-bold">${eq.name}</p>
                         <p class="text-[10px] text-gray-500">Ref: ${eq.equipment_no}</p>
                     </div>
                 `;
+                div.appendChild(left);
+                if (data.area_manager_id == CURRENT_USER_ID) {
+                    const actions = document.createElement('div');
+                    actions.className = 'no-print';
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'text-red-500 px-2 py-1 rounded-md border';
+                    delBtn.textContent = 'حذف';
+                    delBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        removeEquipment(eq.id);
+                    });
+                    actions.appendChild(delBtn);
+                    div.appendChild(actions);
+                }
                 eqContainer.appendChild(div);
             });
 

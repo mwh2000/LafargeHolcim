@@ -133,7 +133,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">تاريخ انتهاء الرخصة</label>
                                     <select id="license_expiry_select" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76] mb-2">
-                                        <option value="بعد 12 ساعة اجباريا" selected>بعد 12 ساعة اجباريا</option>
+                                        <option value="بعد 8 ساعات اجباريا" selected>بعد 8 ساعات اجباريا</option>
                                         <option value="بعد 4 ساعات">بعد 4 ساعات</option>
                                         <!-- <option value="manual">كتابة يدوية (أخرى)</option> -->
                                     </select>
@@ -710,8 +710,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     date: formData.get('date'),
                     reason: formData.get('reason'),
                     license_expiry: document.getElementById('license_expiry_select').value === 'manual' ?
-                        document.getElementById('license_expiry_manual').value.trim() :
-                        document.getElementById('license_expiry_select').value,
+                        document.getElementById('license_expiry_manual').value.trim() : document.getElementById('license_expiry_select').value,
                     work_permit: formData.get('work_permit'),
                     exact_location: formData.get('exact_location'),
                     requester_name: formData.get('requester_name'),

@@ -30,6 +30,9 @@ try {
 
     switch ($method) {
         case 'GET':
+            if ($action === 'getEnergyTypes') {
+                $res = $controller->getEnergyTypes();
+            }
             if ($action === 'getEligibleUsers') {
                 $res = $controller->getEligibleUsers();
             } elseif ($action === 'getEquipmentsBySection') {
@@ -75,6 +78,14 @@ try {
                 $res = $controller->updateStaffGroups((int)$input['license_id'], $input['staff_groups'] ?? [], $decoded->id);
             } elseif ($action === 'toggleGroupDone') {
                 $res = $controller->toggleGroupDone((int)($input['group_id'] ?? 0), (int)($input['license_id'] ?? 0), $decoded->id, (int)($input['is_done'] ?? 0));
+            } elseif ($action === 'addEnergyTypes') {
+                $res = $controller->addEnergyTypesToLicense((int)($input['license_id'] ?? 0), $input['energy_type_ids'] ?? [], $decoded->id);
+            } elseif ($action === 'removeEnergyType') {
+                $res = $controller->removeEnergyTypeFromLicense((int)($input['license_id'] ?? 0), (int)($input['energy_type_id'] ?? 0), $decoded->id);
+            } elseif ($action === 'addEquipments') {
+                $res = $controller->addEquipmentsToLicense((int)($input['license_id'] ?? 0), $input['equipment_ids'] ?? [], $decoded->id);
+            } elseif ($action === 'removeEquipment') {
+                $res = $controller->removeEquipmentFromLicense((int)($input['license_id'] ?? 0), (int)($input['equipment_id'] ?? 0), $decoded->id);
             } else {
                 $input['created_by'] = $decoded->id;
                 $res = $controller->createLicense($input);

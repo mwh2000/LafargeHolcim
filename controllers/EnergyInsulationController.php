@@ -276,6 +276,101 @@ class EnergyInsulationController
         return $this->respond(true, 'Isolation officers retrieved successfully', $users);
     }
 
+    public function getEnergyTypes()
+    {
+        $stmt = $this->conn->prepare("SELECT id, name FROM energy_types ORDER BY name");
+        $stmt->execute();
+        $types = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $this->respond(true, 'Energy types retrieved successfully', $types);
+    }
+
+    /**
+     * Only area manager assigned to the license may add/remove energy types or equipments.
+     */
+    private function ensureIsAreaManager(int $licenseId, int $userId)
+    {
+        $stmt = $this->conn->prepare("SELECT area_manager_id FROM energy_insulation_license WHERE id = ?");
+        $stmt->execute([$licenseId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) throw new Exception('License not found');
+        return ((int)$row['area_manager_id'] === (int)$userId);
+    }
+
+    public function addEnergyTypesToLicense(int $licenseId, array $energyTypeIds, int $userId)
+    {
+        try {
+            if (!$this->ensureIsAreaManager($licenseId, $userId)) {
+                return $this->respond(false, 'Unauthorized', null, ['code' => 403], 403);
+            }
+
+            $this->conn->beginTransaction();
+            $insert = $this->conn->prepare("INSERT INTO energy_insulation_energy_types (license_id, energy_type_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE energy_type_id = energy_type_id");
+            foreach ($energyTypeIds as $id) {
+                $insert->execute([$licenseId, (int)$id]);
+            }
+            $this->conn->commit();
+            return $this->respond(true, 'Energy types added successfully');
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            return $this->respond(false, 'Error: ' . $e->getMessage(), null, ['code' => 500], 500);
+        }
+    }
+
+    public function removeEnergyTypeFromLicense(int $licenseId, int $energyTypeId, int $userId)
+    {
+        try {
+            if (!$this->ensureIsAreaManager($licenseId, $userId)) {
+                return $this->respond(false, 'Unauthorized', null, ['code' => 403], 403);
+            }
+            $stmt = $this->conn->prepare("DELETE FROM energy_insulation_energy_types WHERE license_id = ? AND energy_type_id = ?");
+            $success = $stmt->execute([$licenseId, $energyTypeId]);
+            if ($success) return $this->respond(true, 'Energy type removed successfully');
+            return $this->respond(false, 'Failed to remove energy type', null, ['code' => 500], 500);
+        } catch (Exception $e) {
+            return $this->respond(false, 'Error: ' . $e->getMessage(), null, ['code' => 500], 500);
+        }
+    }
+
+    public function addEquipmentsToLicense(int $licenseId, array $equipmentIds, int $userId)
+    {
+        try {
+            if (!$this->ensureIsAreaManager($licenseId, $userId)) {
+                return $this->respond(false, 'Unauthorized', null, ['code' => 403], 403);
+            }
+            $this->conn->beginTransaction();
+            $selectEq = $this->conn->prepare("SELECT id FROM equipments WHERE id = ?");
+            $insert = $this->conn->prepare("INSERT INTO energy_insulation_equipments (license_id, equipment_id, equipment_no) VALUES (?, ?, ?)");
+            foreach ($equipmentIds as $id) {
+                $selectEq->execute([(int)$id]);
+                $eq = $selectEq->fetch(PDO::FETCH_ASSOC);
+                if ($eq) {
+                    // equipments table does not have equipment_no column in this schema; store null
+                    $insert->execute([$licenseId, $eq['id'], null]);
+                }
+            }
+            $this->conn->commit();
+            return $this->respond(true, 'Equipments added successfully');
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            return $this->respond(false, 'Error: ' . $e->getMessage(), null, ['code' => 500], 500);
+        }
+    }
+
+    public function removeEquipmentFromLicense(int $licenseId, int $equipmentId, int $userId)
+    {
+        try {
+            if (!$this->ensureIsAreaManager($licenseId, $userId)) {
+                return $this->respond(false, 'Unauthorized', null, ['code' => 403], 403);
+            }
+            $stmt = $this->conn->prepare("DELETE FROM energy_insulation_equipments WHERE license_id = ? AND equipment_id = ?");
+            $success = $stmt->execute([$licenseId, $equipmentId]);
+            if ($success) return $this->respond(true, 'Equipment removed successfully');
+            return $this->respond(false, 'Failed to remove equipment', null, ['code' => 500], 500);
+        } catch (Exception $e) {
+            return $this->respond(false, 'Error: ' . $e->getMessage(), null, ['code' => 500], 500);
+        }
+    }
+
     public function updateIsolationOfficer(int $licenseId, int $officerId, int $updatedBy)
     {
         // Fetch license info for notification
