@@ -40,7 +40,7 @@ try {
 
             if ($action === 'getSupervisorFilterOptions') {
                 $roleId = isset($decoded->role_id) ? (int) $decoded->role_id : 0;
-                if (!in_array($roleId, [1, 3, 5, 6], true)) {
+                if (!in_array($roleId, [1, 3, 5, 6, 7], true)) {
                     http_response_code(403);
                     sendJson(['success' => false, 'message' => 'Access denied']);
                 }

@@ -18,7 +18,7 @@ class UserController
     /** ✅ Create user */
     public function create(array $data, $decodedAdmin)
     {
-        if (empty($decodedAdmin) || $decodedAdmin->role_id != 1) {
+        if (empty($decodedAdmin) || !in_array((int)$decodedAdmin->role_id, [1, 7], true)) {
             return $this->respond(false, 'Unauthorized access', null, ['code' => 403], 403);
         }
 
@@ -58,7 +58,7 @@ class UserController
     /** ✅ Update user */
     public function update(int $id, array $data, $decodedAdmin)
     {
-        if (empty($decodedAdmin) || $decodedAdmin->role_id != 1) {
+        if (empty($decodedAdmin) || !in_array((int)$decodedAdmin->role_id, [1, 7], true)) {
             return $this->respond(false, 'Unauthorized', null, ['code' => 403], 403);
         }
 
@@ -113,7 +113,7 @@ class UserController
     /** ✅ Delete user */
     public function delete(int $id, $decodedAdmin)
     {
-        if (empty($decodedAdmin) || $decodedAdmin->role_id != 1) {
+        if (empty($decodedAdmin) || !in_array((int)$decodedAdmin->role_id, [1, 7], true)) {
             return $this->respond(false, 'Unauthorized', null, ['code' => 403], 403);
         }
 

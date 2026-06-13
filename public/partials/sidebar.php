@@ -90,7 +90,7 @@ function renderSidebar($activePage = '')
     4 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action'], // Safety
     5 => ['dashboard', 'create_action', 'actions_assigned_to_me', 'actions_created_by_me', 'permit'], // Manager
     6 => ['dashboard', 'create_action', 'permit', 'energy_Isolation'], // Plant Manager
-    7 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action', 'permit'], // Shift Leader
+    7 => ['dashboard', 'users', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action', 'equipment_sections', 'equipments', 'energy_types', 'permit'], // Shift Leader
     8 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action'], // Isolation Officer
   ];
 

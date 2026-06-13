@@ -76,7 +76,7 @@ class AuthMiddleware
 
         // نفترض أن الـ super_admin هو role_id = 1
         // و admin هو role_id = 2
-        if (!in_array($decoded->role_id, [1])) {
+        if (!in_array((int)$decoded->role_id, [1, 7], true)) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Access denied']);
             exit;
@@ -102,9 +102,9 @@ class AuthMiddleware
             exit;
         }
 
-        // add admin role automatically to allowed roles
-        if (strtolower($role) === 'admin') {
-            $allowedRoles[] = 'admin';
+        // add admin and shift leader roles automatically to allowed roles
+        if (strtolower($role) === 'admin' || strtolower($role) === 'shift leader and issurs') {
+            $allowedRoles[] = strtolower($role);
         }
 
         // ✅ التحقق من أن الدور ضمن الأدوار المسموحة

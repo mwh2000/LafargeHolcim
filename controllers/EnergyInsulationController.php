@@ -604,7 +604,7 @@ class EnergyInsulationController
             $userRole = (int)$filters['role_id'];
             $userId = (int)$filters['user_id'];
 
-            if (!in_array($userRole, [1, 6])) {
+            if (!in_array($userRole, [1, 6, 7])) {
                 // Roles 7, 3, 5 see only permits assigned to them as Area Manager
                 // Or if they created it.
                 $query .= " AND (area_manager_id = ? OR created_by = ?)";
@@ -654,7 +654,7 @@ class EnergyInsulationController
             $userRole = (int)$filters['role_id'];
             $userId = (int)$filters['user_id'];
 
-            if (!in_array($userRole, [1, 6])) {
+            if (!in_array($userRole, [1, 6, 7])) {
                 $where .= " AND (l.area_manager_id = ? OR l.created_by = ?)";
                 $params[] = $userId;
                 $params[] = $userId;

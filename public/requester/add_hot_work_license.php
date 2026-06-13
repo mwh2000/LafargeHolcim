@@ -102,6 +102,10 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                     <input type="text" name="permit_no" value="<?= $nextLicenseNo ?>" readonly class="w-full px-4 py-2 border rounded-md bg-gray-100 cursor-not-allowed focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">رقم أمر العمل (WO)</label>
+                                    <input type="text" name="wo" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
+                                </div>
+                                <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">اسم طالب الرخصه</label>
                                     <input type="text" name="company_name" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
@@ -118,7 +122,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                 </div>
                                 <div id="critical_manager_container" style="display:none;">
                                     <label class="block text-sm font-medium text-green-700 mb-1">موافقة قسم السلامة</label>
-                                    <select id="critical_manager_id" name="critical_manager_id" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]"></select>
+                                    <select id="critical_manager_id" name="critical_manager_id" class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]"></select>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">الموقع الدقيق</label>
@@ -129,12 +133,25 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                     <input type="text" name="equipment_used" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">نوع الصيانة</label>
+                                    <select id="maintenance_type" name="maintenance_type" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
+                                        <option selected value="طارئة">طارئة</option>
+                                        <option value="العمل على المرتفعات">العمل على المرتفعات</option>
+                                        <option value="مخطط">مخطط</option>
+                                        <option value="pm">pm</option>
+                                    </select>
+                                </div>
+                                <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">تاريخ اصدار الرخصه</label>
                                     <input type="datetime-local" name="task_start_datetime" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">وقت انتهاء الرخصه</label>
                                     <input type="datetime-local" name="finishing_time" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">تاريخ انشاء الرخصة</label>
+                                    <input type="date" name="creation_date" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                             </div>
                         </div>
@@ -367,6 +384,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
             isCriticalCheckbox.addEventListener('change', async (e) => {
                 const checked = e.target.checked;
                 populateLocation(checked);
+                document.getElementById('critical_manager_id').required = checked;
                 if (checked) {
                     criticalManagerContainer.style.display = 'block';
                     if (!resumeMode) {
@@ -439,12 +457,15 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
                             // populate basic fields
                             document.querySelector('input[name="permit_no"]').value = p.permit_no || '';
+                            document.querySelector('input[name="wo"]').value = p.wo || '';
                             document.querySelector('input[name="company_name"]').value = p.company_name || '';
                             document.getElementById('location').value = p.location || '';
                             document.querySelector('input[name="supervisor"]').value = p.supervisor || '';
                             document.querySelector('input[name="equipment_used"]').value = p.equipment_used || '';
+                            document.getElementById('maintenance_type').value = p.maintenance_type || 'طارئة';
                             if (p.task_start_datetime) document.querySelector('input[name="task_start_datetime"]').value = p.task_start_datetime.replace(' ', 'T');
                             if (p.finishing_time) document.querySelector('input[name="finishing_time"]').value = p.finishing_time.replace(' ', 'T');
+                            if (p.creation_date) document.querySelector('input[name="creation_date"]').value = p.creation_date;
 
                             // show steps 2-6 and ensure their controls are enabled
                             document.querySelectorAll('.step-content').forEach(c => c.style.display = '');
@@ -622,12 +643,15 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 if (isCriticalCheckbox.checked && !resumeMode) {
                     const payload = {
                         permit_no: formData.get('permit_no'),
+                        wo: formData.get('wo'),
                         company_name: formData.get('company_name'),
                         location: formData.get('location'),
                         supervisor: formData.get('supervisor'),
                         equipment_used: formData.get('equipment_used'),
+                        maintenance_type: formData.get('maintenance_type'),
                         task_start_datetime: formData.get('task_start_datetime'),
                         finishing_time: formData.get('finishing_time'),
+                        creation_date: formData.get('creation_date'),
                         is_critical: 1,
                         critical_manager_id: criticalManagerSelect.getValue(),
                         critical_status: 'pending_manager'
@@ -678,12 +702,15 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
                 const data = {
                     permit_no: formData.get('permit_no'),
+                    wo: formData.get('wo'),
                     company_name: formData.get('company_name'),
                     location: formData.get('location'),
                     supervisor: formData.get('supervisor'),
                     equipment_used: formData.get('equipment_used'),
+                    maintenance_type: formData.get('maintenance_type'),
                     task_start_datetime: formData.get('task_start_datetime'),
                     finishing_time: formData.get('finishing_time'),
+                    creation_date: formData.get('creation_date'),
                     assigned_to: assigneeSelect.getValue(),
                     work_description: formData.get('work_description'),
                     additional_permits: [],

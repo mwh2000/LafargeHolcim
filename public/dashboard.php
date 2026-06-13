@@ -109,7 +109,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <option value="M">M</option>
                         </select>
 
-                        <?php if (in_array((int)($_COOKIE['user_type'] ?? 0), [1, 3, 5, 6], true)): ?>
+                        <?php if (in_array((int)($_COOKIE['user_type'] ?? 0), [1, 3, 5, 6, 7], true)): ?>
                             <select id="supervisor_filter" multiple
                                 class="multi-select w-full px-4 py-2 border rounded-md"></select>
                         <?php endif; ?>
@@ -153,7 +153,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
         const USER_ID = "<?= $_COOKIE['user_id'] ?? '' ?>";
         const USER_ROLE = "<?= $_COOKIE['user_type'] ?? '2' ?>"; // 1=Admin, 2=User
-        const IS_ADMIN = [1, 3, 5, 6].includes(Number(USER_ROLE)); // Roles 1, 3, 5, 6 have full visibility
+        const IS_ADMIN = [1, 3, 5, 6, 7].includes(Number(USER_ROLE)); // Roles 1, 3, 5, 6, 7 have full visibility
 
         let actionsStatusChart = null;
 

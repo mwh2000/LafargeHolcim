@@ -19,10 +19,10 @@ class HotWorkPermitController
             // 1. Insert main permit
             // Support critical workflow columns if provided
             $stmt = $this->db->prepare("INSERT INTO hot_work_permit (
-                permit_no, issuing_date_time, company_name, location, supervisor, 
-                equipment_used, task_start_datetime, finishing_time, assigned_to, 
+                permit_no, issuing_date_time, wo, company_name, location, supervisor, 
+                equipment_used, maintenance_type, task_start_datetime, finishing_time, creation_date, assigned_to, 
                 work_description, created_by, created_at, is_critical, critical_manager_id, critical_supervisor_id, critical_status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
             $isCritical = !empty($data['is_critical']) ? 1 : 0;
             $criticalManager = $data['critical_manager_id'] ?? null;
@@ -32,12 +32,15 @@ class HotWorkPermitController
             $stmt->execute([
                 $data['permit_no'],
                 date('Y-m-d H:i:s'),
+                $data['wo'],
                 $data['company_name'],
                 $data['location'],
                 $data['supervisor'] ?? null,
                 $data['equipment_used'] ?? null,
+                $data['maintenance_type'] ?? null,
                 $data['task_start_datetime'] ?? null,
                 $data['finishing_time'] ?? null,
+                $data['creation_date'] ?? date('Y-m-d H:i:s'),
                 $data['assigned_to'] ?? null,
                 $data['work_description'] ?? '',
                 $data['created_by'],
@@ -386,7 +389,7 @@ class HotWorkPermitController
             $userRole = (int)$filters['role_id'];
             $userId = (int)$filters['user_id'];
 
-            if (!in_array($userRole, [1, 6])) {
+            if (!in_array($userRole, [1, 6, 7])) {
                 $query .= " AND (assigned_to = ? OR created_by = ?)";
                 $params[] = $userId;
                 $params[] = $userId;
@@ -425,7 +428,7 @@ class HotWorkPermitController
             $userRole = (int)$filters['role_id'];
             $userId = (int)$filters['user_id'];
 
-            if (!in_array($userRole, [1, 6])) {
+            if (!in_array($userRole, [1, 6, 7])) {
                 $where .= " AND (h.assigned_to = ? OR h.created_by = ?)";
                 $params[] = $userId;
                 $params[] = $userId;
