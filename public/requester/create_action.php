@@ -97,6 +97,11 @@ require_once '../helpers/authCheck.php';
                                 <option value="Packing">Packing</option>
                                 <option value="Despatch">Despatch</option>
                                 <option value="Mechanical & Electrical Workshop">Mechanical & Electrical Workshop</option>
+                                <option value="Administration">Administration</option>
+                                <option value="Canteen">Canteen</option>
+                                <option value="Changing">Changing</option>
+                                <option value="Rooms">Rooms</option>
+                                <option value="Warehouse">Warehouse</option>
                             </select>
                         </div>
                         <!-- Type (full width) -->
@@ -323,7 +328,7 @@ require_once '../helpers/authCheck.php';
                         function toggleGoodPracticeFields() {
                             const isGoodPractice = el.goodPracticeSwitch.checked;
                             const allFieldsContainers = el.form.querySelectorAll('.col-span-1:not(.sm\\:col-span-2), .col-span-full');
-                            
+
                             allFieldsContainers.forEach(container => {
                                 // Keep these visible
                                 const hasStartDate = container.querySelector('#start_date');
@@ -458,7 +463,7 @@ require_once '../helpers/authCheck.php';
 
                             const isGoodPractice = el.goodPracticeSwitch && el.goodPracticeSwitch.checked;
                             const formData = new FormData();
-                            
+
                             if (isGoodPractice) {
                                 formData.append("start_date", document.getElementById("start_date").value);
                                 formData.append("assigned_user_id", document.getElementById("assigned_user").value);

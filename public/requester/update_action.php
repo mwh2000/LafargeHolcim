@@ -87,6 +87,11 @@ require_once '../helpers/authCheck.php';
                                 <option value="Packing">Packing</option>
                                 <option value="Despatch">Despatch</option>
                                 <option value="Mechanical & Electrical Workshop">Mechanical & Electrical Workshop</option>
+                                <option value="Administration">Administration</option>
+                                <option value="Canteen">Canteen</option>
+                                <option value="Changing">Changing</option>
+                                <option value="Rooms">Rooms</option>
+                                <option value="Warehouse">Warehouse</option>
                             </select>
                         </div>
                         <!-- Type (full width) -->
