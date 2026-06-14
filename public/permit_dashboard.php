@@ -117,8 +117,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
             const chartData = {
                 labels: [
-                    `Open: ${stats.pending}`,
-                    `Active Isolation: ${stats.active_isolation}`,
+                    `open: ${stats.active_isolation}`,
                     `Completed: ${stats.completed}`
                 ],
                 datasets: [{
@@ -190,15 +189,9 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <p class="mt-2 text-2xl font-semibold text-gray-700">${d.total}</p>
                         </div>
 
-                        <div onclick="location.href='${getPermitsUrl('pending')}'"
-                             class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-yellow-400 hover:shadow-lg transition">
-                            <p class="text-sm text-gray-500">Open</p>
-                            <p class="mt-2 text-2xl font-semibold text-yellow-600">${d.pending}</p>
-                        </div>
-
                         <div onclick="location.href='${getPermitsUrl('active_isolation')}'"
                              class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-blue-400 hover:shadow-lg transition">
-                            <p class="text-sm text-gray-500">Active Isolation</p>
+                            <p class="text-sm text-gray-500">open</p>
                             <p class="mt-2 text-2xl font-semibold text-blue-600">${d.active_isolation}</p>
                         </div>
 

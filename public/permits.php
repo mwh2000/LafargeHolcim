@@ -38,16 +38,15 @@ require_once __DIR__ . '/helpers/authCheck.php';
                         </button>
                         <select id="statusFilter" class="border px-4 py-2 rounded-md text-sm">
                             <option value="">All Status</option>
-                            <option value="pending">Open</option>
-                            <option value="active_isolation">Active Isolation</option>
+                            <option value="active_isolation">Open</option>
                             <option value="completed">Completed</option>
                             <option value="rejected">Rejected</option>
                         </select>
-                    <select id="sectionFilter" class="border px-4 py-2 rounded-md text-sm">
-    <option value="">All Sections</option>
-    <!-- Add more section options as needed -->
-</select>
-</div>
+                        <select id="sectionFilter" class="border px-4 py-2 rounded-md text-sm">
+                            <option value="">All Sections</option>
+                            <!-- Add more section options as needed -->
+                        </select>
+                    </div>
                 </div>
 
                 <div class="bg-white shadow-md rounded-lg overflow-x-auto">
@@ -97,7 +96,9 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 const params = new URLSearchParams();
                 params.set('action', 'all');
                 const response = await fetch(`${API_URL_SECTIONS}?${params.toString()}`, {
-                    headers: { "Authorization": `Bearer ${TOKEN}` }
+                    headers: {
+                        "Authorization": `Bearer ${TOKEN}`
+                    }
                 });
                 const result = await response.json();
                 if (!result.success) throw new Error(result.message);
@@ -118,8 +119,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
         function getStatusText(status) {
             const map = {
-                'pending': 'Open',
-                'active_isolation': 'Active Isolation',
+                'active_isolation': 'Open',
                 'rejected': 'Rejected',
                 'completed': 'Completed'
             };

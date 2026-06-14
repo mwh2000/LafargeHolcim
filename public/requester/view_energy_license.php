@@ -240,24 +240,30 @@ $userName = $userData['name'] ?? 'N/A';
 
                                         <!-- Energy Types Card -->
                                         <div class="bg-white p-6 rounded-lg shadow-md">
-                                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">أنواع الطاقة المعزولة</h2>
-                                            <div class="flex justify-between items-center mb-3">
-                                                <div id="val-energy-types" class="flex flex-wrap gap-2 justify-start" dir="rtl"></div>
-                                                <div class="no-print">
-                                                    <button id="addEnergyTypesBtn" class="hidden bg-white border px-3 py-1 rounded-md text-sm text-[#0b6f76]">إضافة</button>
-                                                </div>
+                                            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                                                <button id="editEnergyTypesBtn" class="hidden no-print text-sm flex items-center gap-1 text-[#0b6f76] hover:text-[#085a60] font-medium transition-colors bg-[#0b6f76]/10 px-3 py-1.5 rounded-md hover:bg-[#0b6f76]/20">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    </svg>
+                                                    تعديل
+                                                </button>
+                                                <h2 class="text-lg font-bold text-[#0b6f76] text-right" dir="rtl">أنواع الطاقة المعزولة</h2>
                                             </div>
+                                            <div id="val-energy-types" class="flex flex-wrap gap-2" dir="rtl"></div>
                                         </div>
 
                                         <!-- Equipments Card -->
                                         <div class="bg-white p-6 rounded-lg shadow-md">
-                                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">اسم المعدة المراد عزلها</h2>
-                                            <div class="flex justify-between items-center mb-3">
-                                                <div id="val-equipments" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-start" dir="rtl"></div>
-                                                <div class="no-print">
-                                                    <button id="addEquipmentsBtn" class="hidden bg-white border px-3 py-1 rounded-md text-sm text-[#0b6f76]">إضافة</button>
-                                                </div>
+                                            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                                                <button id="editEquipmentsBtn" class="hidden no-print text-sm flex items-center gap-1 text-[#0b6f76] hover:text-[#085a60] font-medium transition-colors bg-[#0b6f76]/10 px-3 py-1.5 rounded-md hover:bg-[#0b6f76]/20">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    </svg>
+                                                    تعديل
+                                                </button>
+                                                <h2 class="text-lg font-bold text-[#0b6f76] text-right" dir="rtl">اسم المعدة المراد عزلها</h2>
                                             </div>
+                                            <div id="val-equipments" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-start" dir="rtl"></div>
                                         </div>
 
                                         <!-- Staff Card -->
@@ -357,13 +363,29 @@ $userName = $userData['name'] ?? 'N/A';
     </div>
 
     <script>
-        // Add/Remove Energy Types & Equipments - Area Manager actions
-        function openAddEnergyModal() {
-            const modal = document.getElementById('addEnergyModal');
-            const list = document.getElementById('add-energy-list');
-            list.innerHTML = '<p class="text-center py-4">جاري التحميل...</p>';
+        function openManageEnergyModal() {
+            const modal = document.getElementById('manageEnergyModal');
+            const addList = document.getElementById('manage-energy-add-list');
+            const currentList = document.getElementById('manage-energy-current-list');
             modal.classList.remove('hidden');
 
+            const currentTypes = currentLicenseData.energy_types || [];
+            currentList.innerHTML = '';
+            if (currentTypes.length === 0) {
+                currentList.innerHTML = '<p class="text-gray-400 text-sm italic">لا توجد أنواع طاقة مضافة</p>';
+            } else {
+                currentTypes.forEach(et => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center justify-between px-3 py-2 bg-gray-50 border rounded-md';
+                    row.innerHTML = `
+                        <span class="text-sm font-medium text-gray-700">${et.name}</span>
+                        <button type="button" onclick="removeEnergyType(${et.id})" class="text-red-500 hover:text-red-700 text-xs px-2 py-1 border border-red-200 rounded hover:bg-red-50 transition">حذف</button>
+                    `;
+                    currentList.appendChild(row);
+                });
+            }
+
+            addList.innerHTML = '<p class="text-center py-2 text-sm text-gray-400">جاري التحميل...</p>';
             fetch(`${API_BASE}?action=getEnergyTypes`, {
                     headers: {
                         'Authorization': `Bearer ${TOKEN}`
@@ -371,30 +393,97 @@ $userName = $userData['name'] ?? 'N/A';
                 })
                 .then(r => r.json())
                 .then(res => {
-                    if (!res.success) throw new Error('فشل في جلب الأنواع');
-                    const types = res.data;
-                    list.innerHTML = '';
-                    types.forEach(t => {
-                        const id = t.id;
-                        const already = (currentLicenseData.energy_types || []).some(et => et.id == id);
-                        const row = document.createElement('div');
-                        row.className = 'flex items-center justify-between p-2 border-b';
-                        row.innerHTML = `<label class="flex items-center gap-2"><input type="checkbox" value="${id}" ${already ? 'disabled' : ''}> <span>${t.name}</span></label>`;
-                        list.appendChild(row);
-                    });
-                }).catch(e => {
-                    list.innerHTML = '<p class="text-red-500">خطأ في التحميل</p>';
+                    if (!res.success) throw new Error();
+                    const available = res.data.filter(t => !currentTypes.some(ct => ct.id == t.id));
+                    addList.innerHTML = '';
+                    if (available.length === 0) {
+                        addList.innerHTML = '<p class="text-gray-400 text-sm italic">لا توجد أنواع إضافية متاحة</p>';
+                    } else {
+                        available.forEach(t => {
+                            const row = document.createElement('div');
+                            row.className = 'flex items-center gap-2 p-2 border-b';
+                            row.innerHTML = `<label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="${t.id}" class="w-4 h-4 text-[#0b6f76]"> <span class="text-sm">${t.name}</span></label>`;
+                            addList.appendChild(row);
+                        });
+                    }
+                })
+                .catch(() => {
+                    addList.innerHTML = '<p class="text-red-500 text-sm">خطأ في التحميل</p>';
                 });
         }
 
-        function closeAddEnergyModal() {
-            document.getElementById('addEnergyModal').classList.add('hidden');
+        function closeManageEnergyModal() {
+            document.getElementById('manageEnergyModal').classList.add('hidden');
+        }
+
+        function openManageEquipmentsModal() {
+            const modal = document.getElementById('manageEquipmentsModal');
+            const addList = document.getElementById('manage-equip-add-list');
+            const currentList = document.getElementById('manage-equip-current-list');
+            modal.classList.remove('hidden');
+
+            const currentEquips = currentLicenseData.equipments || [];
+            currentList.innerHTML = '';
+            if (currentEquips.length === 0) {
+                currentList.innerHTML = '<p class="text-gray-400 text-sm italic">لا توجد معدات مضافة</p>';
+            } else {
+                currentEquips.forEach(eq => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center justify-between p-2 border rounded-md bg-gray-50';
+                    const img = eq.image ?
+                        `<img src="../../public/${eq.image}" class="w-8 h-8 object-cover rounded">` :
+                        `<div class="w-8 h-8 bg-gray-200 rounded flex items-center justify-center text-[8px] text-gray-400">No Img</div>`;
+                    row.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            ${img}
+                            <div>
+                                <p class="text-xs font-bold">${eq.name}</p>
+                                <p class="text-[10px] text-gray-400">Ref: ${eq.equipment_no}</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="removeEquipment(${eq.id})" class="text-red-500 text-xs px-2 py-1 border border-red-200 rounded hover:bg-red-50 transition">حذف</button>
+                    `;
+                    currentList.appendChild(row);
+                });
+            }
+
+            addList.innerHTML = '<p class="text-center py-2 text-sm text-gray-400">جاري التحميل...</p>';
+            const sectionId = currentLicenseData.equipment_section_id;
+            fetch(`${API_BASE}?action=getEquipmentsBySection&section_id=${sectionId}&limit=200`, {
+                    headers: {
+                        'Authorization': `Bearer ${TOKEN}`
+                    }
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (!res.success) throw new Error();
+                    const items = res.data.equipments || [];
+                    const available = items.filter(it => !currentEquips.some(eq => eq.id == it.id));
+                    addList.innerHTML = '';
+                    if (available.length === 0) {
+                        addList.innerHTML = '<p class="text-gray-400 text-sm italic">لا توجد معدات إضافية متاحة</p>';
+                    } else {
+                        available.forEach(it => {
+                            const row = document.createElement('div');
+                            row.className = 'flex items-center gap-2 p-2 border-b';
+                            row.innerHTML = `<label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" value="${it.id}" class="w-4 h-4 text-[#0b6f76]"> <span class="text-sm">${it.name}</span></label>`;
+                            addList.appendChild(row);
+                        });
+                    }
+                })
+                .catch(() => {
+                    addList.innerHTML = '<p class="text-red-500 text-sm">خطأ في التحميل</p>';
+                });
+        }
+
+        function closeManageEquipmentsModal() {
+            document.getElementById('manageEquipmentsModal').classList.add('hidden');
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const submitAddEnergyBtn = document.getElementById('submitAddEnergyBtn');
+            const submitAddEnergyBtn = document.getElementById('submitManageAddEnergyBtn');
             if (submitAddEnergyBtn) submitAddEnergyBtn.addEventListener('click', async () => {
-                const checkboxes = Array.from(document.querySelectorAll('#add-energy-list input[type="checkbox"]:not(:disabled):checked'));
+                const checkboxes = Array.from(document.querySelectorAll('#manage-energy-add-list input[type="checkbox"]:checked'));
                 if (checkboxes.length === 0) {
                     Swal.fire('تنبيه', 'اختر نوع طاقة واحد على الأقل', 'warning');
                     return;
@@ -413,19 +502,16 @@ $userName = $userData['name'] ?? 'N/A';
                         })
                     });
                     const result = await res.json();
-                    if (result.success) {
-                        Swal.fire('نجاح', result.message, 'success').then(() => location.reload());
-                    } else {
+                    result.success ? Swal.fire('نجاح', result.message, 'success').then(() => location.reload()) :
                         Swal.fire('خطأ', result.message || 'فشل', 'error');
-                    }
                 } catch (e) {
                     Swal.fire('خطأ', 'حدث خطأ', 'error');
                 }
             });
 
-            const submitAddEquipmentsBtn = document.getElementById('submitAddEquipmentsBtn');
-            if (submitAddEquipmentsBtn) submitAddEquipmentsBtn.addEventListener('click', async () => {
-                const checkboxes = Array.from(document.querySelectorAll('#add-equipments-list input[type="checkbox"]:not(:disabled):checked'));
+            const submitAddEquipBtn = document.getElementById('submitManageAddEquipBtn');
+            if (submitAddEquipBtn) submitAddEquipBtn.addEventListener('click', async () => {
+                const checkboxes = Array.from(document.querySelectorAll('#manage-equip-add-list input[type="checkbox"]:checked'));
                 if (checkboxes.length === 0) {
                     Swal.fire('تنبيه', 'اختر معدة واحدة على الأقل', 'warning');
                     return;
@@ -444,11 +530,8 @@ $userName = $userData['name'] ?? 'N/A';
                         })
                     });
                     const result = await res.json();
-                    if (result.success) {
-                        Swal.fire('نجاح', result.message, 'success').then(() => location.reload());
-                    } else {
+                    result.success ? Swal.fire('نجاح', result.message, 'success').then(() => location.reload()) :
                         Swal.fire('خطأ', result.message || 'فشل', 'error');
-                    }
                 } catch (e) {
                     Swal.fire('خطأ', 'حدث خطأ', 'error');
                 }
@@ -477,78 +560,12 @@ $userName = $userData['name'] ?? 'N/A';
                     })
                 });
                 const result = await res.json();
-                if (result.success) {
-                    Swal.fire('نجاح', result.message, 'success').then(() => location.reload());
-                } else {
+                result.success ? Swal.fire('نجاح', result.message, 'success').then(() => location.reload()) :
                     Swal.fire('خطأ', result.message || 'فشل', 'error');
-                }
             } catch (e) {
                 Swal.fire('خطأ', 'حدث خطأ', 'error');
             }
         }
-
-        function openAddEquipmentsModal() {
-            const modal = document.getElementById('addEquipmentsModal');
-            const list = document.getElementById('add-equipments-list');
-            list.innerHTML = '<p class="text-center py-4">جاري التحميل...</p>';
-            modal.classList.remove('hidden');
-
-            const sectionId = currentLicenseData.equipment_section_id;
-            fetch(`${API_BASE}?action=getEquipmentsBySection&section_id=${sectionId}&limit=200`, {
-                    headers: {
-                        'Authorization': `Bearer ${TOKEN}`
-                    }
-                })
-                .then(r => r.json())
-                .then(res => {
-                    if (!res.success) throw new Error('فشل في جلب المعدات');
-                    const items = res.data.equipments || [];
-                    list.innerHTML = '';
-                    items.forEach(it => {
-                        const already = (currentLicenseData.equipments || []).some(eq => eq.id == it.id);
-                        const row = document.createElement('div');
-                        row.className = 'flex items-center justify-between p-2 border-b';
-                        row.innerHTML = `<label class="flex items-center gap-2"><input type="checkbox" value="${it.id}" ${already ? 'disabled' : ''}> <span>${it.name}</span></label>`;
-                        list.appendChild(row);
-                    });
-                }).catch(e => {
-                    list.innerHTML = '<p class="text-red-500">خطأ في التحميل</p>';
-                });
-        }
-
-        function closeAddEquipmentsModal() {
-            document.getElementById('addEquipmentsModal').classList.add('hidden');
-        }
-
-        document.getElementById('submitAddEquipmentsBtn').addEventListener('click', async () => {
-            const checkboxes = Array.from(document.querySelectorAll('#add-equipments-list input[type="checkbox"]:not(:disabled):checked'));
-            if (checkboxes.length === 0) {
-                Swal.fire('تنبيه', 'اختر معدة واحدة على الأقل', 'warning');
-                return;
-            }
-            const ids = checkboxes.map(cb => parseInt(cb.value));
-            try {
-                const res = await fetch(`${API_BASE}?action=addEquipments`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${TOKEN}`
-                    },
-                    body: JSON.stringify({
-                        license_id: LICENSE_ID,
-                        equipment_ids: ids
-                    })
-                });
-                const result = await res.json();
-                if (result.success) {
-                    Swal.fire('نجاح', result.message, 'success').then(() => location.reload());
-                } else {
-                    Swal.fire('خطأ', result.message || 'فشل', 'error');
-                }
-            } catch (e) {
-                Swal.fire('خطأ', 'حدث خطأ', 'error');
-            }
-        });
 
         async function removeEquipment(equipmentId) {
             const ok = await Swal.fire({
@@ -572,43 +589,69 @@ $userName = $userData['name'] ?? 'N/A';
                     })
                 });
                 const result = await res.json();
-                if (result.success) {
-                    Swal.fire('نجاح', result.message, 'success').then(() => location.reload());
-                } else {
+                result.success ? Swal.fire('نجاح', result.message, 'success').then(() => location.reload()) :
                     Swal.fire('خطأ', result.message || 'فشل', 'error');
-                }
             } catch (e) {
                 Swal.fire('خطأ', 'حدث خطأ', 'error');
             }
         }
     </script>
 
-    <!-- Add Energy Types Modal -->
-    <div id="addEnergyModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4">
+    <!-- Manage Energy Types Modal -->
+    <div id="manageEnergyModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
             <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-lg">
-                <h3 class="text-lg font-bold text-[#0b6f76]">إضافة أنواع طاقة</h3>
-                <button type="button" onclick="closeAddEnergyModal()" class="text-gray-400 hover:text-red-500">✕</button>
+                <button type="button" onclick="closeManageEnergyModal()" class="text-gray-400 hover:text-red-500 text-xl leading-none">✕</button>
+                <h3 class="text-lg font-bold text-[#0b6f76]">إدارة أنواع الطاقة المعزولة</h3>
             </div>
-            <div class="p-4 overflow-y-auto" id="add-energy-list"></div>
-            <div class="p-4 border-t flex justify-end gap-3 bg-gray-50 rounded-b-lg">
-                <button id="submitAddEnergyBtn" class="px-4 py-2 bg-[#0b6f76] text-white rounded-md">إضافة</button>
-                <button type="button" onclick="closeAddEnergyModal()" class="px-4 py-2 bg-gray-200 rounded-md">إلغاء</button>
+            <div class="p-4 overflow-y-auto flex-1">
+                <div class="mb-4">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1 justify-end" dir="rtl">
+                        إضافة نوع جديد
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#0b6f76]" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                    </h4>
+                    <div id="manage-energy-add-list" class="max-h-40 overflow-y-auto border rounded-md p-2 bg-gray-50 text-right" dir="rtl"></div>
+                    <div class="mt-2 text-right" dir="rtl">
+                        <button id="submitManageAddEnergyBtn" class="px-4 py-1.5 bg-[#0b6f76] text-white text-sm rounded-md hover:bg-[#085a60] transition">إضافة المحدد</button>
+                    </div>
+                </div>
+                <hr class="my-4 border-gray-200">
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3 text-right" dir="rtl">الأنواع الحالية</h4>
+                    <div id="manage-energy-current-list" class="space-y-2" dir="rtl"></div>
+                </div>
+            </div>
+            <div class="p-4 border-t bg-gray-50 rounded-b-lg flex justify-end">
+                <button type="button" onclick="closeManageEnergyModal()" class="px-4 py-2 bg-gray-200 rounded-md text-sm hover:bg-gray-300 transition">إغلاق</button>
             </div>
         </div>
     </div>
 
-    <!-- Add Equipments Modal -->
-    <div id="addEquipmentsModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4">
+    <!-- Manage Equipments Modal -->
+    <div id="manageEquipmentsModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
             <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-lg">
-                <h3 class="text-lg font-bold text-[#0b6f76]">إضافة معدات</h3>
-                <button type="button" onclick="closeAddEquipmentsModal()" class="text-gray-400 hover:text-red-500">✕</button>
+                <button type="button" onclick="closeManageEquipmentsModal()" class="text-gray-400 hover:text-red-500 text-xl leading-none">✕</button>
+                <h3 class="text-lg font-bold text-[#0b6f76]">إدارة المعدات المراد عزلها</h3>
             </div>
-            <div class="p-4 overflow-y-auto" id="add-equipments-list"></div>
-            <div class="p-4 border-t flex justify-end gap-3 bg-gray-50 rounded-b-lg">
-                <button id="submitAddEquipmentsBtn" class="px-4 py-2 bg-[#0b6f76] text-white rounded-md">إضافة</button>
-                <button type="button" onclick="closeAddEquipmentsModal()" class="px-4 py-2 bg-gray-200 rounded-md">إلغاء</button>
+            <div class="p-4 overflow-y-auto flex-1">
+                <div class="mb-4">
+                    </h4>
+                    <div id="manage-equip-add-list" class="max-h-48 overflow-y-auto border rounded-md p-2 bg-gray-50 text-right" dir="rtl"></div>
+                    <div class="mt-2 text-right" dir="rtl">
+                        <button id="submitManageAddEquipBtn" class="px-4 py-1.5 bg-[#0b6f76] text-white text-sm rounded-md hover:bg-[#085a60] transition">إضافة المحدد</button>
+                    </div>
+                </div>
+                <hr class="my-4 border-gray-200">
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3 text-right" dir="rtl">المعدات الحالية</h4>
+                    <div id="manage-equip-current-list" class="space-y-2" dir="rtl"></div>
+                </div>
+            </div>
+            <div class="p-4 border-t bg-gray-50 rounded-b-lg flex justify-end">
+                <button type="button" onclick="closeManageEquipmentsModal()" class="px-4 py-2 bg-gray-200 rounded-md text-sm hover:bg-gray-300 transition">إغلاق</button>
             </div>
         </div>
     </div>
@@ -693,16 +736,16 @@ $userName = $userData['name'] ?? 'N/A';
                         document.getElementById('am-action-section').classList.remove('hidden');
                     }
 
-                    // Show add/remove controls to all authorized users
-                    const addEnergyBtn = document.getElementById('addEnergyTypesBtn');
-                    const addEquipBtn = document.getElementById('addEquipmentsBtn');
-                    if (addEnergyBtn) {
-                        addEnergyBtn.classList.remove('hidden');
-                        addEnergyBtn.addEventListener('click', openAddEnergyModal);
+                    // Show edit buttons for energy types and equipments
+                    const editEnergyBtn = document.getElementById('editEnergyTypesBtn');
+                    const editEquipBtn = document.getElementById('editEquipmentsBtn');
+                    if (editEnergyBtn) {
+                        editEnergyBtn.classList.remove('hidden');
+                        editEnergyBtn.addEventListener('click', openManageEnergyModal);
                     }
-                    if (addEquipBtn) {
-                        addEquipBtn.classList.remove('hidden');
-                        addEquipBtn.addEventListener('click', openAddEquipmentsModal);
+                    if (editEquipBtn) {
+                        editEquipBtn.classList.remove('hidden');
+                        editEquipBtn.addEventListener('click', openManageEquipmentsModal);
                     }
 
                     // Show Requester actions if active_isolation and user is creator
@@ -778,55 +821,39 @@ $userName = $userData['name'] ?? 'N/A';
             // Energy Types
             const energyContainer = document.getElementById('val-energy-types');
             energyContainer.innerHTML = '';
-            data.energy_types.forEach(et => {
-                const span = document.createElement('span');
-                span.className = 'px-3 py-1 bg-gray-100 border rounded-full text-xs flex items-center gap-2';
-                span.setAttribute('data-energy-id', et.id);
-                span.innerHTML = `<span>${et.name}</span>`;
-                // allow delete for all users
-                const del = document.createElement('button');
-                del.className = 'text-red-500 text-sm no-print';
-                del.title = 'حذف';
-                del.innerHTML = '✕';
-                del.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    removeEnergyType(et.id);
+            if (!data.energy_types || data.energy_types.length === 0) {
+                energyContainer.innerHTML = '<p class="text-gray-400 text-sm italic">لا توجد أنواع طاقة</p>';
+            } else {
+                data.energy_types.forEach(et => {
+                    const span = document.createElement('span');
+                    span.className = 'px-3 py-1 bg-gray-100 border rounded-full text-xs font-medium text-gray-700';
+                    span.textContent = et.name;
+                    energyContainer.appendChild(span);
                 });
-                span.appendChild(del);
-                energyContainer.appendChild(span);
-            });
+            }
 
             // Equipments
             const eqContainer = document.getElementById('val-equipments');
-            data.equipments.forEach(eq => {
-                const div = document.createElement('div');
-                div.className = 'flex items-center gap-3 p-2 border rounded-md bg-gray-50 justify-between';
-                const left = document.createElement('div');
-                left.className = 'flex items-center gap-3';
-                const img = eq.image ?
-                    `<img src="../../public/${eq.image}" class="w-12 h-12 object-cover rounded">` :
-                    `<div class="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-[10px] text-gray-400">No Image</div>`;
-                left.innerHTML = `
-                    ${img}
-                    <div>
-                        <p class="text-xs font-bold">${eq.name}</p>
-                        <p class="text-[10px] text-gray-500">Ref: ${eq.equipment_no}</p>
-                    </div>
-                `;
-                div.appendChild(left);
-                const actions = document.createElement('div');
-                actions.className = 'no-print';
-                const delBtn = document.createElement('button');
-                delBtn.className = 'text-red-500 px-2 py-1 rounded-md border';
-                delBtn.textContent = 'حذف';
-                delBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    removeEquipment(eq.id);
+            eqContainer.innerHTML = '';
+            if (!data.equipments || data.equipments.length === 0) {
+                eqContainer.innerHTML = '<p class="text-gray-400 text-sm italic">لا توجد معدات</p>';
+            } else {
+                data.equipments.forEach(eq => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center gap-3 p-2 border rounded-md bg-gray-50';
+                    const img = eq.image ?
+                        `<img src="../../public/${eq.image}" class="w-12 h-12 object-cover rounded">` :
+                        `<div class="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-[10px] text-gray-400">No Image</div>`;
+                    div.innerHTML = `
+                        ${img}
+                        <div>
+                            <p class="text-xs font-bold">${eq.name}</p>
+                            <p class="text-[10px] text-gray-500">Ref: ${eq.equipment_no}</p>
+                        </div>
+                    `;
+                    eqContainer.appendChild(div);
                 });
-                actions.appendChild(delBtn);
-                div.appendChild(actions);
-                eqContainer.appendChild(div);
-            });
+            }
 
             // Staff
             const staffContainer = document.getElementById('val-staff');

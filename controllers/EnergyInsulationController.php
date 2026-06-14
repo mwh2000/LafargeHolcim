@@ -641,6 +641,10 @@ class EnergyInsulationController
                 $where .= " AND l.equipment_section_id = ?";
                 $params[] = $filters['section'];
             }
+            if (!empty($filters['status'])) {
+                $where .= " AND l.status = ?";
+                $params[] = $filters['status'];
+            }
             if (!empty($filters['from_date'])) {
                 $where .= " AND l.date >= ?";
                 $params[] = $filters['from_date'];
