@@ -373,7 +373,10 @@ class HotWorkPermitController
     public function getStatistics($filters)
     {
         try {
-            $query = "SELECT COUNT(*) as total FROM hot_work_permit WHERE 1=1";
+            $query = "SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN finishing_time IS NOT NULL AND finishing_time < NOW() THEN 1 ELSE 0 END) as not_active
+            FROM hot_work_permit WHERE 1=1";
             $params = [];
 
             if (!empty($filters['from_date'])) {
@@ -399,7 +402,10 @@ class HotWorkPermitController
             $stmt->execute($params);
             $stats = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            return ['success' => true, 'data' => ['total' => (int)$stats['total']]];
+            return ['success' => true, 'data' => [
+                'total'      => (int)$stats['total'],
+                'not_active' => (int)$stats['not_active']
+            ]];
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Failed to fetch statistics: ' . $e->getMessage()];
         }

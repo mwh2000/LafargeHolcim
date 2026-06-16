@@ -192,7 +192,7 @@ $userName = $userData['name'] ?? 'N/A';
                                                 <div><span class="text-gray-500">الموقع الدقيق:</span> <span id="val-supervisor" class="font-medium text-gray-800"></span></div>
                                                 <div><span class="text-gray-500">المعدة المستخدمة:</span> <span id="val-equipment" class="font-medium text-gray-800"></span></div>
                                                 <div><span class="text-gray-500">تاريخ اصدار الرخصه:</span> <span id="val-start" class="font-medium text-blue-600"></span></div>
-                                                <div><span class="text-gray-500">وقت انتهاء الرخصه:</span> <span id="val-finish" class="font-medium text-green-600"></span></div>
+                                                <div class="flex items-center gap-2 flex-wrap"><span class="text-gray-500">وقت انتهاء الرخصه:</span> <span id="val-finish" class="font-medium text-green-600"></span><span id="not-active-badge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">Not Active</span></div>
                                                 <div><span class="text-gray-500">تم الإنشاء بواسطة:</span> <span id="val-creator" class="font-medium text-gray-800"></span></div>
                                                 <div><span class="text-gray-500">مسند إلى (Assigned To):</span> <span id="val-assigned" class="font-bold text-[#0b6f76]"></span></div>
                                                 <div><span class="text-gray-500" id="critical_manager_info">موافقة قسم سلامة:</span> <span id="critical_manager_name" class="font-bold text-[#0b6f76]"></span></div>
@@ -300,6 +300,13 @@ $userName = $userData['name'] ?? 'N/A';
             document.getElementById('val-equipment').textContent = data.equipment_used || '-';
             document.getElementById('val-start').textContent = data.task_start_datetime ? data.task_start_datetime.replace('T', ' ') : '-';
             document.getElementById('val-finish').textContent = data.finishing_time ? data.finishing_time.replace('T', ' ') : '-';
+
+            // Show "Not Active" badge if finishing time has passed
+            if (data.finishing_time && new Date(data.finishing_time) < new Date()) {
+                document.getElementById('not-active-badge').classList.remove('hidden');
+                document.getElementById('val-finish').classList.replace('text-green-600', 'text-red-500');
+            }
+
             document.getElementById('val-work-description').textContent = data.work_description || '-';
             document.getElementById('val-creator').textContent = data.creator_name || '-';
             document.getElementById('val-assigned').textContent = data.assigned_to_name || '-';
@@ -331,8 +338,9 @@ $userName = $userData['name'] ?? 'N/A';
                 const actions = document.getElementById('critical_actions');
                 actions.innerHTML = '';
 
-                // Manager view: if pending_manager and current user is critical_manager
-                if (status === 'pending_manager' && USER_ID === parseInt(data.critical_manager_id || 0)) {
+                const canAct = [3, 5, 7].includes(USER_ROLE);
+                // Manager view: if pending_manager and current user is critical_manager or has role 3/5/7
+                if (status === 'pending_manager' && (USER_ID === parseInt(data.critical_manager_id || 0) || canAct)) {
                     // show supervisor select and assign button
                     const sel = document.createElement('select');
                     sel.id = 'assign_supervisor_select';
@@ -386,8 +394,8 @@ $userName = $userData['name'] ?? 'N/A';
                     });
                 }
 
-                // Supervisor view: if pending_supervisor and current user is critical_supervisor
-                if (status === 'pending_supervisor' && USER_ID === parseInt(data.critical_supervisor_id || 0)) {
+                // Supervisor view: if pending_supervisor and current user is critical_supervisor or has role 3/5/7
+                if (status === 'pending_supervisor' && (USER_ID === parseInt(data.critical_supervisor_id || 0) || canAct)) {
                     const btn = document.createElement('button');
                     btn.className = 'px-3 py-2 bg-[#0b6f76] text-white rounded';
                     btn.textContent = 'Done';
@@ -413,8 +421,8 @@ $userName = $userData['name'] ?? 'N/A';
                     });
                 }
 
-                // Creator view: if pending_creator and current user is creator
-                if (status === 'pending_creator' && USER_ID === parseInt(data.created_by || 0)) {
+                // Creator view: if pending_creator and current user is creator or has role 3/5/7
+                if (status === 'pending_creator' && (USER_ID === parseInt(data.created_by || 0) || canAct)) {
                     const btn = document.createElement('button');
                     btn.className = 'px-3 py-2 bg-[#0b6f76] text-white rounded';
                     btn.textContent = 'إكمال خطوات الرخصة';

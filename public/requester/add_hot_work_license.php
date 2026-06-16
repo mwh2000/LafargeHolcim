@@ -142,16 +142,16 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                     </select>
                                 </div>
                                 <div>
+                                    <label class="block text-sm font-medium text-green-700 mb-1">تاريخ انشاء الرخصة</label>
+                                    <input type="date" name="creation_date" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
+                                </div>
+                                <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">تاريخ اصدار الرخصه</label>
                                     <input type="datetime-local" name="task_start_datetime" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">وقت انتهاء الرخصه</label>
                                     <input type="datetime-local" name="finishing_time" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-green-700 mb-1">تاريخ انشاء الرخصة</label>
-                                    <input type="date" name="creation_date" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                             </div>
                         </div>

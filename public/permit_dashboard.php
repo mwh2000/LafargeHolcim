@@ -205,9 +205,14 @@ require_once __DIR__ . '/helpers/authCheck.php';
                     chartContainer.classList.add("hidden");
                     statsContainer.innerHTML = `
                         <div onclick="location.href='${getPermitsUrl()}'"
-                             class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-gray-400 hover:shadow-lg transition col-span-1 sm:col-span-2 lg:col-span-4">
+                             class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-gray-400 hover:shadow-lg transition">
                             <p class="text-sm text-gray-500">Total Permits (Hot Work)</p>
                             <p class="mt-2 text-2xl font-semibold text-gray-700">${d.total}</p>
+                        </div>
+                        <div class="bg-white shadow-md rounded-lg p-5 border-l-4 border-red-400 hover:shadow-lg transition">
+                            <p class="text-sm text-gray-500">Not Active (Expired)</p>
+                            <p class="mt-2 text-2xl font-semibold text-red-600">${d.not_active ?? 0}</p>
+                            <p class="text-xs text-gray-400 mt-1">Finishing time passed</p>
                         </div>
                     `;
                 }

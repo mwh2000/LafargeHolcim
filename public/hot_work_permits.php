@@ -30,7 +30,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
                 <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
                     <h1 class="text-2xl font-semibold text-gray-700">Hot Work Permits List</h1>
-                    
+
                     <div class="flex flex-wrap gap-2 items-center bg-white p-3 rounded-md shadow-sm">
                         <div class="flex items-center gap-2">
                             <label class="text-sm text-gray-600">From:</label>
@@ -51,11 +51,12 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <tr>
                                 <th class="px-6 py-3">Permit No</th>
                                 <th class="px-6 py-3">Issuing Date</th>
+                                <th class="px-6 py-3">Finishing Time</th>
                                 <th class="px-6 py-3">Company</th>
                                 <th class="px-6 py-3">Location</th>
-                                <th class="px-6 py-3">Supervisor</th>
                                 <th class="px-6 py-3">Requester</th>
                                 <th class="px-6 py-3">Assigned To</th>
+                                <th class="px-6 py-3">Status</th>
                                 <th class="px-6 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -96,7 +97,9 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
             try {
                 const response = await fetch(`${API_URL}?${params.toString()}`, {
-                    headers: { "Authorization": `Bearer ${TOKEN}` }
+                    headers: {
+                        "Authorization": `Bearer ${TOKEN}`
+                    }
                 });
                 const result = await response.json();
                 if (!result.success) throw new Error(result.message);
@@ -110,9 +113,12 @@ require_once __DIR__ . '/helpers/authCheck.php';
         }
 
         function updatePaginationControls(data) {
-            const { page, total_pages } = data;
+            const {
+                page,
+                total_pages
+            } = data;
             document.getElementById('pageInfo').textContent = `Page ${page} of ${total_pages || 1}`;
-            
+
             const prevBtn = document.getElementById('prevPage');
             const nextBtn = document.getElementById('nextPage');
 
@@ -128,27 +134,36 @@ require_once __DIR__ . '/helpers/authCheck.php';
             tbody.innerHTML = '';
 
             if (!permits || !permits.length) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-gray-400">No permits found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-gray-400">No permits found</td></tr>';
                 return;
             }
 
+            const now = new Date();
             permits.forEach(p => {
+                const isNotActive = p.finishing_time && new Date(p.finishing_time) < now;
+                const statusChip = isNotActive ?
+                    `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">Not Active</span>` :
+                    `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700">Active</span>`;
+
                 tbody.innerHTML += `
-                    <tr class="border-b hover:bg-gray-50 transition">
-                        <td class="px-6 py-4 font-bold text-gray-900">${p.permit_no}</td>
-                        <td class="px-6 py-4">${p.issuing_date_time}</td>
-                        <td class="px-6 py-4">${p.company_name}</td>
-                        <td class="px-6 py-4">${p.location}</td>
-                        <td class="px-6 py-4">${p.supervisor}</td>
-                        <td class="px-6 py-4">${p.creator_name || '-'}</td>
-                        <td class="px-6 py-4">${p.assigned_to_name || '-'}</td>
-                        <td class="px-6 py-4 text-right">
-                            <a href="requester/view_hot_work_license.php?id=${p.id}"
-                               class="text-[#0b6f76] hover:underline font-medium">
-                                View
-                            </a>
-                        </td>
-                    </tr>
+                    <tr class="border-b hover:bg-gray-50 transition ${isNotActive ? 'bg-red-50/30' : ''}">
+                    <td class="px-6 py-4 font-bold text-gray-900">${p.permit_no}</td>
+                    <td class="px-6 py-4">${p.issuing_date_time || '-'}</td>
+                    <td class="px-6 py-4">${p.finishing_time || '-'}</td>
+                    <td class="px-6 py-4">${p.company_name}</td>
+                    <td class="px-6 py-4">${p.location}</td>
+                    <td class="px-6 py-4">${p.creator_name || '-'}</td>
+                    <td class="px-6 py-4">${p.assigned_to_name || '-'}</td>
+                    
+                    <td class="px-6 py-4 whitespace-nowrap">${statusChip}</td>
+                    
+                    <td class="px-6 py-4 text-right">
+                        <a href="requester/view_hot_work_license.php?id=${p.id}"
+                        class="text-[#0b6f76] hover:underline font-medium">
+                            View
+                        </a>
+                    </td>
+                </tr>
                 `;
             });
         }
@@ -158,8 +173,10 @@ require_once __DIR__ . '/helpers/authCheck.php';
             const fromDate = document.getElementById('filterFromDate').value;
             const toDate = document.getElementById('filterToDate').value;
 
-            if (fromDate) params.set('from_date', fromDate); else params.delete('from_date');
-            if (toDate) params.set('to_date', toDate); else params.delete('to_date');
+            if (fromDate) params.set('from_date', fromDate);
+            else params.delete('from_date');
+            if (toDate) params.set('to_date', toDate);
+            else params.delete('to_date');
 
             window.location.search = params.toString();
         });
@@ -175,7 +192,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
             if (fromDate) document.getElementById('filterFromDate').value = fromDate;
             if (toDate) document.getElementById('filterToDate').value = toDate;
-            
+
             if (fromDate || toDate) {
                 document.getElementById('resetFilters').classList.remove('hidden');
             }
