@@ -62,6 +62,10 @@ try {
             } elseif ($action === 'complete') {
                 $permitId = $input['permit_id'] ?? null;
                 $res = $controller->completePermit($permitId, $input);
+            } elseif ($action === 'updateFinishingTime') {
+                $permitId = $input['permit_id'] ?? null;
+                $finishingTime = $input['finishing_time'] ?? null;
+                $res = $controller->updateFinishingTime($permitId, $finishingTime, $decoded->id);
             } else {
                 $res = $controller->createPermit($input);
             }

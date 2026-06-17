@@ -143,7 +143,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 const isNotActive = p.finishing_time && new Date(p.finishing_time) < now;
                 const statusChip = isNotActive ?
                     `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">Not Active</span>` :
-                    `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700">Active</span>`;
+                    `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700">Open</span>`;
 
                 tbody.innerHTML += `
                     <tr class="border-b hover:bg-gray-50 transition ${isNotActive ? 'bg-red-50/30' : ''}">

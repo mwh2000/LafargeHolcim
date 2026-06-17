@@ -69,10 +69,6 @@ function renderSidebar($activePage = '')
           'label' => 'All Permits',
           'href' => BASE_URL . '/public/permits.php',
         ],
-        'good_practices' => [
-          'label' => 'Good Practices',
-          'href' => BASE_URL . '/public/good_practices.php',
-        ],
       ]
     ],
     'energy_Isolation' => [

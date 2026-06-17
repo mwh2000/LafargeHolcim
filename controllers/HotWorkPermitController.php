@@ -334,12 +334,14 @@ class HotWorkPermitController
     {
         try {
             $stmt = $this->db->prepare("SELECT h.*, u.name as assigned_to_name, c.name as creator_name,
-                                                cm.name as critical_manager_name, cs.name as critical_supervisor_name
+                                                cm.name as critical_manager_name, cs.name as critical_supervisor_name, 
+                                                ft.name as finishing_time_updated_by
                                         FROM hot_work_permit h 
                                         LEFT JOIN users u ON h.assigned_to = u.id
                                         LEFT JOIN users c ON h.created_by = c.id
                                         LEFT JOIN users cm ON h.critical_manager_id = cm.id
                                         LEFT JOIN users cs ON h.critical_supervisor_id = cs.id
+                                        LEFT JOIN users ft ON h.finishing_time_updated_by = ft.id
                                         WHERE h.id = ?");
             $stmt->execute([$id]);
             $permit = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -370,12 +372,24 @@ class HotWorkPermitController
         }
     }
 
+    public function updateFinishingTime($id, $finishingTime, $updatedBy)
+    {
+        try {
+            $stmt = $this->db->prepare("UPDATE hot_work_permit SET finishing_time = ?, finishing_time_updated_by = ? WHERE id = ?");
+            $stmt->execute([$finishingTime, $updatedBy, $id]);
+            return ['success' => true, 'message' => 'Finishing time updated successfully'];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Failed to update: ' . $e->getMessage()];
+        }
+    }
+
     public function getStatistics($filters)
     {
         try {
             $query = "SELECT
                 COUNT(*) as total,
-                SUM(CASE WHEN finishing_time IS NOT NULL AND finishing_time < NOW() THEN 1 ELSE 0 END) as not_active
+                SUM(CASE WHEN finishing_time IS NOT NULL AND finishing_time < NOW() THEN 1 ELSE 0 END) as not_active,
+                SUM(CASE WHEN finishing_time IS NULL OR finishing_time >= NOW() THEN 1 ELSE 0 END) as open
             FROM hot_work_permit WHERE 1=1";
             $params = [];
 
@@ -404,7 +418,8 @@ class HotWorkPermitController
 
             return ['success' => true, 'data' => [
                 'total'      => (int)$stats['total'],
-                'not_active' => (int)$stats['not_active']
+                'not_active' => (int)$stats['not_active'],
+                'open'       => (int)$stats['open']
             ]];
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Failed to fetch statistics: ' . $e->getMessage()];

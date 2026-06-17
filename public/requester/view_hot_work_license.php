@@ -192,11 +192,26 @@ $userName = $userData['name'] ?? 'N/A';
                                                 <div><span class="text-gray-500">الموقع الدقيق:</span> <span id="val-supervisor" class="font-medium text-gray-800"></span></div>
                                                 <div><span class="text-gray-500">المعدة المستخدمة:</span> <span id="val-equipment" class="font-medium text-gray-800"></span></div>
                                                 <div><span class="text-gray-500">تاريخ اصدار الرخصه:</span> <span id="val-start" class="font-medium text-blue-600"></span></div>
-                                                <div class="flex items-center gap-2 flex-wrap"><span class="text-gray-500">وقت انتهاء الرخصه:</span> <span id="val-finish" class="font-medium text-green-600"></span><span id="not-active-badge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">Not Active</span></div>
+                                                <div class="block">
+                                                    <div class="flex items-center gap-2 flex-wrap">
+                                                        <span class="text-gray-500">وقت انتهاء الرخصه:</span>
+                                                        <span id="val-finish" class="font-medium text-green-600"></span>
+                                                        <span id="open-badge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700">Open</span>
+                                                        <span id="not-active-badge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">Not Active</span>
+                                                        <button id="edit-finish-btn" class="hidden no-print p-1 text-gray-400 hover:text-[#0b6f76] transition rounded" title="تعديل وقت الانتهاء">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                    <span class="text-gray-500" id="updated-by"></span>
+                                                </div>
                                                 <div><span class="text-gray-500">تم الإنشاء بواسطة:</span> <span id="val-creator" class="font-medium text-gray-800"></span></div>
                                                 <div><span class="text-gray-500">مسند إلى (Assigned To):</span> <span id="val-assigned" class="font-bold text-[#0b6f76]"></span></div>
                                                 <div><span class="text-gray-500" id="critical_manager_info">موافقة قسم سلامة:</span> <span id="critical_manager_name" class="font-bold text-[#0b6f76]"></span></div>
                                                 <div><span class="text-gray-500" id="critical_supervisor_info">موافقة مدير المصنع:</span> <span id="critical_supervisor_name" class="font-bold text-[#0b6f76]"></span></div>
+                                                <div><span class="text-gray-500">رقم أمر العمل (WO):</span> <span id="val-wo" class="font-medium text-gray-800"></span></div>
+                                                <div><span class="text-gray-500">نوع الرخصة:</span> <span id="val-permit-type" class="font-medium text-gray-800"></span></div>
                                             </div>
                                         </div>
 
@@ -257,6 +272,18 @@ $userName = $userData['name'] ?? 'N/A';
         </div>
     </div>
 
+    <!-- Edit Finishing Time Modal -->
+    <div id="editFinishModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center flex">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4 p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 text-right">تعديل وقت انتهاء الرخصة</h3>
+            <input type="datetime-local" id="newFinishingTime" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm mb-4 focus:ring-[#0b6f76] focus:border-[#0b6f76]">
+            <div class="flex gap-2 justify-end">
+                <button onclick="document.getElementById('editFinishModal').classList.add('hidden')" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border rounded-md">إلغاء</button>
+                <button onclick="saveFinishingTime()" class="px-4 py-2 bg-[#0b6f76] text-white text-sm rounded-md hover:bg-[#085a60]">حفظ</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const PERMIT_ID = "<?= $permitId ?>";
         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
@@ -301,15 +328,31 @@ $userName = $userData['name'] ?? 'N/A';
             document.getElementById('val-start').textContent = data.task_start_datetime ? data.task_start_datetime.replace('T', ' ') : '-';
             document.getElementById('val-finish').textContent = data.finishing_time ? data.finishing_time.replace('T', ' ') : '-';
 
-            // Show "Not Active" badge if finishing time has passed
-            if (data.finishing_time && new Date(data.finishing_time) < new Date()) {
-                document.getElementById('not-active-badge').classList.remove('hidden');
-                document.getElementById('val-finish').classList.replace('text-green-600', 'text-red-500');
+            // Show "Open" or "Not Active" badge based on finishing time
+            if (data.finishing_time) {
+                if (new Date(data.finishing_time) < new Date()) {
+                    document.getElementById('not-active-badge').classList.remove('hidden');
+                    document.getElementById('val-finish').classList.replace('text-green-600', 'text-red-500');
+                } else {
+                    document.getElementById('open-badge').classList.remove('hidden');
+                }
+            }
+            if (data.finishing_time_updated_by) {
+                document.getElementById('updated-by').textContent = `تم التحديث بواسطة: ${data.finishing_time_updated_by }`;
+            }
+
+            // Show edit finishing time button only for creator
+            if (data.created_by == USER_ID) {
+                const editFinishBtn = document.getElementById('edit-finish-btn');
+                editFinishBtn.classList.remove('hidden');
+                editFinishBtn.addEventListener('click', () => openEditFinishingTimeModal(data.finishing_time));
             }
 
             document.getElementById('val-work-description').textContent = data.work_description || '-';
             document.getElementById('val-creator').textContent = data.creator_name || '-';
             document.getElementById('val-assigned').textContent = data.assigned_to_name || '-';
+
+            document.getElementById('val-permit-type').textContent = (parseInt(data.is_critical) === 1) ? 'حرجة' : 'طبيعية';
 
             // Critical status handling
             if (data.is_critical && parseInt(data.is_critical) === 1) {
@@ -334,6 +377,9 @@ $userName = $userData['name'] ?? 'N/A';
                     document.getElementById('critical_supervisor_info').style.display = 'inline-block';
                     document.getElementById('critical_supervisor_name').textContent = data.critical_supervisor_name;
                 }
+                if (data.WO) {
+                    document.getElementById('val-wo').textContent = data.WO;
+                }
 
                 const actions = document.getElementById('critical_actions');
                 actions.innerHTML = '';
@@ -349,7 +395,7 @@ $userName = $userData['name'] ?? 'N/A';
 
                     const btn = document.createElement('button');
                     btn.className = 'px-3 py-2 bg-[#0b6f76] text-white rounded';
-                    btn.textContent = 'إسناد';
+                    btn.textContent = 'تمت الموافقة';
                     actions.appendChild(btn);
 
                     // load supervisors
@@ -398,7 +444,7 @@ $userName = $userData['name'] ?? 'N/A';
                 if (status === 'pending_supervisor' && (USER_ID === parseInt(data.critical_supervisor_id || 0) || canAct)) {
                     const btn = document.createElement('button');
                     btn.className = 'px-3 py-2 bg-[#0b6f76] text-white rounded';
-                    btn.textContent = 'Done';
+                    btn.textContent = 'تمت الموافقة';
                     actions.appendChild(btn);
                     btn.addEventListener('click', async () => {
                         try {
@@ -514,8 +560,8 @@ $userName = $userData['name'] ?? 'N/A';
                         <div class="text-gray-500 text-xs mb-1">${app.role_name}</div>
                         <div class="font-bold text-gray-800 mb-2">${name}</div>
                         <div class="flex items-center gap-2">
-                            ${isApproved 
-                                ? '<svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> <span class="text-green-600 text-sm font-medium">تمت الموافقة</span>' 
+                            ${isApproved
+                                ? '<svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> <span class="text-green-600 text-sm font-medium">تمت الموافقة</span>'
                                 : '<svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> <span class="text-yellow-600 text-sm font-medium">قيد الانتظار / غير مكتمل</span>'}
                         </div>
                     `;
@@ -523,6 +569,41 @@ $userName = $userData['name'] ?? 'N/A';
                 });
             } else {
                 appSection.style.display = 'none';
+            }
+        }
+
+        function openEditFinishingTimeModal(currentTime) {
+            const input = document.getElementById('newFinishingTime');
+            if (currentTime) {
+                input.value = currentTime.replace(' ', 'T').substring(0, 16);
+            }
+            document.getElementById('editFinishModal').classList.remove('hidden');
+        }
+
+        async function saveFinishingTime() {
+            const newTime = document.getElementById('newFinishingTime').value;
+            if (!newTime) {
+                Swal.fire('تنبيه', 'يرجى تحديد وقت الانتهاء', 'warning');
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}?action=updateFinishingTime`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        permit_id: PERMIT_ID,
+                        finishing_time: newTime
+                    })
+                });
+                const result = await res.json();
+                if (!result.success) throw new Error(result.message);
+                document.getElementById('editFinishModal').classList.add('hidden');
+                Swal.fire('تم', 'تم تحديث وقت الانتهاء بنجاح', 'success').then(() => loadLicenseData());
+            } catch (e) {
+                Swal.fire('خطأ', e.message || 'حدث خطأ في الاتصال', 'error');
             }
         }
     </script>

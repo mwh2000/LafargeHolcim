@@ -154,7 +154,7 @@ require_once 'helpers/authCheck.php';
         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
         const USER_ID = "<?= $_COOKIE['user_id'] ?? '' ?>";
         const USER_ROLE = "<?= $_COOKIE['user_type'] ?? '2' ?>"; // 1 = admin
-        const IS_ADMIN = [1, 3, 5, 6].includes(Number(USER_ROLE));
+        const IS_ADMIN = [1, 3, 5, 6, 7].includes(Number(USER_ROLE));
 
         let currentPage = 1;
         const rowsPerPage = 15;

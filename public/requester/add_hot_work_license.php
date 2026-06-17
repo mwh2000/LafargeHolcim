@@ -136,7 +136,6 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                     <label class="block text-sm font-medium text-green-700 mb-1">نوع الصيانة</label>
                                     <select id="maintenance_type" name="maintenance_type" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                         <option selected value="طارئة">طارئة</option>
-                                        <option value="العمل على المرتفعات">العمل على المرتفعات</option>
                                         <option value="مخطط">مخطط</option>
                                         <option value="pm">pm</option>
                                     </select>
