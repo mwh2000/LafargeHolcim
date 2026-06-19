@@ -29,7 +29,10 @@ require_once __DIR__ . '/helpers/authCheck.php';
             <main class="flex-1 overflow-y-auto p-8 md:pl-12">
 
                 <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-                    <h1 class="text-2xl font-semibold text-gray-700">Hot Work Permits List</h1>
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-2xl font-semibold text-gray-700">Hot Work Permits List</h1>
+                        <span id="statusFilterBadge" class="hidden px-3 py-1 rounded-full text-xs font-bold"></span>
+                    </div>
 
                     <div class="flex flex-wrap gap-2 items-center bg-white p-3 rounded-md shadow-sm">
                         <div class="flex items-center gap-2">
@@ -189,12 +192,25 @@ require_once __DIR__ . '/helpers/authCheck.php';
             const params = new URLSearchParams(window.location.search);
             const fromDate = params.get('from_date');
             const toDate = params.get('to_date');
+            const status = params.get('status');
 
             if (fromDate) document.getElementById('filterFromDate').value = fromDate;
             if (toDate) document.getElementById('filterToDate').value = toDate;
 
-            if (fromDate || toDate) {
+            if (fromDate || toDate || status) {
                 document.getElementById('resetFilters').classList.remove('hidden');
+            }
+
+            if (status) {
+                const badge = document.getElementById('statusFilterBadge');
+                badge.classList.remove('hidden');
+                if (status === 'open') {
+                    badge.textContent = 'Open';
+                    badge.classList.add('bg-green-100', 'text-green-700');
+                } else if (status === 'not_active') {
+                    badge.textContent = 'Not Active';
+                    badge.classList.add('bg-red-100', 'text-red-700');
+                }
             }
 
             fetchPermits();

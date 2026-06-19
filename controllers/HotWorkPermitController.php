@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/notificationsController.php';
+require_once __DIR__ . '/emailController.php';
 
 
 class HotWorkPermitController
@@ -20,9 +21,9 @@ class HotWorkPermitController
             // Support critical workflow columns if provided
             $stmt = $this->db->prepare("INSERT INTO hot_work_permit (
                 permit_no, issuing_date_time, wo, company_name, location, supervisor, 
-                equipment_used, maintenance_type, task_start_datetime, finishing_time, creation_date, assigned_to, 
+                equipment_used, maintenance_type, task_start_datetime, finishing_time, assigned_to, 
                 work_description, created_by, created_at, is_critical, critical_manager_id, critical_supervisor_id, critical_status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
             $isCritical = !empty($data['is_critical']) ? 1 : 0;
             $criticalManager = $data['critical_manager_id'] ?? null;
@@ -40,7 +41,6 @@ class HotWorkPermitController
                 $data['maintenance_type'] ?? null,
                 $data['task_start_datetime'] ?? null,
                 $data['finishing_time'] ?? null,
-                $data['creation_date'] ?? date('Y-m-d H:i:s'),
                 $data['assigned_to'] ?? null,
                 $data['work_description'] ?? '',
                 $data['created_by'],
@@ -117,21 +117,22 @@ class HotWorkPermitController
 
             try {
                 $notificationController = new NotificationController($this->db);
+                $emailController = new EmailController($this->db);
                 if ($isCritical && $criticalManager) {
-                    // For critical permits, notify the assigned manager
                     $title = 'تم انشاء رخصة الاعمال الساخنه الحرجة';
                     $body = 'بأنتظار موافقة قسم السلامة لأكمال العمل';
                     $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
                     $notificationController->sendNotification($title, $body, [$criticalManager], $url, $data['created_by']);
+                    $emailController->sendEmail($title, $body, [$criticalManager]);
                 } elseif (!$isCritical && !empty($data['assigned_to'])) {
-                    // For normal permits, notify the assigned user
                     $title = 'رخصة عمل ساخن جديدة';
                     $body = 'تم إسناد رخصة عمل ساخن جديدة إليك برقم ' . $data['permit_no'];
                     $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
                     $notificationController->sendNotification($title, $body, [$data['assigned_to']], $url, $data['created_by']);
+                    $emailController->sendEmail($title, $body, [$data['assigned_to']]);
                 }
             } catch (Exception $e) {
-                // Ignore notification error
+                // Ignore notification/email errors
             }
 
             return ['success' => true, 'message' => 'Hot Work Permit created successfully!', 'id' => $permitId];
@@ -184,12 +185,14 @@ class HotWorkPermitController
             // Notify supervisor
             try {
                 $notificationController = new NotificationController($this->db);
+                $emailController = new EmailController($this->db);
                 $title = 'تم إسناد رخصة عمل حرجة للمشرف';
                 $body = 'تم إسناد رخصة عمل حرجة برقم إلى المشرف. الرجاء المراجعة.';
                 $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
                 $notificationController->sendNotification($title, $body, [$supervisorId], $url, $managerId);
+                $emailController->sendEmail($title, $body, [$supervisorId]);
             } catch (Exception $e) {
-                // ignore notification errors
+                // ignore notification/email errors
             }
 
             return ['success' => true, 'message' => 'Supervisor assigned successfully'];
@@ -217,10 +220,12 @@ class HotWorkPermitController
             try {
                 $creatorId = $row['created_by'];
                 $notificationController = new NotificationController($this->db);
+                $emailController = new EmailController($this->db);
                 $title = 'المشرف أكمل مهمة الرخصة الحرجة';
                 $body = 'يمكنك الآن إكمال بقية خطوات الرخصة.';
                 $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
                 $notificationController->sendNotification($title, $body, [$creatorId], $url, $supervisorId);
+                $emailController->sendEmail($title, $body, [$creatorId]);
             } catch (Exception $e) {
                 // ignore
             }
@@ -314,10 +319,12 @@ class HotWorkPermitController
                 $row = $stmtFinal->fetch(PDO::FETCH_ASSOC);
                 if ($row && $row['assigned_to']) {
                     $notificationController = new NotificationController($this->db);
+                    $emailController = new EmailController($this->db);
                     $title = 'تم إكمال رخصة العمل الحرجة';
                     $body = 'تمت إكمال الرخصة وتم إسنادها.';
                     $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
                     $notificationController->sendNotification($title, $body, [$row['assigned_to']], $url, $row['created_by']);
+                    $emailController->sendEmail($title, $body, [$row['assigned_to']]);
                 }
             } catch (Exception $e) {
                 // ignore
@@ -443,6 +450,13 @@ class HotWorkPermitController
             if (!empty($filters['to_date'])) {
                 $where .= " AND DATE(h.issuing_date_time) <= ?";
                 $params[] = $filters['to_date'];
+            }
+            if (!empty($filters['status'])) {
+                if ($filters['status'] === 'open') {
+                    $where .= " AND (h.finishing_time IS NULL OR h.finishing_time >= NOW())";
+                } elseif ($filters['status'] === 'not_active') {
+                    $where .= " AND (h.finishing_time IS NOT NULL AND h.finishing_time < NOW())";
+                }
             }
 
             // Role-based filtering

@@ -130,7 +130,11 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">المعدة المستخدمة</label>
-                                    <input type="text" name="equipment_used" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
+                                    <select id="equipment_used" name="equipment_used" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
+                                        <option selected value="كوسره">كوسره</option>
+                                        <option value="ماكنة لحام">ماكنة لحام</option>
+                                        <option value="OXE">OXE</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">نوع الصيانة</label>
@@ -139,10 +143,6 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                         <option value="مخطط">مخطط</option>
                                         <option value="pm">pm</option>
                                     </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-green-700 mb-1">تاريخ انشاء الرخصة</label>
-                                    <input type="date" name="creation_date" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">تاريخ اصدار الرخصه</label>
@@ -464,7 +464,6 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                             document.getElementById('maintenance_type').value = p.maintenance_type || 'طارئة';
                             if (p.task_start_datetime) document.querySelector('input[name="task_start_datetime"]').value = p.task_start_datetime.replace(' ', 'T');
                             if (p.finishing_time) document.querySelector('input[name="finishing_time"]').value = p.finishing_time.replace(' ', 'T');
-                            if (p.creation_date) document.querySelector('input[name="creation_date"]').value = p.creation_date;
 
                             // show steps 2-6 and ensure their controls are enabled
                             document.querySelectorAll('.step-content').forEach(c => c.style.display = '');
@@ -650,7 +649,6 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                         maintenance_type: formData.get('maintenance_type'),
                         task_start_datetime: formData.get('task_start_datetime'),
                         finishing_time: formData.get('finishing_time'),
-                        creation_date: formData.get('creation_date'),
                         is_critical: 1,
                         critical_manager_id: criticalManagerSelect.getValue(),
                         critical_status: 'pending_manager'
@@ -709,7 +707,6 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     maintenance_type: formData.get('maintenance_type'),
                     task_start_datetime: formData.get('task_start_datetime'),
                     finishing_time: formData.get('finishing_time'),
-                    creation_date: formData.get('creation_date'),
                     assigned_to: assigneeSelect.getValue(),
                     work_description: formData.get('work_description'),
                     additional_permits: [],

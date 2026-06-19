@@ -352,7 +352,7 @@ $userName = $userData['name'] ?? 'N/A';
             document.getElementById('val-creator').textContent = data.creator_name || '-';
             document.getElementById('val-assigned').textContent = data.assigned_to_name || '-';
 
-            document.getElementById('val-permit-type').textContent = (parseInt(data.is_critical) === 1) ? 'حرجة' : 'طبيعية';
+            document.getElementById('val-permit-type').textContent = (parseInt(data.is_critical) === 1) ? 'رخصة العمل الساخن (الحرجة)' : 'رخصة العمل الساخن (عاديه)';
 
             // Critical status handling
             if (data.is_critical && parseInt(data.is_critical) === 1) {
