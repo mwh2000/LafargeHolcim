@@ -702,20 +702,31 @@ $userName = $userData['name'] ?? 'N/A';
         let currentLicenseData = null;
         let officerSelect, shiftLeaderSelect;
 
+        function updateRemoveBtnState() {
+            const permitCb = document.getElementById('permitWorkCb');
+            const removeSectionLockCb = document.getElementById('removeSectionLockCb');
+            const removeBtn = document.getElementById('removeIsolationBtn');
+            if (!permitCb || !removeSectionLockCb || !removeBtn) return;
+
+            let allGroupsDone = true;
+            if (currentLicenseData && currentLicenseData.staff_groups && currentLicenseData.staff_groups.length > 0) {
+                allGroupsDone = currentLicenseData.staff_groups.every(g => parseInt(g.is_done) === 1);
+            }
+
+            removeBtn.disabled = !(permitCb.checked && removeSectionLockCb.checked && allGroupsDone);
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             await loadLicenseData();
 
             // Handle work permit checkbox
             const permitCb = document.getElementById('permitWorkCb');
             const removeSectionLockCb = document.getElementById('removeSectionLockCb');
-            const removeBtn = document.getElementById('removeIsolationBtn');
-            if (permitCb && removeSectionLockCb && removeBtn) {
-                const updateBtnState = () => {
-                    removeBtn.disabled = !(permitCb.checked && removeSectionLockCb.checked);
-                };
-                permitCb.addEventListener('change', updateBtnState);
-                removeSectionLockCb.addEventListener('change', updateBtnState);
+            if (permitCb && removeSectionLockCb) {
+                permitCb.addEventListener('change', updateRemoveBtnState);
+                removeSectionLockCb.addEventListener('change', updateRemoveBtnState);
             }
+            updateRemoveBtnState();
         });
 
         async function loadLicenseData() {
@@ -1081,6 +1092,14 @@ $userName = $userData['name'] ?? 'N/A';
                     el.checked = !checked;
                     Swal.fire('خطأ', result.message || 'لم يتم التحديث', 'error');
                 } else {
+                    // Update the local currentLicenseData.staff_groups state
+                    if (currentLicenseData && currentLicenseData.staff_groups) {
+                        const group = currentLicenseData.staff_groups.find(g => g.id == groupId);
+                        if (group) {
+                            group.is_done = checked ? 1 : 0;
+                        }
+                    }
+
                     // update data-group-id bg color based on new is_done value
                     const groupDiv = el.closest('[data-group-id]');
                     if (groupDiv) {
@@ -1092,6 +1111,7 @@ $userName = $userData['name'] ?? 'N/A';
                             groupDiv.classList.remove('bg-green-50', 'border-green-300');
                         }
                     }
+                    updateRemoveBtnState();
                 }
             } catch (e) {
                 el.checked = !checked;

@@ -516,6 +516,15 @@ class EnergyInsulationController
                 return $this->respond(false, 'License not found', null, ['code' => 404], 404);
             }
 
+            // Check if there are any incomplete staff groups
+            $groupCheckStmt = $this->conn->prepare("SELECT COUNT(*) as incomplete_count FROM energy_insulation_staff_group WHERE license_id = ? AND IFNULL(is_done, 0) = 0");
+            $groupCheckStmt->execute([$licenseId]);
+            $incompleteCount = (int)$groupCheckStmt->fetch(PDO::FETCH_ASSOC)['incomplete_count'];
+
+            if ($incompleteCount > 0) {
+                return $this->respond(false, 'لا يمكن رفع العزل حتى يتم إكمال العمل لجميع المجموعات', null, ['code' => 400], 400);
+            }
+
             $stmt = $this->conn->prepare("UPDATE energy_insulation_license SET status = 'completed', isolation_removed_at = NOW(), end_at = NOW() WHERE id = ?");
             $success = $stmt->execute([$licenseId]);
 
