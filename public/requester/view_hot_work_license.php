@@ -176,9 +176,9 @@ $userName = $userData['name'] ?? 'N/A';
                                     <div id="content" class="hidden space-y-6">
                                         <!-- Critical status and actions -->
                                         <div id="critical_status_container" class="bg-white p-4 rounded-lg shadow-md hidden text-right no-print">
-                                            <div class="flex items-center justify-between">
+                                            <div class="inline-flex flex-wrap items-center justify-end gap-4">
                                                 <div id="critical_status_badge" class="font-bold"></div>
-                                                <div id="critical_actions" class="flex gap-2"></div>
+                                                <div id="critical_actions" class="flex gap-2 start"></div>
                                             </div>
                                         </div>
                                         <!-- القسم الأول: المعلومات الأساسية -->
