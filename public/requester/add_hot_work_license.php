@@ -7,7 +7,6 @@ require_once '../helpers/authCheck.php';
 
 // Fetch options from partials
 $additionalPermits = require '../partials/hot_work/additional_permits.php';
-$controlMeasures = require '../partials/hot_work/control_measures.php';
 $performersCheck = require '../partials/hot_work/performers_check.php';
 
 // Fetch database connection
@@ -85,10 +84,9 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     <div class="flex justify-between mb-8 border-b pb-2 text-[9px] md:text-sm overflow-x-auto no-scrollbar whitespace-nowrap gap-2">
                         <div class="step-indicator active px-2 transition-all duration-300 flex-shrink-0" data-step="1">المعلومات الأساسية</div>
                         <div class="step-indicator px-2 transition-all duration-300 flex-shrink-0" data-step="2">تصاريح إضافية</div>
-                        <div class="step-indicator px-2 transition-all duration-300 flex-shrink-0" data-step="3">إجراءات السيطرة</div>
-                        <div class="step-indicator px-2 transition-all duration-300 flex-shrink-0" data-step="4">منفذي الأعمال</div>
-                        <div class="step-indicator px-2 transition-all duration-300 flex-shrink-0" data-step="5">المطابقة والموافقة</div>
-                        <div class="step-indicator px-2 transition-all duration-300 flex-shrink-0" data-step="6">إسناد الرخصة</div>
+                        <div class="step-indicator px-2 transition-all duration-300 flex-shrink-0" data-step="3">منفذي الأعمال</div>
+                        <div class="step-indicator px-2 transition-all duration-300 flex-shrink-0" data-step="4">المطابقة والموافقة</div>
+                        <div class="step-indicator px-2 transition-all duration-300 flex-shrink-0" data-step="5">إسناد الرخصة</div>
                     </div>
 
                     <form id="hotWorkForm" class="bg-white p-6 rounded-lg shadow-md">
@@ -125,7 +123,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                     <select id="critical_manager_id" name="critical_manager_id" class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]"></select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-green-700 mb-1">الموقع الدقيق</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-1" ب>الموقع الدقيق</label>
                                     <input type="text" name="supervisor" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                 </div>
                                 <div>
@@ -190,37 +188,8 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                             </div>
                         </div>
 
-                        <!-- Step 3: Control Measures -->
+                        <!-- Step 3: Performers Check -->
                         <div class="step-content" data-step="3">
-                            <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم الثالث: إجراءات السيطرة</h2>
-                            <div class="space-y-2">
-                                <?php foreach ($controlMeasures as $index => $measure): ?>
-                                    <div class="p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                                            <span class="text-sm text-gray-700 flex-1"><?= ($index + 1) . ". " . $measure ?></span>
-                                            <input type="hidden" name="control_measure_text_<?= $index ?>" value="<?= htmlspecialchars($measure) ?>">
-                                            <div class="flex gap-3">
-                                                <label class="flex items-center gap-1 cursor-pointer">
-                                                    <input type="radio" name="control_measure_status_<?= $index ?>" value="نعم" class="w-4 h-4 text-[#0b6f76]">
-                                                    <span class="text-xs">نعم</span>
-                                                </label>
-                                                <label class="flex items-center gap-1 cursor-pointer">
-                                                    <input type="radio" name="control_measure_status_<?= $index ?>" value="كلا" class="w-4 h-4 text-red-600">
-                                                    <span class="text-xs">كلا</span>
-                                                </label>
-                                                <label class="flex items-center gap-1 cursor-pointer">
-                                                    <input type="radio" name="control_measure_status_<?= $index ?>" value="غير متاح" class="w-4 h-4 text-gray-500">
-                                                    <span class="text-xs">غير متاح</span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-
-                        <!-- Step 4: Performers Check -->
-                        <div class="step-content" data-step="4">
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم الرابع: منفذي الأعمال الساخنة</h2>
                             <div class="space-y-2">
                                 <?php foreach ($performersCheck as $index => $check): ?>
@@ -248,9 +217,9 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                             </div>
                         </div>
 
-                        <!-- Step 5: Approvals -->
-                        <div class="step-content" data-step="5">
-                            <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم الخامس: المطابقة والموافقة</h2>
+                        <!-- Step 4: Approvals -->
+                        <div class="step-content" data-step="4">
+                            <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم الرابع: المطابقة والموافقة</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <?php
                                 $userData = json_decode($_COOKIE['user_data'] ?? '{}', true);
@@ -281,9 +250,9 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                             </div>
                         </div>
 
-                        <!-- Step 6: Assigned To -->
-                        <div class="step-content" data-step="6">
-                            <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم السادس: إسناد الرخصة</h2>
+                        <!-- Step 5: Assigned To -->
+                        <div class="step-content" data-step="5">
+                            <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم الخامس: إسناد الرخصة</h2>
                             <div class="max-w-md mx-auto">
                                 <label class="block text-sm font-medium text-green-700 mb-2">اختر الشخص المسؤول (Assigned To)</label>
                                 <select id="assigned_to" name="assigned_to" required class="w-full"></select>
@@ -306,7 +275,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
         document.addEventListener('DOMContentLoaded', async () => {
             let currentStep = 1;
             let highestStepReached = 1;
-            const totalSteps = 6;
+            const totalSteps = 5;
             const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
 
             const group1 = [
@@ -490,22 +459,17 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     const workDesc = currentContent.querySelector('textarea[name="work_description"]').value.trim();
                     if (checkedCount === 0 || !workDesc) return false;
                 } else if (step === 3) {
-                    // Must answer ALL control measures
-                    const questionsCount = currentContent.querySelectorAll('.p-3.border.rounded-lg').length;
-                    const radioChecked = currentContent.querySelectorAll('input[type="radio"]:checked').length;
-                    if (radioChecked < questionsCount) return false;
-                } else if (step === 4) {
                     // Must answer ALL performer checks
                     const questionsCount = currentContent.querySelectorAll('.p-3.border.rounded-lg').length;
                     const radioChecked = currentContent.querySelectorAll('input[type="radio"]:checked').length;
                     if (radioChecked < questionsCount) return false;
-                } else if (step === 5) {
+                } else if (step === 4) {
                     // Assuming all 4 names are mandatory as section is mandatory
                     const names = currentContent.querySelectorAll('input[type="text"]');
                     for (let input of names) {
                         if (!input.value.trim()) return false;
                     }
-                } else if (step === 6) {
+                } else if (step === 5) {
                     if (!assigneeSelect.getValue()) return false;
                 }
 
@@ -564,7 +528,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 nextBtn.classList.toggle('hidden', currentStep === totalSteps);
                 submitBtn.classList.toggle('hidden', currentStep !== totalSteps);
 
-                if (currentStep === 6) {
+                if (currentStep === 5) {
                     loadAssignees().then(() => updateButtonStates());
                 } else {
                     updateButtonStates();
@@ -710,7 +674,6 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     assigned_to: assigneeSelect.getValue(),
                     work_description: formData.get('work_description'),
                     additional_permits: [],
-                    control_measures: [],
                     performers_check: [],
                     approvals: []
                 };
@@ -723,14 +686,6 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                         permit_number: formData.get('permit_no_' + id)
                     });
                 });
-
-                // Collection of Control Measures
-                <?php foreach ($controlMeasures as $index => $measure): ?>
-                    data.control_measures.push({
-                        text: formData.get('control_measure_text_<?= $index ?>'),
-                        status: formData.get('control_measure_status_<?= $index ?>') || 'غير متاح'
-                    });
-                <?php endforeach; ?>
 
                 // Collection of Performers Check
                 <?php foreach ($performersCheck as $index => $check): ?>

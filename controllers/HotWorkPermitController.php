@@ -69,21 +69,7 @@ class HotWorkPermitController
                 }
             }
 
-            // 3. Insert Control Measures
-            if (!empty($data['control_measures'])) {
-                $stmtCtrl = $this->db->prepare("INSERT INTO hot_work_control_measures (
-                    hot_work_permit_id, measure_text, status
-                ) VALUES (?, ?, ?)");
-                foreach ($data['control_measures'] as $measure) {
-                    $stmtCtrl->execute([
-                        $permitId,
-                        $measure['text'],
-                        $measure['status']
-                    ]);
-                }
-            }
-
-            // 4. Insert Performers Check
+            // 3. Insert Performers Check
             if (!empty($data['performers_check'])) {
                 $stmtPerf = $this->db->prepare("INSERT INTO hot_work_performers_check (
                     hot_work_permit_id, question_text, answer
@@ -273,18 +259,6 @@ class HotWorkPermitController
                 }
             }
 
-            // Clear and insert control measures
-            $stmtDelCtrl = $this->db->prepare("DELETE FROM hot_work_control_measures WHERE hot_work_permit_id = ?");
-            $stmtDelCtrl->execute([$permitId]);
-            if (!empty($data['control_measures'])) {
-                $stmtCtrl = $this->db->prepare("INSERT INTO hot_work_control_measures (
-                    hot_work_permit_id, measure_text, status
-                ) VALUES (?, ?, ?)");
-                foreach ($data['control_measures'] as $measure) {
-                    $stmtCtrl->execute([$permitId, $measure['text'], $measure['status']]);
-                }
-            }
-
             // Clear and insert performers check
             $stmtDelPerf = $this->db->prepare("DELETE FROM hot_work_performers_check WHERE hot_work_permit_id = ?");
             $stmtDelPerf->execute([$permitId]);
@@ -360,10 +334,6 @@ class HotWorkPermitController
             $stmtAdd = $this->db->prepare("SELECT * FROM additional_hot_permits WHERE hot_work_permit_id = ?");
             $stmtAdd->execute([$id]);
             $permit['additional_permits'] = $stmtAdd->fetchAll(PDO::FETCH_ASSOC);
-
-            $stmtCtrl = $this->db->prepare("SELECT * FROM hot_work_control_measures WHERE hot_work_permit_id = ?");
-            $stmtCtrl->execute([$id]);
-            $permit['control_measures'] = $stmtCtrl->fetchAll(PDO::FETCH_ASSOC);
 
             $stmtPerf = $this->db->prepare("SELECT * FROM hot_work_performers_check WHERE hot_work_permit_id = ?");
             $stmtPerf->execute([$id]);

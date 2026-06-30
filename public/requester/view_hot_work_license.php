@@ -238,15 +238,7 @@ $userName = $userData['name'] ?? 'N/A';
                                             <p id="no-additional-permits" class="text-sm text-gray-500 hidden mt-2">لا توجد تصاريح إضافية محددة.</p>
                                         </div>
 
-                                        <!-- القسم الثالث: إجراءات السيطرة -->
-                                        <div class="bg-white p-6 rounded-lg shadow-md">
-                                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">إجراءات السيطرة (Control Measures)</h2>
-                                            <div class="space-y-2 text-sm text-right" dir="rtl" id="val-control-measures">
-                                                <!-- Data will be injected here -->
-                                            </div>
-                                        </div>
-
-                                        <!-- القسم الرابع: منفذي الأعمال -->
+                                        <!-- القسم الثالث: منفذي الأعمال -->
                                         <div class="bg-white p-6 rounded-lg shadow-md">
                                             <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">منفذي الأعمال الساخنة (Performers Check)</h2>
                                             <div class="space-y-2 text-sm text-right" dir="rtl" id="val-performers-check">
@@ -495,29 +487,6 @@ $userName = $userData['name'] ?? 'N/A';
                 });
             } else {
                 apSection.style.display = 'none';
-            }
-
-            // Control Measures
-            const cmContainer = document.getElementById('val-control-measures');
-            const cmSection = cmContainer.closest('.bg-white');
-            if (data.control_measures && data.control_measures.length > 0) {
-                cmSection.style.display = 'block';
-                data.control_measures.forEach((cm, index) => {
-                    const div = document.createElement('div');
-                    div.className = 'flex flex-col sm:flex-row justify-between p-3 border rounded-md bg-gray-50 gap-2';
-
-                    let statusColor = 'text-gray-600';
-                    if (cm.status === 'نعم') statusColor = 'text-[#0b6f76] font-bold';
-                    else if (cm.status === 'كلا') statusColor = 'text-red-600 font-bold';
-
-                    div.innerHTML = `
-                        <span class="text-gray-700 flex-1">${index + 1}. ${cm.measure_text}</span>
-                        <span class="${statusColor} w-20 text-right">${cm.status}</span>
-                    `;
-                    cmContainer.appendChild(div);
-                });
-            } else {
-                cmSection.style.display = 'none';
             }
 
             // Performers Check
