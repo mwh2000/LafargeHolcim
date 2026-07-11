@@ -824,6 +824,120 @@ class ActionController
     }
 
     /**
+     * ✅ تجيب الإجراءات التي أنشأها أعضاء الفريق التابع للمدير (users.manager_id)
+     */
+    public function getCreatedByTeam(int $managerId, array $filters = [])
+    {
+        $baseConditions = ["u2.manager_id = ?"];
+        $params = [$managerId];
+
+        if (!empty($filters['search'])) {
+            $baseConditions[] = "(a.action LIKE ? OR a.description LIKE ?)";
+            $search = '%' . $filters['search'] . '%';
+            $params[] = $search;
+            $params[] = $search;
+        }
+
+        if (!empty($filters['type_id'])) {
+            $baseConditions[] = "a.type_id = ?";
+            $params[] = (int) $filters['type_id'];
+        }
+
+        if (!empty($filters['assigned_user_id'])) {
+            $baseConditions[] = "a.assigned_user_id = ?";
+            $params[] = (int) $filters['assigned_user_id'];
+        }
+
+        if (!empty($filters['created_by'])) {
+            $baseConditions[] = "a.created_by = ?";
+            $params[] = (int) $filters['created_by'];
+        }
+
+        if (!empty($filters['from_date'])) {
+            $baseConditions[] = "a.created_at >= ?";
+            $params[] = $filters['from_date'] . " 00:00:00";
+        }
+
+        if (!empty($filters['to_date'])) {
+            $baseConditions[] = "a.created_at <= ?";
+            $params[] = $filters['to_date'] . " 23:59:59";
+        }
+
+        if (isset($filters['status']) && $filters['status'] !== '') {
+            if ($filters['status'] === 'overdue') {
+                $baseConditions[] = "a.status = 'open' AND a.expiry_date < CURDATE()";
+            } elseif ($filters['status'] === 'open') {
+                $baseConditions[] = "a.status = 'open' AND a.expiry_date >= CURDATE()";
+            } else {
+                $baseConditions[] = "a.status = ?";
+                $params[] = $filters['status'];
+            }
+        }
+
+        $where = " WHERE " . implode(" AND ", $baseConditions);
+
+        $countQuery = "
+            SELECT COUNT(*)
+            FROM actions a
+            LEFT JOIN users u2 ON a.created_by = u2.id
+            $where
+        ";
+        $stmtCount = $this->conn->prepare($countQuery);
+        $stmtCount->execute($params);
+        $total = (int) $stmtCount->fetchColumn();
+
+        $limit = isset($filters['limit']) ? (int) $filters['limit'] : 15;
+        $page = isset($filters['page']) ? (int) $filters['page'] : 1;
+        $offset = ($page - 1) * $limit;
+
+        $allowedSortColumns = [
+            'id', 'status', 'description', 'action', 'expiry_date', 'created_at',
+            'type_name', 'assigned_user_name', 'created_by_name'
+        ];
+
+        $sortBy = 'a.created_at';
+        if (isset($filters['sort_by']) && in_array($filters['sort_by'], $allowedSortColumns)) {
+            $map = [
+                'type_name' => 't.name',
+                'assigned_user_name' => 'u.name',
+                'created_by_name' => 'u2.name'
+            ];
+            $sortBy = $map[$filters['sort_by']] ?? 'a.' . $filters['sort_by'];
+        }
+
+        $sortOrder = 'DESC';
+        if (isset($filters['sort_order']) && strtoupper($filters['sort_order']) === 'ASC') {
+            $sortOrder = 'ASC';
+        }
+
+        $query = "
+            SELECT
+                a.id, a.description, a.action, a.expiry_date, a.image, a.attachment, a.status, a.created_at,
+                t.name AS type_name,
+                u.name AS assigned_user_name,
+                u2.name AS created_by_name
+            FROM actions a
+            LEFT JOIN types t ON a.type_id = t.id
+            LEFT JOIN users u ON a.assigned_user_id = u.id
+            LEFT JOIN users u2 ON a.created_by = u2.id
+            $where
+            ORDER BY $sortBy $sortOrder
+            LIMIT $limit OFFSET $offset
+        ";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute($params);
+        $actions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return $this->respond(true, 'Team actions retrieved successfully', [
+            'total'   => $total,
+            'page'    => $page,
+            'limit'   => $limit,
+            'actions' => $actions
+        ]);
+    }
+
+    /**
      * Users with role 3 or 5 (for dashboard: filter actions assigned to their direct reports).
      */
     public function getSupervisorFilterOptions(): array

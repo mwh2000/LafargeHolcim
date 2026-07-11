@@ -5,6 +5,25 @@ function renderSidebar($activePage = '')
 {
   //get user role
   $userRole = $_COOKIE['user_type'] ?? null;
+  $userId = $_COOKIE['user_id'] ?? null;
+
+  // ✅ Check if this user is a manager with a team reporting to them (users.manager_id)
+  $hasTeam = false;
+  if ($userId && class_exists('Database') && isset($_ENV['DB_HOST'])) {
+    try {
+      $database = new Database([
+        'host' => $_ENV['DB_HOST'],
+        'name' => $_ENV['DB_NAME'],
+        'user' => $_ENV['DB_USER'],
+        'pass' => $_ENV['DB_PASS'],
+      ]);
+      $stmt = $database->getConnection()->prepare("SELECT COUNT(*) FROM users WHERE manager_id = ?");
+      $stmt->execute([$userId]);
+      $hasTeam = (int) $stmt->fetchColumn() > 0;
+    } catch (Exception $e) {
+      $hasTeam = false;
+    }
+  }
 
   // Define all possible navigation items
   $all_items = [
@@ -22,6 +41,11 @@ function renderSidebar($activePage = '')
       'label' => 'Action Assigned to Me',
       'href' => BASE_URL . '/public/actions_assigned_to_me.php',
       'icon' => '<path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />'
+    ],
+    'actions_created_by_team' => [
+      'label' => 'Action Created by Team',
+      'href' => BASE_URL . '/public/actions_created_by_team.php',
+      'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 10-4-4" />'
     ],
     'actions_created_by_me' => [
       'label' => 'Action Created by Me',
@@ -98,6 +122,11 @@ function renderSidebar($activePage = '')
     if (isset($all_items[$key])) {
       $links[$key] = $all_items[$key];
     }
+  }
+
+  // ✅ Managers with a team reporting to them can see actions created by their team
+  if ($hasTeam) {
+    $links['actions_created_by_team'] = $all_items['actions_created_by_team'];
   }
 ?>
 

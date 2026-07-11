@@ -91,6 +91,8 @@ try {
                 $res = $controller->getAssignedToMe($user_id, $filters);
             } elseif ($action === 'created_by_me') {
                 $res = $controller->getAllByME($user_id, $filters);
+            } elseif ($action === 'created_by_team') {
+                $res = $controller->getCreatedByTeam((int) $user_id, $filters);
             } elseif ($action === 'getStatistics') {
                 $res = $controller->getStatistics($filters);
             } else {
