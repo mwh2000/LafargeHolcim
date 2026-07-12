@@ -7,24 +7,6 @@ function renderSidebar($activePage = '')
   $userRole = $_COOKIE['user_type'] ?? null;
   $userId = $_COOKIE['user_id'] ?? null;
 
-  // ✅ Check if this user is a manager with a team reporting to them (users.manager_id)
-  $hasTeam = false;
-  if ($userId && class_exists('Database') && isset($_ENV['DB_HOST'])) {
-    try {
-      $database = new Database([
-        'host' => $_ENV['DB_HOST'],
-        'name' => $_ENV['DB_NAME'],
-        'user' => $_ENV['DB_USER'],
-        'pass' => $_ENV['DB_PASS'],
-      ]);
-      $stmt = $database->getConnection()->prepare("SELECT COUNT(*) FROM users WHERE manager_id = ?");
-      $stmt->execute([$userId]);
-      $hasTeam = (int) $stmt->fetchColumn() > 0;
-    } catch (Exception $e) {
-      $hasTeam = false;
-    }
-  }
-
   // Define all possible navigation items
   $all_items = [
     'dashboard' => [
@@ -106,9 +88,9 @@ function renderSidebar($activePage = '')
   $role_permissions = [
     1 => ['dashboard', 'users', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action', 'equipment_sections', 'equipments', 'energy_types', 'permit'], // Admin
     2 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action'], // Requester
-    3 => ['dashboard', 'create_action', 'actions_assigned_to_me', 'actions_created_by_me', 'permit'], // Area Manager
+    3 => ['dashboard', 'create_action', 'actions_assigned_to_me', 'actions_created_by_me', 'actions_created_by_team', 'permit'], // Area Manager
     4 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action'], // Safety
-    5 => ['dashboard', 'create_action', 'actions_assigned_to_me', 'actions_created_by_me', 'permit'], // Manager
+    5 => ['dashboard', 'create_action', 'actions_assigned_to_me', 'actions_created_by_me', 'actions_created_by_team', 'permit'], // Manager
     6 => ['dashboard', 'create_action', 'permit', 'energy_Isolation'], // Plant Manager
     7 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action', 'permit'], // Shift Leader
     8 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action'], // Isolation Officer
@@ -125,9 +107,9 @@ function renderSidebar($activePage = '')
   }
 
   // ✅ Managers with a team reporting to them can see actions created by their team
-  if ($hasTeam) {
-    $links['actions_created_by_team'] = $all_items['actions_created_by_team'];
-  }
+  // if ($hasTeam) {
+  $links['actions_created_by_team'] = $all_items['actions_created_by_team'];
+  // }
 ?>
 
   <!-- Overlay للموبايل -->
