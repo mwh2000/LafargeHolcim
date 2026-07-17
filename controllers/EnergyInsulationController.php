@@ -181,7 +181,7 @@ class EnergyInsulationController
     public function getLicenseById(int $id)
     {
         $stmt = $this->conn->prepare("
-            SELECT l.*, u.name AS creator_name, am.name AS area_manager_name, 
+            SELECT l.*, u.name AS creator_name, u.signature AS creator_signature, am.name AS area_manager_name,
                    off.name AS official_name, off.department AS official_department,
                    es.name AS section_name
             FROM energy_insulation_license l

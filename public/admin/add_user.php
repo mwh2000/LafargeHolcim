@@ -129,6 +129,15 @@ require_once '../helpers/authCheck.php';
                             </select>
                         </div>
 
+                        <!-- Signature -->
+                        <div class="flex flex-col">
+                            <label for="signature" class="text-sm text-gray-600 mb-1">Signature</label>
+                            <input id="signature" name="signature" type="file" accept="image/*"
+                                class="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0b6f76] transition" />
+                            <img id="signaturePreview" src="" alt="Signature preview"
+                                class="hidden mt-2 h-16 object-contain border border-gray-200 rounded-md p-1" />
+                        </div>
+
                         <!-- Submit button spans full width on small, right-aligned on larger screens -->
                         <div class="lg:col-span-3 flex justify-end">
                             <input type="submit" value="Create User"
@@ -240,6 +249,27 @@ require_once '../helpers/authCheck.php';
         }
 
         /**
+         * 🔹 معاينة صورة التوقيع بعد الرفع
+         */
+        document.getElementById("signature").addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            const preview = document.getElementById("signaturePreview");
+
+            if (!file) {
+                preview.src = "";
+                preview.classList.add("hidden");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                preview.src = reader.result;
+                preview.classList.remove("hidden");
+            };
+            reader.readAsDataURL(file);
+        });
+
+        /**
          * 🔹 إرسال طلب إضافة المستخدم
          */
         document.getElementById("filtersForm").addEventListener("submit", async (e) => {
@@ -257,28 +287,25 @@ require_once '../helpers/authCheck.php';
                 is_active: document.getElementById("status").value,
             };
 
-            const payload = {};
+            const formData = new FormData();
             Object.entries(raw).forEach(([key, value]) => {
                 if (value !== '' && value !== null && typeof value !== 'undefined') {
-                    // convert numeric-ish fields to numbers if appropriate
-                    if (['manager_id', 'role_id', 'is_active'].includes(key)) {
-                        // keep as number when possible
-                        const n = Number(value);
-                        payload[key] = isNaN(n) ? value : n;
-                    } else {
-                        payload[key] = value;
-                    }
+                    formData.append(key, value);
                 }
             });
+
+            const signatureFile = document.getElementById("signature").files[0];
+            if (signatureFile) {
+                formData.append("signature", signatureFile);
+            }
 
             try {
                 const response = await fetch(API_CREATE_USER, {
                     method: "POST",
                     headers: {
-                        "Authorization": `Bearer ${TOKEN}`,
-                        "Content-Type": "application/json"
+                        "Authorization": `Bearer ${TOKEN}`
                     },
-                    body: JSON.stringify(payload)
+                    body: formData
                 });
 
                 const data = await response.json();
@@ -299,6 +326,7 @@ require_once '../helpers/authCheck.php';
                         })
                     };
                 document.getElementById("filtersForm").reset();
+                document.getElementById("signaturePreview").classList.add("hidden");
             } catch (error) {
                 Swal.fire({
                     icon: "error",

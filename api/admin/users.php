@@ -35,7 +35,15 @@ try {
         // 🔸 Create User
         case 'POST':
             if ($action === 'create') {
-                $res = $userController->create($input, $decoded);
+                $data = !empty($_POST) || !empty($_FILES) ? $_POST : $input;
+                $data['signature_file'] = $_FILES['signature'] ?? null;
+                $res = $userController->create($data, $decoded);
+                sendJson($res);
+            } elseif ($action === 'update' && isset($queryParams['id'])) {
+                // 🔸 Multipart-aware update (used when a signature file is attached)
+                $data = $_POST;
+                $data['signature_file'] = $_FILES['signature'] ?? null;
+                $res = $userController->update((int) $queryParams['id'], $data, $decoded);
                 sendJson($res);
             } else {
                 http_response_code(400);

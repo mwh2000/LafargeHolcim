@@ -33,10 +33,12 @@ class UserController
             return $this->respond(false, 'Email already exists', null, ['code' => 409], 409);
         }
 
+        $signaturePath = $this->handleSignatureUpload($data['signature_file'] ?? null);
+
         // Insert user
         $stmt = $this->conn->prepare("
-            INSERT INTO users (name, email, password, phone, department, `group`, manager_id, time_target, role_id, is_active, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            INSERT INTO users (name, email, password, phone, department, `group`, manager_id, time_target, role_id, is_active, signature, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ");
         $stmt->execute([
             $data['name'],
@@ -49,6 +51,7 @@ class UserController
             $data['time_target'] ?? null,
             $data['role_id'] ?? 2,
             isset($data['is_active']) ? (bool) $data['is_active'] : true,
+            $signaturePath,
         ]);
 
         $userId = $this->conn->lastInsertId();
@@ -94,6 +97,22 @@ class UserController
             $values[] = password_hash($data['password'], PASSWORD_DEFAULT);
         }
 
+        if (!empty($data['signature_file'])) {
+            $newSignature = $this->handleSignatureUpload($data['signature_file']);
+            if ($newSignature) {
+                $current = $this->conn->prepare("SELECT signature FROM users WHERE id = ?");
+                $current->execute([$id]);
+                $oldSignature = $current->fetchColumn();
+
+                if ($oldSignature && file_exists(__DIR__ . '/../public/' . $oldSignature)) {
+                    @unlink(__DIR__ . '/../public/' . $oldSignature);
+                }
+
+                $fields[] = "signature = ?";
+                $values[] = $newSignature;
+            }
+        }
+
         if (empty($fields)) {
             return $this->respond(false, 'No fields to update', null, ['code' => 400], 400);
         }
@@ -131,10 +150,10 @@ class UserController
     public function getById(int $id)
     {
         $stmt = $this->conn->prepare("
-            SELECT 
+            SELECT
                 u.id, u.name, u.email, u.phone, u.department, u.`group`,
                 u.manager_id, m.name AS manager_name,
-                u.time_target, u.is_active, u.created_at, 
+                u.time_target, u.is_active, u.created_at, u.signature,
                 r.name AS role_name
             FROM users u
             LEFT JOIN users m ON u.manager_id = m.id
@@ -229,6 +248,29 @@ class UserController
             'users' => $users
         ]);
 
+    }
+
+    /** ✅ Handle signature image upload */
+    private function handleSignatureUpload($file)
+    {
+        if (!$file || !isset($file['tmp_name']) || empty($file['tmp_name'])) {
+            return null;
+        }
+
+        $uploadDir = __DIR__ . '/../public/uploads/signatures/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = uniqid('sig_') . '.' . $extension;
+        $targetPath = $uploadDir . $filename;
+
+        if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+            return 'uploads/signatures/' . $filename;
+        }
+
+        return null;
     }
 
 }

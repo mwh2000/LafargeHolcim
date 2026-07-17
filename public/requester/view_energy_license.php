@@ -283,13 +283,16 @@ $userName = $userData['name'] ?? 'N/A';
                                         <!-- Isolation Done Info Card -->
                                         <div id="isolation-done-card" class="hidden bg-white p-6 rounded-lg shadow-md border-t-4 border-green-600 mt-6">
                                             <h2 class="text-lg font-bold text-green-700 mb-4 border-b pb-2 text-right" dir="rtl">تم العزل</h2>
-                                            <div class="space-y-4 text-right" dir="rtl">
-                                                <p class="text-sm text-gray-700 font-medium">تمت المصادقة على العزل</p>
-                                                <div class="flex flex-col gap-1">
-                                                    <span class="text-[10px] text-gray-400 flex">بواسطة مرخص العزل ✔
-                                                    </span>
-                                                    <span id="val-iso-done-by" class="text-sm font-bold text-green-800"></span>
+                                            <div class="flex items-center justify-between gap-4" dir="rtl">
+                                                <div class="space-y-4 text-right">
+                                                    <p class="text-sm text-gray-700 font-medium">تمت المصادقة على العزل</p>
+                                                    <div class="flex flex-col gap-1">
+                                                        <span class="text-[10px] text-gray-400 flex">بواسطة مرخص العزل ✔
+                                                        </span>
+                                                        <span id="val-iso-done-by" class="text-sm font-bold text-green-800"></span>
+                                                    </div>
                                                 </div>
+                                                <img id="val-iso-done-signature" src="" alt="التوقيع" class="hidden h-16 object-contain p-1 bg-white" />
                                             </div>
                                         </div>
 
@@ -347,8 +350,13 @@ $userName = $userData['name'] ?? 'N/A';
                                                     </div>
                                                 </div>
 
-                                                <p class="text-sm font-bold text-gray-700 italic mt-4 text-xs">تمت المصادقة على رفع العزل بواسطة: <span id="val-remover-confirm-name"></span></p>
-                                                <div id="end-at-container" class="hidden"><span class="text-gray-500 text-xs">تاريخ رفع العزل:</span> <span id="val-end-at" class="font-medium text-xs text-green-600"></span></div>
+                                                <div class="flex items-end justify-between gap-4 mt-4">
+                                                    <div>
+                                                        <p class="text-sm font-bold text-gray-700 italic text-xs">تمت المصادقة على رفع العزل بواسطة: <span id="val-remover-confirm-name"></span></p>
+                                                        <div id="end-at-container" class="hidden"><span class="text-gray-500 text-xs">تاريخ رفع العزل:</span> <span id="val-end-at" class="font-medium text-xs text-green-600"></span></div>
+                                                    </div>
+                                                    <img id="val-remover-signature" src="" alt="التوقيع" class="hidden h-14 object-contain p-1 bg-white" />
+                                                </div>
                                             </div>
                                         </div>
 
@@ -791,6 +799,19 @@ $userName = $userData['name'] ?? 'N/A';
             }
         }
 
+        function setSignatureImage(elementId, signaturePath) {
+            const img = document.getElementById(elementId);
+            if (!img) return;
+
+            if (signaturePath) {
+                img.src = `../../public/${signaturePath}`;
+                img.classList.remove('hidden');
+            } else {
+                img.src = '';
+                img.classList.add('hidden');
+            }
+        }
+
         function displayData(data) {
             document.getElementById('val-no').textContent = data.equipment_no;
             document.getElementById('val-date').textContent = data.date;
@@ -955,6 +976,7 @@ $userName = $userData['name'] ?? 'N/A';
                 if (isoDoneCard) {
                     isoDoneCard.classList.remove('hidden');
                     document.getElementById('val-iso-done-by').textContent = data.creator_name || 'N/A';
+                    setSignatureImage('val-iso-done-signature', data.creator_signature);
                 }
             }
 
@@ -973,6 +995,7 @@ $userName = $userData['name'] ?? 'N/A';
                 if (pcCard) {
                     pcCard.classList.remove('hidden');
                     document.getElementById('val-remover-name').textContent = data.creator_name;
+                    setSignatureImage('val-remover-signature', data.creator_signature);
                 }
             } else {
                 if (pcCard) pcCard.classList.add('hidden');

@@ -128,6 +128,15 @@ require_once '../helpers/authCheck.php';
                             </select>
                         </div>
 
+                        <!-- Signature -->
+                        <div class="flex flex-col">
+                            <label for="signature" class="text-sm text-gray-600 mb-1">Signature</label>
+                            <input id="signature" name="signature" type="file" accept="image/*"
+                                class="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0b6f76] transition" />
+                            <img id="signaturePreview" src="" alt="Current signature"
+                                class="hidden mt-2 h-16 object-contain border border-gray-200 rounded-md p-1" />
+                        </div>
+
                         <!-- Submit button spans full width on small, right-aligned on larger screens -->
                         <div class="lg:col-span-3 flex justify-end">
                             <input type="submit" value="Update User"
@@ -152,6 +161,8 @@ require_once '../helpers/authCheck.php';
             Swal.fire("Error", "User ID is missing", "error");
         }
 
+        let currentSignatureUrl = "";
+
         async function loadUserData() {
             try {
                 const response = await fetch(`${API_USERS}?action=show&id=${USER_ID}`, {
@@ -171,6 +182,13 @@ require_once '../helpers/authCheck.php';
                 document.getElementById("role").value = user.role_id ?? '';
                 document.getElementById("manager").value = user.manager_id ?? '';
                 document.getElementById("usersList").value = user.manager_id ?? '';
+
+                if (user.signature) {
+                    currentSignatureUrl = `../${user.signature}`;
+                    const preview = document.getElementById("signaturePreview");
+                    preview.src = currentSignatureUrl;
+                    preview.classList.remove("hidden");
+                }
 
             } catch (error) {
                 Swal.fire("Error", error.message, "error");
@@ -241,6 +259,27 @@ require_once '../helpers/authCheck.php';
             await loadUserData();
         });
 
+        /**
+         * 🔹 معاينة صورة التوقيع الجديد بعد الرفع
+         */
+        document.getElementById("signature").addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            const preview = document.getElementById("signaturePreview");
+
+            if (!file) {
+                preview.src = currentSignatureUrl;
+                preview.classList.toggle("hidden", !currentSignatureUrl);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                preview.src = reader.result;
+                preview.classList.remove("hidden");
+            };
+            reader.readAsDataURL(file);
+        });
+
         document.getElementById("filtersForm").addEventListener("submit", async (e) => {
             e.preventDefault();
 
@@ -255,28 +294,51 @@ require_once '../helpers/authCheck.php';
                 is_active: document.getElementById("status").value,
             };
 
-            // نحذف القيم الفاضية
-            const payload = {};
-            Object.entries(raw).forEach(([key, value]) => {
-                // نسمح لـ manager_id يكون null
-                if (
-                    value !== '' &&
-                    value !== undefined &&
-                    (key === 'manager_id' || value !== null)
-                ) {
-                    payload[key] = value;
-                }
-            });
+            const signatureFile = document.getElementById("signature").files[0];
 
             try {
-                const response = await fetch(`${API_USERS}?action=update&id=${USER_ID}`, {
-                    method: "PUT",
-                    headers: {
-                        "Authorization": `Bearer ${TOKEN}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(payload)
-                });
+                let response;
+
+                if (signatureFile) {
+                    // multipart submission so the signature file reaches $_FILES
+                    const formData = new FormData();
+                    Object.entries(raw).forEach(([key, value]) => {
+                        if (value !== '' && value !== undefined && value !== null) {
+                            formData.append(key, value);
+                        }
+                    });
+                    formData.append("signature", signatureFile);
+
+                    response = await fetch(`${API_USERS}?action=update&id=${USER_ID}`, {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${TOKEN}`
+                        },
+                        body: formData
+                    });
+                } else {
+                    // نحذف القيم الفاضية
+                    const payload = {};
+                    Object.entries(raw).forEach(([key, value]) => {
+                        // نسمح لـ manager_id يكون null
+                        if (
+                            value !== '' &&
+                            value !== undefined &&
+                            (key === 'manager_id' || value !== null)
+                        ) {
+                            payload[key] = value;
+                        }
+                    });
+
+                    response = await fetch(`${API_USERS}?action=update&id=${USER_ID}`, {
+                        method: "PUT",
+                        headers: {
+                            "Authorization": `Bearer ${TOKEN}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                }
 
                 const data = await response.json();
                 if (!data.success) throw new Error(data.message);
