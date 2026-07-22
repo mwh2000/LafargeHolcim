@@ -32,6 +32,8 @@ try {
                 $res = $controller->getManagers();
             } elseif ($action === 'getSupervisors') {
                 $res = $controller->getSupervisors();
+            } elseif ($action === 'getSafetyReviewers') {
+                $res = $controller->getSafetyReviewers();
             } elseif ($action === 'show' && isset($_GET['id'])) {
                 $res = $controller->getPermit($_GET['id']);
             } elseif ($action === 'getStatistics') {
@@ -66,6 +68,16 @@ try {
                 $permitId = $input['permit_id'] ?? null;
                 $finishingTime = $input['finishing_time'] ?? null;
                 $res = $controller->updateFinishingTime($permitId, $finishingTime, $decoded->id);
+            } elseif ($action === 'approveSafety') {
+                $permitId = $input['permit_id'] ?? null;
+                $res = $controller->approveBySafety($permitId, $decoded->id);
+            } elseif ($action === 'rejectSafety') {
+                $permitId = $input['permit_id'] ?? null;
+                $comment = $input['comment'] ?? '';
+                $res = $controller->rejectBySafety($permitId, $decoded->id, $comment);
+            } elseif ($action === 'resubmit') {
+                $permitId = $input['permit_id'] ?? null;
+                $res = $controller->resubmitPermit($permitId, $input, $decoded->id);
             } else {
                 $res = $controller->createPermit($input);
             }

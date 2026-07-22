@@ -181,6 +181,18 @@ $userName = $userData['name'] ?? 'N/A';
                                                 <div id="critical_actions" class="flex gap-2 start"></div>
                                             </div>
                                         </div>
+
+                                        <!-- Safety review status and actions (normal permits only) -->
+                                        <div id="safety_status_container" class="bg-white p-4 rounded-lg shadow-md hidden text-right no-print">
+                                            <div class="inline-flex flex-wrap items-center justify-end gap-4 w-full">
+                                                <div id="safety_status_badge" class="font-bold px-3 py-1 rounded-full text-sm"></div>
+                                                <div id="safety_actions" class="flex gap-2 start"></div>
+                                            </div>
+                                            <div id="safety_comment_container" class="hidden mt-3 p-3 bg-red-50 border border-red-200 rounded-md text-right" dir="rtl">
+                                                <span class="text-red-700 text-sm font-medium">سبب الرفض:</span>
+                                                <p id="safety_comment_text" class="text-red-800 text-sm mt-1"></p>
+                                            </div>
+                                        </div>
                                         <!-- القسم الأول: المعلومات الأساسية -->
                                         <div class="bg-white p-6 rounded-lg shadow-md">
                                             <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">المعلومات الأساسية</h2>
@@ -468,6 +480,122 @@ $userName = $userData['name'] ?? 'N/A';
                         window.location.href = `add_hot_work_license.php?id=${PERMIT_ID}`;
                     });
                     actions.appendChild(btn);
+                }
+            } else {
+                // Normal permit: Safety review status handling
+                const status = data.safety_status || 'pending';
+                document.getElementById('safety_status_container').classList.remove('hidden');
+
+                const badge = document.getElementById('safety_status_badge');
+                if (status === 'pending') {
+                    badge.textContent = 'بانتظار موافقة السيفتي' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');
+                    badge.className = 'font-bold px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800';
+                } else if (status === 'approved') {
+                    badge.textContent = 'تمت الموافقة من قبل السيفتي' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');
+                    badge.className = 'font-bold px-3 py-1 rounded-full text-sm bg-green-100 text-green-800';
+                } else if (status === 'rejected') {
+                    badge.textContent = 'مرفوضة من قبل السيفتي' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');
+                    badge.className = 'font-bold px-3 py-1 rounded-full text-sm bg-red-100 text-red-800';
+                }
+
+                if (status === 'rejected' && data.safety_comment) {
+                    document.getElementById('safety_comment_container').classList.remove('hidden');
+                    document.getElementById('safety_comment_text').textContent = data.safety_comment;
+                }
+
+                const actions = document.getElementById('safety_actions');
+                actions.innerHTML = '';
+
+                // Safety reviewer view: pending review, current user is the assigned safety reviewer
+                if (status === 'pending' && USER_ID === parseInt(data.safety_reviewer_id || 0)) {
+                    const approveBtn = document.createElement('button');
+                    approveBtn.className = 'px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition';
+                    approveBtn.textContent = 'موافقة';
+                    actions.appendChild(approveBtn);
+
+                    const rejectBtn = document.createElement('button');
+                    rejectBtn.className = 'px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition';
+                    rejectBtn.textContent = 'رفض';
+                    actions.appendChild(rejectBtn);
+
+                    approveBtn.addEventListener('click', async () => {
+                        const result = await Swal.fire({
+                            title: 'تأكيد الموافقة',
+                            text: 'هل أنت متأكد من الموافقة على رخصة العمل الساخن؟',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: 'نعم، موافقة',
+                            cancelButtonText: 'إلغاء',
+                            confirmButtonColor: '#059669'
+                        });
+                        if (!result.isConfirmed) return;
+                        try {
+                            const res = await fetch(API_BASE + '?action=approveSafety', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${TOKEN}`
+                                },
+                                body: JSON.stringify({
+                                    permit_id: PERMIT_ID
+                                })
+                            });
+                            const jr = await res.json();
+                            if (jr.success) Swal.fire('تم', jr.message, 'success').then(() => location.reload());
+                            else Swal.fire('خطأ', jr.message || 'فشل', 'error');
+                        } catch (e) {
+                            Swal.fire('خطأ', 'فشل الطلب', 'error');
+                        }
+                    });
+
+                    rejectBtn.addEventListener('click', async () => {
+                        const result = await Swal.fire({
+                            title: 'رفض الرخصة',
+                            input: 'textarea',
+                            inputLabel: 'سبب الرفض',
+                            inputPlaceholder: 'اكتب سبب الرفض هنا...',
+                            inputAttributes: {
+                                'dir': 'rtl'
+                            },
+                            showCancelButton: true,
+                            confirmButtonText: 'رفض الرخصة',
+                            cancelButtonText: 'إلغاء',
+                            confirmButtonColor: '#dc2626',
+                            inputValidator: (value) => {
+                                if (!value || !value.trim()) return 'سبب الرفض مطلوب';
+                            }
+                        });
+                        if (!result.isConfirmed) return;
+                        try {
+                            const res = await fetch(API_BASE + '?action=rejectSafety', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${TOKEN}`
+                                },
+                                body: JSON.stringify({
+                                    permit_id: PERMIT_ID,
+                                    comment: result.value
+                                })
+                            });
+                            const jr = await res.json();
+                            if (jr.success) Swal.fire('تم', jr.message, 'success').then(() => location.reload());
+                            else Swal.fire('خطأ', jr.message || 'فشل', 'error');
+                        } catch (e) {
+                            Swal.fire('خطأ', 'فشل الطلب', 'error');
+                        }
+                    });
+                }
+
+                // Creator view: rejected permit, current user is the creator -> allow edit & resend
+                if (status === 'rejected' && USER_ID === parseInt(data.created_by || 0)) {
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'px-3 py-2 bg-[#0b6f76] text-white rounded hover:bg-[#085a60] transition';
+                    editBtn.textContent = 'تعديل الرخصة وإعادة الإرسال';
+                    editBtn.addEventListener('click', () => {
+                        window.location.href = `add_hot_work_license.php?id=${PERMIT_ID}`;
+                    });
+                    actions.appendChild(editBtn);
                 }
             }
 

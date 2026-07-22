@@ -25,6 +25,9 @@ if ($lastNo) {
     }
 }
 $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
+
+$userData = json_decode($_COOKIE['user_data'] ?? '{}', true);
+$currentUserId = $userData['id'] ?? 0;
 ?>
 
 <!DOCTYPE html>
@@ -253,9 +256,15 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                         <!-- Step 5: Assigned To -->
                         <div class="step-content" data-step="5">
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم الخامس: إسناد الرخصة</h2>
-                            <div class="max-w-md mx-auto">
-                                <label class="block text-sm font-medium text-green-700 mb-2">اختر الشخص المسؤول (Assigned To)</label>
-                                <select id="assigned_to" name="assigned_to" required class="w-full"></select>
+                            <div class="max-w-md mx-auto space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-green-700 mb-2">اختر الشخص المسؤول (Assigned To)</label>
+                                    <select id="assigned_to" name="assigned_to" required class="w-full"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-green-700 mb-2">اختر مسؤول السلامة (Safety) للموافقة على الرخصة</label>
+                                    <select id="safety_reviewer_id" name="safety_reviewer_id" required class="w-full"></select>
+                                </div>
                             </div>
                         </div>
 
@@ -277,6 +286,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
             let highestStepReached = 1;
             const totalSteps = 5;
             const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
+            const CURRENT_USER_ID = <?= (int)$currentUserId ?>;
 
             const group1 = [
                 'كسارة', 'طحونة مواد', 'الافران', 'طواحين الاسمنت', 'التعبئة', 'محطة الاساله', 'اخرى'
@@ -300,6 +310,14 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 onChange: () => updateButtonStates()
             });
 
+            // Initialize TomSelect for Safety Reviewer
+            let safetyReviewerSelect = new TomSelect('#safety_reviewer_id', {
+                persist: false,
+                create: false,
+                placeholder: 'اختر مسؤول السلامة...',
+                onChange: () => updateButtonStates()
+            });
+
             // Critical manager select (TomSelect)
             let criticalManagerSelect = new TomSelect('#critical_manager_id', {
                 persist: false,
@@ -312,6 +330,8 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
             const locationSelect = document.getElementById('location');
 
             let resumeMode = false;
+            let resubmitMode = false;
+            let resubmitPermitId = null;
 
             function setPointerEventsForStep1(enabled) {
                 document.querySelectorAll('.step-content[data-step="1"] select').forEach(el => {
@@ -425,11 +445,11 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
                             // populate basic fields
                             document.querySelector('input[name="permit_no"]').value = p.permit_no || '';
-                            document.querySelector('input[name="wo"]').value = p.wo || '';
+                            document.querySelector('input[name="wo"]').value = p.WO || '';
                             document.querySelector('input[name="company_name"]').value = p.company_name || '';
                             document.getElementById('location').value = p.location || '';
                             document.querySelector('input[name="supervisor"]').value = p.supervisor || '';
-                            document.querySelector('input[name="equipment_used"]').value = p.equipment_used || '';
+                            document.getElementById('equipment_used').value = p.equipment_used || '';
                             document.getElementById('maintenance_type').value = p.maintenance_type || 'طارئة';
                             if (p.task_start_datetime) document.querySelector('input[name="task_start_datetime"]').value = p.task_start_datetime.replace(' ', 'T');
                             if (p.finishing_time) document.querySelector('input[name="finishing_time"]').value = p.finishing_time.replace(' ', 'T');
@@ -438,6 +458,71 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                             document.querySelectorAll('.step-content').forEach(c => c.style.display = '');
                             disableNonStep1Controls(false);
                             currentStep = 2;
+                            updateUI();
+                        } else if (!parseInt(p.is_critical || 0) && p.safety_status === 'rejected' && parseInt(p.created_by) === CURRENT_USER_ID) {
+                            // Normal permit rejected by Safety: allow the creator to edit everything and resend it
+                            resubmitMode = true;
+                            resubmitPermitId = editId;
+
+                            document.querySelector('input[name="permit_no"]').value = p.permit_no || '';
+                            document.querySelector('input[name="wo"]').value = p.WO || '';
+                            document.querySelector('input[name="company_name"]').value = p.company_name || '';
+                            document.getElementById('location').value = p.location || '';
+                            document.querySelector('input[name="supervisor"]').value = p.supervisor || '';
+                            document.getElementById('equipment_used').value = p.equipment_used || '';
+                            document.getElementById('maintenance_type').value = p.maintenance_type || 'طارئة';
+                            if (p.task_start_datetime) document.querySelector('input[name="task_start_datetime"]').value = p.task_start_datetime.replace(' ', 'T');
+                            if (p.finishing_time) document.querySelector('input[name="finishing_time"]').value = p.finishing_time.replace(' ', 'T');
+
+                            document.querySelector('textarea[name="work_description"]').value = p.work_description || '';
+
+                            if (p.additional_permits && p.additional_permits.length) {
+                                const hiddenInputs = document.querySelectorAll('input[type="hidden"][name^="permit_name_"]');
+                                p.additional_permits.forEach(ap => {
+                                    hiddenInputs.forEach(hidden => {
+                                        if (hidden.value === ap.permit_name) {
+                                            const catalogId = hidden.name.replace('permit_name_', '');
+                                            const cb = document.querySelector(`input[name="additional_permits_selected[]"][value="${catalogId}"]`);
+                                            if (cb) cb.checked = true;
+                                            const numInput = document.querySelector(`input[name="permit_no_${catalogId}"]`);
+                                            if (numInput) numInput.value = ap.permit_number || '';
+                                        }
+                                    });
+                                });
+                            }
+
+                            if (p.performers_check && p.performers_check.length) {
+                                p.performers_check.forEach((pc, index) => {
+                                    const radio = document.querySelector(`input[name="performer_check_answer_${index}"][value="${pc.answer}"]`);
+                                    if (radio) radio.checked = true;
+                                });
+                            }
+
+                            if (p.approvals && p.approvals.length) {
+                                const roleLabelToKey = {
+                                    'Welding Name': 'welding',
+                                    'Supervisor': 'supervisor',
+                                    'Fire Sentry': 'fire_sentry',
+                                    'PTW Issuer': 'ptw_issuer'
+                                };
+                                p.approvals.forEach(app => {
+                                    const key = roleLabelToKey[app.role_name];
+                                    if (!key) return;
+                                    const parts = (app.approval_status || '').split(' - ');
+                                    const name = parts[0] || '';
+                                    const approved = (app.approval_status || '').includes('Approved');
+                                    const nameInput = document.querySelector(`input[name="approval_name_${key}"]`);
+                                    if (nameInput && !nameInput.readOnly) nameInput.value = name;
+                                    const statusCb = document.querySelector(`input[name="approval_status_${key}"]`);
+                                    if (statusCb) statusCb.checked = approved;
+                                });
+                            }
+
+                            await loadAssignees();
+                            assigneeSelect.setValue(p.assigned_to ? String(p.assigned_to) : null);
+                            await loadSafetyReviewers();
+                            safetyReviewerSelect.setValue(p.safety_reviewer_id ? String(p.safety_reviewer_id) : null);
+
                             updateUI();
                         }
                     }
@@ -471,6 +556,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     }
                 } else if (step === 5) {
                     if (!assigneeSelect.getValue()) return false;
+                    if (!safetyReviewerSelect.getValue()) return false;
                 }
 
                 return true;
@@ -529,7 +615,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 submitBtn.classList.toggle('hidden', currentStep !== totalSteps);
 
                 if (currentStep === 5) {
-                    loadAssignees().then(() => updateButtonStates());
+                    Promise.all([loadAssignees(), loadSafetyReviewers()]).then(() => updateButtonStates());
                 } else {
                     updateButtonStates();
                 }
@@ -593,6 +679,30 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     }
                 } catch (e) {
                     console.error('Failed to load assignees');
+                }
+            }
+
+            async function loadSafetyReviewers() {
+                if (safetyReviewerSelect.options.length > 0) return;
+
+                try {
+                    const res = await fetch('../../api/requester/hot_work_permit.php?action=getSafetyReviewers', {
+                        headers: {
+                            'Authorization': `Bearer ${TOKEN}`
+                        }
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        data.data.forEach(user => {
+                            safetyReviewerSelect.addOption({
+                                value: user.id,
+                                text: user.name
+                            });
+                        });
+                        safetyReviewerSelect.refreshOptions(false);
+                    }
+                } catch (e) {
+                    console.error('Failed to load safety reviewers');
                 }
             }
 
@@ -672,6 +782,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     task_start_datetime: formData.get('task_start_datetime'),
                     finishing_time: formData.get('finishing_time'),
                     assigned_to: assigneeSelect.getValue(),
+                    safety_reviewer_id: safetyReviewerSelect.getValue(),
                     work_description: formData.get('work_description'),
                     additional_permits: [],
                     performers_check: [],
@@ -725,6 +836,13 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                         payload = {
                             ...data,
                             permit_id: editId
+                        };
+                    } else if (resubmitMode) {
+                        // When resending a normal permit rejected by Safety, use resubmit action
+                        url += '?action=resubmit';
+                        payload = {
+                            ...data,
+                            permit_id: resubmitPermitId
                         };
                     }
 

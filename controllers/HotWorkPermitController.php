@@ -7,6 +7,10 @@ class HotWorkPermitController
 {
     private $db;
 
+    // TODO: fill in once the recipient list is decided — notified in addition to
+    // the assignee whenever a normal (non-critical) permit is approved by Safety.
+    private $safetyApprovalExtraNotifyUserIds = [189, 188, 191, 149];
+
     public function __construct($db)
     {
         $this->db = $db;
@@ -20,15 +24,18 @@ class HotWorkPermitController
             // 1. Insert main permit
             // Support critical workflow columns if provided
             $stmt = $this->db->prepare("INSERT INTO hot_work_permit (
-                permit_no, issuing_date_time, wo, company_name, location, supervisor, 
-                equipment_used, maintenance_type, task_start_datetime, finishing_time, assigned_to, 
+                permit_no, issuing_date_time, wo, company_name, location, supervisor,
+                equipment_used, maintenance_type, task_start_datetime, finishing_time, assigned_to,
+                safety_reviewer_id, safety_status,
                 work_description, created_by, created_at, is_critical, critical_manager_id, critical_supervisor_id, critical_status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
             $isCritical = !empty($data['is_critical']) ? 1 : 0;
             $criticalManager = $data['critical_manager_id'] ?? null;
             $criticalSupervisor = $data['critical_supervisor_id'] ?? null;
             $criticalStatus = $isCritical ? ($data['critical_status'] ?? 'pending_manager') : null;
+            $safetyReviewerId = $isCritical ? null : ($data['safety_reviewer_id'] ?? null);
+            $safetyStatus = $isCritical ? null : 'pending';
 
             $stmt->execute([
                 $data['permit_no'],
@@ -42,6 +49,8 @@ class HotWorkPermitController
                 $data['task_start_datetime'] ?? null,
                 $data['finishing_time'] ?? null,
                 $data['assigned_to'] ?? null,
+                $safetyReviewerId,
+                $safetyStatus,
                 $data['work_description'] ?? '',
                 $data['created_by'],
                 date('Y-m-d H:i:s'),
@@ -110,12 +119,14 @@ class HotWorkPermitController
                     $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
                     $notificationController->sendNotification($title, $body, [$criticalManager], $url, $data['created_by']);
                     $emailController->sendEmail($title, $body, [$criticalManager]);
-                } elseif (!$isCritical && !empty($data['assigned_to'])) {
-                    $title = 'رخصة عمل ساخن جديدة';
-                    $body = 'تم إسناد رخصة عمل ساخن جديدة إليك برقم ' . $data['permit_no'];
+                } elseif (!$isCritical && !empty($safetyReviewerId)) {
+                    // Normal permits now go to the Safety reviewer first; the assignee
+                    // is only notified once Safety approves (see approveBySafety()).
+                    $title = 'رخصة عمل ساخن جديدة بانتظار موافقة السيفتي';
+                    $body = 'تم إنشاء رخصة عمل ساخن جديدة برقم ' . $data['permit_no'] . ' وهي بانتظار مراجعتك والموافقة عليها';
                     $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
-                    $notificationController->sendNotification($title, $body, [$data['assigned_to']], $url, $data['created_by']);
-                    $emailController->sendEmail($title, $body, [$data['assigned_to']]);
+                    $notificationController->sendNotification($title, $body, [$safetyReviewerId], $url, $data['created_by']);
+                    $emailController->sendEmail($title, $body, [$safetyReviewerId]);
                 }
             } catch (Exception $e) {
                 // Ignore notification/email errors
@@ -158,6 +169,210 @@ class HotWorkPermitController
             return ['success' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Error fetching supervisors: ' . $e->getMessage()];
+        }
+    }
+
+    public function getSafetyReviewers()
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT id, name FROM users WHERE role_id = 4");
+            $stmt->execute();
+            return ['success' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error fetching safety reviewers: ' . $e->getMessage()];
+        }
+    }
+
+    public function approveBySafety($permitId, $safetyUserId)
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT assigned_to, is_critical, safety_reviewer_id, safety_status FROM hot_work_permit WHERE id = ?");
+            $stmt->execute([$permitId]);
+            $permit = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$permit || (int)$permit['is_critical'] === 1) {
+                return ['success' => false, 'message' => 'Permit not found'];
+            }
+            if ((int)$permit['safety_reviewer_id'] !== (int)$safetyUserId) {
+                return ['success' => false, 'message' => 'Not authorized to review this permit'];
+            }
+            if ($permit['safety_status'] !== 'pending') {
+                return ['success' => false, 'message' => 'This permit has already been reviewed'];
+            }
+
+            $stmt = $this->db->prepare("UPDATE hot_work_permit SET safety_status = 'approved', safety_reviewed_at = ? WHERE id = ?");
+            $stmt->execute([date('Y-m-d H:i:s'), $permitId]);
+
+            try {
+                $notificationController = new NotificationController($this->db);
+                $emailController = new EmailController($this->db);
+                $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
+
+                if (!empty($permit['assigned_to'])) {
+                    $title = 'رخصة عمل ساخن جديدة';
+                    $body = 'وافق السيفتي على رخصة العمل الساخن وتم إسنادها إليك';
+                    $notificationController->sendNotification($title, $body, [$permit['assigned_to']], $url, $safetyUserId);
+                    $emailController->sendEmail($title, $body, [$permit['assigned_to']]);
+                }
+
+                if (!empty($this->safetyApprovalExtraNotifyUserIds)) {
+                    $title = 'تمت الموافقة على رخصة عمل ساخن';
+                    $body = 'وافق السيفتي على رخصة عمل ساخن';
+                    $notificationController->sendNotification($title, $body, $this->safetyApprovalExtraNotifyUserIds, $url, $safetyUserId);
+                    $emailController->sendEmail($title, $body, $this->safetyApprovalExtraNotifyUserIds);
+                }
+            } catch (Exception $e) {
+                // Ignore notification/email errors
+            }
+
+            return ['success' => true, 'message' => 'تمت الموافقة على الرخصة بنجاح'];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Failed to approve permit: ' . $e->getMessage()];
+        }
+    }
+
+    public function rejectBySafety($permitId, $safetyUserId, $comment)
+    {
+        try {
+            if (empty(trim($comment ?? ''))) {
+                return ['success' => false, 'message' => 'سبب الرفض مطلوب'];
+            }
+
+            $stmt = $this->db->prepare("SELECT created_by, assigned_to, is_critical, safety_reviewer_id, safety_status FROM hot_work_permit WHERE id = ?");
+            $stmt->execute([$permitId]);
+            $permit = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$permit || (int)$permit['is_critical'] === 1) {
+                return ['success' => false, 'message' => 'Permit not found'];
+            }
+            if ((int)$permit['safety_reviewer_id'] !== (int)$safetyUserId) {
+                return ['success' => false, 'message' => 'Not authorized to review this permit'];
+            }
+            if ($permit['safety_status'] !== 'pending') {
+                return ['success' => false, 'message' => 'This permit has already been reviewed'];
+            }
+
+            $stmt = $this->db->prepare("UPDATE hot_work_permit SET safety_status = 'rejected', safety_comment = ?, safety_reviewed_at = ? WHERE id = ?");
+            $stmt->execute([$comment, date('Y-m-d H:i:s'), $permitId]);
+
+            try {
+                $notificationController = new NotificationController($this->db);
+                $emailController = new EmailController($this->db);
+                $title = 'تم رفض رخصة عمل ساخن';
+                $body = 'قام السيفتي برفض رخصة العمل الساخن. السبب: ' . $comment;
+                $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
+
+                $recipients = array_filter(array_unique([$permit['created_by'], $permit['assigned_to']]));
+                if (!empty($recipients)) {
+                    $notificationController->sendNotification($title, $body, array_values($recipients), $url, $safetyUserId);
+                    $emailController->sendEmail($title, $body, array_values($recipients));
+                }
+            } catch (Exception $e) {
+                // Ignore notification/email errors
+            }
+
+            return ['success' => true, 'message' => 'تم رفض الرخصة'];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Failed to reject permit: ' . $e->getMessage()];
+        }
+    }
+
+    public function resubmitPermit($permitId, $data, $creatorId)
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT created_by, is_critical, safety_status FROM hot_work_permit WHERE id = ?");
+            $stmt->execute([$permitId]);
+            $permit = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$permit || (int)$permit['is_critical'] === 1) {
+                return ['success' => false, 'message' => 'Permit not found'];
+            }
+            if ((int)$permit['created_by'] !== (int)$creatorId) {
+                return ['success' => false, 'message' => 'Not authorized to edit this permit'];
+            }
+            if ($permit['safety_status'] !== 'rejected') {
+                return ['success' => false, 'message' => 'يمكن تعديل وإعادة إرسال الرخصة فقط بعد رفضها'];
+            }
+
+            $this->db->beginTransaction();
+
+            $stmt = $this->db->prepare("UPDATE hot_work_permit SET
+                wo = ?, company_name = ?, location = ?, supervisor = ?,
+                equipment_used = ?, maintenance_type = ?, task_start_datetime = ?, finishing_time = ?,
+                assigned_to = ?, safety_reviewer_id = ?, work_description = ?,
+                safety_status = 'pending', safety_comment = NULL, safety_reviewed_at = NULL
+                WHERE id = ?");
+            $stmt->execute([
+                $data['wo'],
+                $data['company_name'],
+                $data['location'],
+                $data['supervisor'] ?? null,
+                $data['equipment_used'] ?? null,
+                $data['maintenance_type'] ?? null,
+                $data['task_start_datetime'] ?? null,
+                $data['finishing_time'] ?? null,
+                $data['assigned_to'] ?? null,
+                $data['safety_reviewer_id'] ?? null,
+                $data['work_description'] ?? '',
+                $permitId
+            ]);
+
+            $stmtDelAdd = $this->db->prepare("DELETE FROM additional_hot_permits WHERE hot_work_permit_id = ?");
+            $stmtDelAdd->execute([$permitId]);
+            if (!empty($data['additional_permits'])) {
+                $stmtAdd = $this->db->prepare("INSERT INTO additional_hot_permits (
+                    hot_work_permit_id, permit_name, permit_number
+                ) VALUES (?, ?, ?)");
+                foreach ($data['additional_permits'] as $permitRow) {
+                    if (!empty($permitRow['permit_name'])) {
+                        $stmtAdd->execute([$permitId, $permitRow['permit_name'], $permitRow['permit_number'] ?? '']);
+                    }
+                }
+            }
+
+            $stmtDelPerf = $this->db->prepare("DELETE FROM hot_work_performers_check WHERE hot_work_permit_id = ?");
+            $stmtDelPerf->execute([$permitId]);
+            if (!empty($data['performers_check'])) {
+                $stmtPerf = $this->db->prepare("INSERT INTO hot_work_performers_check (
+                    hot_work_permit_id, question_text, answer
+                ) VALUES (?, ?, ?)");
+                foreach ($data['performers_check'] as $check) {
+                    $stmtPerf->execute([$permitId, $check['text'], $check['answer']]);
+                }
+            }
+
+            $stmtDelAppr = $this->db->prepare("DELETE FROM hot_permit_approvals WHERE hot_work_permit_id = ?");
+            $stmtDelAppr->execute([$permitId]);
+            if (!empty($data['approvals'])) {
+                $stmtAppr = $this->db->prepare("INSERT INTO hot_permit_approvals (
+                    hot_work_permit_id, role_name, approval_status
+                ) VALUES (?, ?, ?)");
+                foreach ($data['approvals'] as $approval) {
+                    $statusText = ($approval['name'] ?? 'N/A') . " - " . ($approval['approved'] ? 'Approved' : 'Pending');
+                    $stmtAppr->execute([$permitId, $approval['role'], $statusText]);
+                }
+            }
+
+            $this->db->commit();
+
+            try {
+                if (!empty($data['safety_reviewer_id'])) {
+                    $notificationController = new NotificationController($this->db);
+                    $emailController = new EmailController($this->db);
+                    $title = 'إعادة إرسال رخصة عمل ساخن بعد التعديل';
+                    $body = 'قام مقدم الطلب بتعديل رخصة العمل الساخن بعد رفضها وإعادة إرسالها، وهي بانتظار مراجعتك';
+                    $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
+                    $notificationController->sendNotification($title, $body, [$data['safety_reviewer_id']], $url, $creatorId);
+                    $emailController->sendEmail($title, $body, [$data['safety_reviewer_id']]);
+                }
+            } catch (Exception $e) {
+                // Ignore notification/email errors
+            }
+
+            return ['success' => true, 'message' => 'تم تعديل الرخصة وإعادة إرسالها بنجاح', 'id' => $permitId];
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            return ['success' => false, 'message' => 'Failed to resubmit permit: ' . $e->getMessage()];
         }
     }
 
@@ -315,14 +530,15 @@ class HotWorkPermitController
     {
         try {
             $stmt = $this->db->prepare("SELECT h.*, u.name as assigned_to_name, c.name as creator_name,
-                                                cm.name as critical_manager_name, cs.name as critical_supervisor_name, 
-                                                ft.name as finishing_time_updated_by
-                                        FROM hot_work_permit h 
+                                                cm.name as critical_manager_name, cs.name as critical_supervisor_name,
+                                                ft.name as finishing_time_updated_by, sr.name as safety_reviewer_name
+                                        FROM hot_work_permit h
                                         LEFT JOIN users u ON h.assigned_to = u.id
                                         LEFT JOIN users c ON h.created_by = c.id
                                         LEFT JOIN users cm ON h.critical_manager_id = cm.id
                                         LEFT JOIN users cs ON h.critical_supervisor_id = cs.id
                                         LEFT JOIN users ft ON h.finishing_time_updated_by = ft.id
+                                        LEFT JOIN users sr ON h.safety_reviewer_id = sr.id
                                         WHERE h.id = ?");
             $stmt->execute([$id]);
             $permit = $stmt->fetch(PDO::FETCH_ASSOC);
