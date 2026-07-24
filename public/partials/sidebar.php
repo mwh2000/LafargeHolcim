@@ -71,10 +71,10 @@ function renderSidebar($activePage = '')
           'label' => 'Hot Work',
           'href' => BASE_URL . '/public/requester/add_hot_work_license.php',
         ],
-        'all_permits' => [
-          'label' => 'All Permits',
-          'href' => BASE_URL . '/public/permits.php',
-        ],
+        // 'all_permits' => [
+        //   'label' => 'All Permits',
+        //   'href' => BASE_URL . '/public/permits.php',
+        // ],
       ]
     ],
     'energy_Isolation' => [
@@ -86,13 +86,13 @@ function renderSidebar($activePage = '')
 
   // Define role permissions (Link IDs available for each role)
   $role_permissions = [
-    1 => ['dashboard', 'users', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action', 'equipment_sections', 'equipments', 'energy_types', 'permit'], // Admin
+    1 => ['dashboard', 'users', 'actions_assigned_to_me', 'actions_created_by_me', 'actions_created_by_team', 'create_action', 'equipment_sections', 'equipments', 'energy_types', 'permit'], // Admin
     2 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action'], // Requester
     3 => ['dashboard', 'create_action', 'actions_assigned_to_me', 'actions_created_by_me', 'actions_created_by_team', 'permit'], // Area Manager
     4 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action'], // Safety
     5 => ['dashboard', 'create_action', 'actions_assigned_to_me', 'actions_created_by_me', 'actions_created_by_team', 'permit'], // Manager
     6 => ['dashboard', 'create_action', 'permit', 'energy_Isolation'], // Plant Manager
-    7 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action', 'permit'], // Shift Leader
+    7 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'actions_created_by_team', 'create_action', 'permit'], // Shift Leader
     8 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action'], // Isolation Officer
   ];
 

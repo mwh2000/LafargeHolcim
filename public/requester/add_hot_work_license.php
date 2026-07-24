@@ -7,6 +7,7 @@ require_once '../helpers/authCheck.php';
 
 // Fetch options from partials
 $additionalPermits = require '../partials/hot_work/additional_permits.php';
+$controlMeasures = require '../partials/hot_work/control_measures.php';
 $performersCheck = require '../partials/hot_work/performers_check.php';
 
 // Fetch database connection
@@ -87,9 +88,10 @@ $currentUserId = $userData['id'] ?? 0;
                     <div class="flex justify-between mb-8 border-b pb-2 text-[9px] md:text-sm overflow-x-auto no-scrollbar whitespace-nowrap gap-2">
                         <div class="step-indicator active px-2 transition-all duration-300 flex-shrink-0" data-step="1">المعلومات الأساسية</div>
                         <div class="step-indicator px-2 transition-all duration-300 flex-shrink-0" data-step="2">تصاريح إضافية</div>
-                        <div class="step-indicator px-2 transition-all duration-300 flex-shrink-0" data-step="3">منفذي الأعمال</div>
-                        <div class="step-indicator px-2 transition-all duration-300 flex-shrink-0" data-step="4">المطابقة والموافقة</div>
-                        <div class="step-indicator px-2 transition-all duration-300 flex-shrink-0" data-step="5">إسناد الرخصة</div>
+                        <div class="step-indicator px-2 transition-all duration-300 flex-shrink-0" data-step="3">إجراءات السيطرة</div>
+                        <div class="step-indicator px-2 transition-all duration-300 flex-shrink-0" data-step="4">منفذي الأعمال</div>
+                        <div class="step-indicator px-2 transition-all duration-300 flex-shrink-0" data-step="5">المطابقة والموافقة</div>
+                        <div class="step-indicator px-2 transition-all duration-300 flex-shrink-0" data-step="6">إسناد الرخصة</div>
                     </div>
 
                     <form id="hotWorkForm" class="bg-white p-6 rounded-lg shadow-md">
@@ -191,12 +193,41 @@ $currentUserId = $userData['id'] ?? 0;
                             </div>
                         </div>
 
-                        <!-- Step 3: Performers Check -->
+                        <!-- Step 3: Control Measures -->
                         <div class="step-content" data-step="3">
+                            <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم الثالث: إجراءات السيطرة</h2>
+                            <div class="space-y-2">
+                                <?php foreach ($controlMeasures as $index => $check): ?>
+                                    <div class="p-3 border rounded-lg hover:bg-gray-50 transition-colors control-measure-item">
+                                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                                            <span class="text-sm text-gray-700 flex-1"><?= ($index + 1) . ". " . $check ?></span>
+                                            <input type="hidden" name="control_measure_text_<?= $index ?>" value="<?= htmlspecialchars($check) ?>">
+                                            <div class="flex gap-3">
+                                                <label class="flex items-center gap-1 cursor-pointer">
+                                                    <input type="radio" name="control_measure_answer_<?= $index ?>" value="نعم" class="w-4 h-4 text-[#0b6f76]">
+                                                    <span class="text-xs">نعم</span>
+                                                </label>
+                                                <label class="flex items-center gap-1 cursor-pointer">
+                                                    <input type="radio" name="control_measure_answer_<?= $index ?>" value="كلا" class="w-4 h-4 text-red-600">
+                                                    <span class="text-xs">كلا</span>
+                                                </label>
+                                                <label class="flex items-center gap-1 cursor-pointer">
+                                                    <input type="radio" name="control_measure_answer_<?= $index ?>" value="غير متاح" class="w-4 h-4 text-gray-500">
+                                                    <span class="text-xs">غير متاح</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Performers Check -->
+                        <div class="step-content" data-step="4">
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم الرابع: منفذي الأعمال الساخنة</h2>
                             <div class="space-y-2">
                                 <?php foreach ($performersCheck as $index => $check): ?>
-                                    <div class="p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                                    <div class="p-3 border rounded-lg hover:bg-gray-50 transition-colors performer-item">
                                         <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
                                             <span class="text-sm text-gray-700 flex-1"><?= ($index + 1) . ". " . $check ?></span>
                                             <input type="hidden" name="performer_check_text_<?= $index ?>" value="<?= htmlspecialchars($check) ?>">
@@ -220,9 +251,9 @@ $currentUserId = $userData['id'] ?? 0;
                             </div>
                         </div>
 
-                        <!-- Step 4: Approvals -->
-                        <div class="step-content" data-step="4">
-                            <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم الرابع: المطابقة والموافقة</h2>
+                        <!-- Step 5: Approvals -->
+                        <div class="step-content" data-step="5">
+                            <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم الخامس: المطابقة والموافقة</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <?php
                                 $userData = json_decode($_COOKIE['user_data'] ?? '{}', true);
@@ -253,16 +284,16 @@ $currentUserId = $userData['id'] ?? 0;
                             </div>
                         </div>
 
-                        <!-- Step 5: Assigned To -->
-                        <div class="step-content" data-step="5">
-                            <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم الخامس: إسناد الرخصة</h2>
+                        <!-- Step 6: Assigned To -->
+                        <div class="step-content" data-step="6">
+                            <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم السادس: إسناد الرخصة</h2>
                             <div class="max-w-md mx-auto space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-green-700 mb-2">اختر الشخص المسؤول (Assigned To)</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-2">Assigned To</label>
                                     <select id="assigned_to" name="assigned_to" required class="w-full"></select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-green-700 mb-2">اختر مسؤول السلامة (Safety) للموافقة على الرخصة</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-2">طلب موافقة السلامة لتنفيذ الرخصة</label>
                                     <select id="safety_reviewer_id" name="safety_reviewer_id" required class="w-full"></select>
                                 </div>
                             </div>
@@ -284,7 +315,7 @@ $currentUserId = $userData['id'] ?? 0;
         document.addEventListener('DOMContentLoaded', async () => {
             let currentStep = 1;
             let highestStepReached = 1;
-            const totalSteps = 5;
+            const totalSteps = 6;
             const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
             const CURRENT_USER_ID = <?= (int)$currentUserId ?>;
 
@@ -491,6 +522,13 @@ $currentUserId = $userData['id'] ?? 0;
                                 });
                             }
 
+                            if (p.control_measures && p.control_measures.length) {
+                                p.control_measures.forEach((cm, index) => {
+                                    const radio = document.querySelector(`input[name="control_measure_answer_${index}"][value="${cm.answer}"]`);
+                                    if (radio) radio.checked = true;
+                                });
+                            }
+
                             if (p.performers_check && p.performers_check.length) {
                                 p.performers_check.forEach((pc, index) => {
                                     const radio = document.querySelector(`input[name="performer_check_answer_${index}"][value="${pc.answer}"]`);
@@ -544,17 +582,20 @@ $currentUserId = $userData['id'] ?? 0;
                     const workDesc = currentContent.querySelector('textarea[name="work_description"]').value.trim();
                     if (checkedCount === 0 || !workDesc) return false;
                 } else if (step === 3) {
-                    // Must answer ALL performer checks
-                    const questionsCount = currentContent.querySelectorAll('.p-3.border.rounded-lg').length;
+                    const questionsCount = currentContent.querySelectorAll('.control-measure-item').length;
                     const radioChecked = currentContent.querySelectorAll('input[type="radio"]:checked').length;
                     if (radioChecked < questionsCount) return false;
                 } else if (step === 4) {
+                    const questionsCount = currentContent.querySelectorAll('.performer-item').length;
+                    const radioChecked = currentContent.querySelectorAll('input[type="radio"]:checked').length;
+                    if (radioChecked < questionsCount) return false;
+                } else if (step === 5) {
                     // Assuming all 4 names are mandatory as section is mandatory
                     const names = currentContent.querySelectorAll('input[type="text"]');
                     for (let input of names) {
                         if (!input.value.trim()) return false;
                     }
-                } else if (step === 5) {
+                } else if (step === 6) {
                     if (!assigneeSelect.getValue()) return false;
                     if (!safetyReviewerSelect.getValue()) return false;
                 }
@@ -614,7 +655,7 @@ $currentUserId = $userData['id'] ?? 0;
                 nextBtn.classList.toggle('hidden', currentStep === totalSteps);
                 submitBtn.classList.toggle('hidden', currentStep !== totalSteps);
 
-                if (currentStep === 5) {
+                if (currentStep === 6) {
                     Promise.all([loadAssignees(), loadSafetyReviewers()]).then(() => updateButtonStates());
                 } else {
                     updateButtonStates();
@@ -785,6 +826,7 @@ $currentUserId = $userData['id'] ?? 0;
                     safety_reviewer_id: safetyReviewerSelect.getValue(),
                     work_description: formData.get('work_description'),
                     additional_permits: [],
+                    control_measures: [],
                     performers_check: [],
                     approvals: []
                 };
@@ -797,6 +839,14 @@ $currentUserId = $userData['id'] ?? 0;
                         permit_number: formData.get('permit_no_' + id)
                     });
                 });
+
+                // Collection of Control Measures
+                <?php foreach ($controlMeasures as $index => $check): ?>
+                    data.control_measures.push({
+                        text: formData.get('control_measure_text_<?= $index ?>'),
+                        answer: formData.get('control_measure_answer_<?= $index ?>') || 'غير متاح'
+                    });
+                <?php endforeach; ?>
 
                 // Collection of Performers Check
                 <?php foreach ($performersCheck as $index => $check): ?>

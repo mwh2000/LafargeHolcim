@@ -105,6 +105,12 @@ $userName = $userData['name'] ?? 'N/A';
                 gap: 0.25rem !important;
             }
 
+            #safety_approval_info>.grid {
+                display: grid !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 0.5rem !important;
+            }
+
             /* Table compression */
             td,
             th {
@@ -146,7 +152,7 @@ $userName = $userData['name'] ?? 'N/A';
                 <div class="w-full mx-auto">
                     <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-6 no-print">
                         <h1 class="text-xl md:text-2xl font-semibold text-gray-700 text-right order-1 md:order-2">تفاصيل رخصة العمل الساخن (Hot Work Permit)</h1>
-                        <button onclick="window.print()" class="flex items-center gap-2 bg-white border border-[#0b6f76] text-[#0b6f76] px-4 py-2 rounded-md hover:bg-[#0b6f76] hover:text-white transition shadow-sm order-2 md:order-1">
+                        <button id="print-btn" onclick="window.print()" class="hidden flex items-center gap-2 bg-white border border-[#0b6f76] text-[#0b6f76] px-4 py-2 rounded-md hover:bg-[#0b6f76] hover:text-white transition shadow-sm order-2 md:order-1">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                             </svg>
@@ -191,6 +197,24 @@ $userName = $userData['name'] ?? 'N/A';
                                             <div id="safety_comment_container" class="hidden mt-3 p-3 bg-red-50 border border-red-200 rounded-md text-right" dir="rtl">
                                                 <span class="text-red-700 text-sm font-medium">سبب الرفض:</span>
                                                 <p id="safety_comment_text" class="text-red-800 text-sm mt-1"></p>
+                                            </div>
+                                        </div>
+                                        <div id="safety_approval_info" class="hidden mt-4 p-4 bg-gray-50 border border-gray-200 rounded-md text-right" dir="rtl">
+                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                                <div>
+                                                    <span class="text-gray-500">اسم السلامة الموافق:</span>
+                                                    <div id="val-safety-approver-name" class="font-medium text-gray-800"></div>
+                                                </div>
+                                                <div>
+                                                    <span class="text-gray-500">وقت الموافقة:</span>
+                                                    <div id="val-safety-approval-time" class="font-medium text-gray-800"></div>
+                                                </div>
+                                                <div>
+                                                    <span class="text-gray-500">توقيع الموافق:</span>
+                                                    <div class="mt-2">
+                                                        <img id="val-safety-approver-signature" src="" alt="توقيع الموافق" class="hidden h-16 object-contain p-1" />
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                         <!-- القسم الأول: المعلومات الأساسية -->
@@ -250,7 +274,15 @@ $userName = $userData['name'] ?? 'N/A';
                                             <p id="no-additional-permits" class="text-sm text-gray-500 hidden mt-2">لا توجد تصاريح إضافية محددة.</p>
                                         </div>
 
-                                        <!-- القسم الثالث: منفذي الأعمال -->
+                                        <!-- القسم الثالث: إجراءات السيطرة -->
+                                        <div class="bg-white p-6 rounded-lg shadow-md">
+                                            <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">إجراءات السيطرة</h2>
+                                            <div class="space-y-2 text-sm text-right" dir="rtl" id="val-control-measures">
+                                                <!-- Data will be injected here -->
+                                            </div>
+                                        </div>
+
+                                        <!-- القسم الرابع: منفذي الأعمال -->
                                         <div class="bg-white p-6 rounded-lg shadow-md">
                                             <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">منفذي الأعمال الساخنة (Performers Check)</h2>
                                             <div class="space-y-2 text-sm text-right" dir="rtl" id="val-performers-check">
@@ -333,14 +365,18 @@ $userName = $userData['name'] ?? 'N/A';
             document.getElementById('val-finish').textContent = data.finishing_time ? data.finishing_time.replace('T', ' ') : '-';
 
             // Show "Open" or "Not Active" badge based on finishing time
-            if (data.finishing_time) {
-                if (new Date(data.finishing_time) < new Date()) {
-                    document.getElementById('not-active-badge').classList.remove('hidden');
-                    document.getElementById('val-finish').classList.replace('text-green-600', 'text-red-500');
-                } else {
-                    document.getElementById('open-badge').classList.remove('hidden');
-                }
+            const printBtn = document.getElementById('print-btn');
+            const openBadge = document.getElementById('open-badge');
+            const notActiveBadge = document.getElementById('not-active-badge');
+
+            const isOpen = !data.finishing_time || new Date(data.finishing_time) >= new Date();
+            if (isOpen) {
+                openBadge.classList.remove('hidden');
+                printBtn.classList.remove('hidden');
+            } else {
+                notActiveBadge.classList.remove('hidden');
             }
+
             if (data.finishing_time_updated_by) {
                 document.getElementById('updated-by').textContent = `تم التحديث بواسطة: ${data.finishing_time_updated_by }`;
             }
@@ -355,6 +391,18 @@ $userName = $userData['name'] ?? 'N/A';
             document.getElementById('val-work-description').textContent = data.work_description || '-';
             document.getElementById('val-creator').textContent = data.creator_name || '-';
             document.getElementById('val-assigned').textContent = data.assigned_to_name || '-';
+
+            // Safety approval details
+            if (data.safety_status === 'approved') {
+                document.getElementById('safety_approval_info').classList.remove('hidden');
+                document.getElementById('val-safety-approver-name').textContent = data.safety_reviewer_name || '-';
+                document.getElementById('val-safety-approval-time').textContent = data.safety_reviewed_at ? data.safety_reviewed_at.replace('T', ' ') : '-';
+                if (data.safety_reviewer_signature) {
+                    const sig = document.getElementById('val-safety-approver-signature');
+                    sig.src = `../../public/${data.safety_reviewer_signature}`;
+                    sig.classList.remove('hidden');
+                }
+            }
 
             document.getElementById('val-permit-type').textContent = (parseInt(data.is_critical) === 1) ? 'رخصة العمل الساخن (الحرجة)' : 'رخصة العمل الساخن (عاديه)';
 
@@ -488,13 +536,13 @@ $userName = $userData['name'] ?? 'N/A';
 
                 const badge = document.getElementById('safety_status_badge');
                 if (status === 'pending') {
-                    badge.textContent = 'بانتظار موافقة السيفتي' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');
+                    badge.textContent = 'بانتظار موافقة قسم السلامة' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');
                     badge.className = 'font-bold px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800';
                 } else if (status === 'approved') {
-                    badge.textContent = 'تمت الموافقة من قبل السيفتي' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');
+                    badge.textContent = 'تمت الموافقة من قبل قسم السلامة' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');
                     badge.className = 'font-bold px-3 py-1 rounded-full text-sm bg-green-100 text-green-800';
                 } else if (status === 'rejected') {
-                    badge.textContent = 'مرفوضة من قبل السيفتي' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');
+                    badge.textContent = 'مرفوضة من قبل قسم السلامة' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');
                     badge.className = 'font-bold px-3 py-1 rounded-full text-sm bg-red-100 text-red-800';
                 }
 
@@ -515,7 +563,7 @@ $userName = $userData['name'] ?? 'N/A';
 
                     const rejectBtn = document.createElement('button');
                     rejectBtn.className = 'px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition';
-                    rejectBtn.textContent = 'رفض';
+                    rejectBtn.textContent = 'مراجعة الرخصة';
                     actions.appendChild(rejectBtn);
 
                     approveBtn.addEventListener('click', async () => {
@@ -550,9 +598,9 @@ $userName = $userData['name'] ?? 'N/A';
 
                     rejectBtn.addEventListener('click', async () => {
                         const result = await Swal.fire({
-                            title: 'رفض الرخصة',
+                            title: 'مراجعة الرخصة',
                             input: 'textarea',
-                            inputLabel: 'سبب الرفض',
+                            inputLabel: 'سبب عدم قبول الرخصة',
                             inputPlaceholder: 'اكتب سبب الرفض هنا...',
                             inputAttributes: {
                                 'dir': 'rtl'
@@ -591,7 +639,7 @@ $userName = $userData['name'] ?? 'N/A';
                 if (status === 'rejected' && USER_ID === parseInt(data.created_by || 0)) {
                     const editBtn = document.createElement('button');
                     editBtn.className = 'px-3 py-2 bg-[#0b6f76] text-white rounded hover:bg-[#085a60] transition';
-                    editBtn.textContent = 'تعديل الرخصة وإعادة الإرسال';
+                    editBtn.textContent = 'تعديل الرخصة';
                     editBtn.addEventListener('click', () => {
                         window.location.href = `add_hot_work_license.php?id=${PERMIT_ID}`;
                     });
@@ -615,6 +663,29 @@ $userName = $userData['name'] ?? 'N/A';
                 });
             } else {
                 apSection.style.display = 'none';
+            }
+
+            // Control Measures
+            const cmContainer = document.getElementById('val-control-measures');
+            const cmSection = cmContainer.closest('.bg-white');
+            if (data.control_measures && data.control_measures.length > 0) {
+                cmSection.style.display = 'block';
+                data.control_measures.forEach((cm, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'flex flex-col sm:flex-row justify-between p-3 border rounded-md bg-gray-50 gap-2';
+
+                    let answerColor = 'text-gray-600';
+                    if (cm.status === 'نعم') answerColor = 'text-[#0b6f76] font-bold';
+                    else if (cm.status === 'كلا') answerColor = 'text-red-600 font-bold';
+
+                    div.innerHTML = `
+                        <span class="text-gray-700 flex-1">${index + 1}. ${cm.measure_text}</span>
+                        <span class="${answerColor} w-20 text-right">${cm.status}</span>
+                    `;
+                    cmContainer.appendChild(div);
+                });
+            } else {
+                cmSection.style.display = 'none';
             }
 
             // Performers Check

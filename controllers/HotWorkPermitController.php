@@ -78,7 +78,21 @@ class HotWorkPermitController
                 }
             }
 
-            // 3. Insert Performers Check
+            // 3. Insert Control Measures
+            if (!empty($data['control_measures'])) {
+                $stmtControl = $this->db->prepare("INSERT INTO hot_work_control_measures (
+                    hot_work_permit_id, measure_text, status
+                ) VALUES (?, ?, ?)");
+                foreach ($data['control_measures'] as $measure) {
+                    $stmtControl->execute([
+                        $permitId,
+                        $measure['text'],
+                        $measure['answer']
+                    ]);
+                }
+            }
+
+            // 4. Insert Performers Check
             if (!empty($data['performers_check'])) {
                 $stmtPerf = $this->db->prepare("INSERT INTO hot_work_performers_check (
                     hot_work_permit_id, question_text, answer
@@ -122,10 +136,25 @@ class HotWorkPermitController
                 } elseif (!$isCritical && !empty($safetyReviewerId)) {
                     // Normal permits now go to the Safety reviewer first; the assignee
                     // is only notified once Safety approves (see approveBySafety()).
-                    $title = 'رخصة عمل ساخن جديدة بانتظار موافقة السيفتي';
-                    $body = 'تم إنشاء رخصة عمل ساخن جديدة برقم ' . $data['permit_no'] . ' وهي بانتظار مراجعتك والموافقة عليها';
+                    $creatorId = $data['created_by'] ?? null;
+                    $creatorName = 'N/A';
+                    $creatorDepartment = 'N/A';
+
+                    if (!empty($creatorId)) {
+                        $creatorStmt = $this->db->prepare("SELECT name, department FROM users WHERE id = ?");
+                        $creatorStmt->execute([$creatorId]);
+                        $creatorUser = $creatorStmt->fetch(PDO::FETCH_ASSOC);
+
+                        if ($creatorUser) {
+                            $creatorName = $creatorUser['name'] ?? 'N/A';
+                            $creatorDepartment = $creatorUser['department'] ?? 'N/A';
+                        }
+                    }
+
+                    $title = 'بأنتظار موافقة قسم السلامة';
+                    $body = "{$creatorName} | {$creatorDepartment}";
                     $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
-                    $notificationController->sendNotification($title, $body, [$safetyReviewerId], $url, $data['created_by']);
+                    $notificationController->sendNotification($title, $body, [$safetyReviewerId], $url, $creatorId);
                     $emailController->sendEmail($title, $body, [$safetyReviewerId]);
                 }
             } catch (Exception $e) {
@@ -175,7 +204,7 @@ class HotWorkPermitController
     public function getSafetyReviewers()
     {
         try {
-            $stmt = $this->db->prepare("SELECT id, name FROM users WHERE role_id = 4");
+            $stmt = $this->db->prepare("SELECT id, name FROM users WHERE role_id IN (1, 4)");
             $stmt->execute();
             return ['success' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
         } catch (Exception $e) {
@@ -258,8 +287,8 @@ class HotWorkPermitController
             try {
                 $notificationController = new NotificationController($this->db);
                 $emailController = new EmailController($this->db);
-                $title = 'تم رفض رخصة عمل ساخن';
-                $body = 'قام السيفتي برفض رخصة العمل الساخن. السبب: ' . $comment;
+                $title = 'قام قسم السلامة بعدم قبول الرخصة يرجى المراجعة';
+                $body = 'قام قسم السلامة برفض الرخصة. السبب: ' . $comment;
                 $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
 
                 $recipients = array_filter(array_unique([$permit['created_by'], $permit['assigned_to']]));
@@ -330,6 +359,17 @@ class HotWorkPermitController
                 }
             }
 
+            $stmtDelControl = $this->db->prepare("DELETE FROM hot_work_control_measures WHERE hot_work_permit_id = ?");
+            $stmtDelControl->execute([$permitId]);
+            if (!empty($data['control_measures'])) {
+                $stmtControl = $this->db->prepare("INSERT INTO hot_work_control_measures (
+                    hot_work_permit_id, measure_text, status
+                ) VALUES (?, ?, ?)");
+                foreach ($data['control_measures'] as $measure) {
+                    $stmtControl->execute([$permitId, $measure['text'], $measure['answer']]);
+                }
+            }
+
             $stmtDelPerf = $this->db->prepare("DELETE FROM hot_work_performers_check WHERE hot_work_permit_id = ?");
             $stmtDelPerf->execute([$permitId]);
             if (!empty($data['performers_check'])) {
@@ -359,8 +399,8 @@ class HotWorkPermitController
                 if (!empty($data['safety_reviewer_id'])) {
                     $notificationController = new NotificationController($this->db);
                     $emailController = new EmailController($this->db);
-                    $title = 'إعادة إرسال رخصة عمل ساخن بعد التعديل';
-                    $body = 'قام مقدم الطلب بتعديل رخصة العمل الساخن بعد رفضها وإعادة إرسالها، وهي بانتظار مراجعتك';
+                    $title = 'قام مقدم الطلب بتعديل رخصة العمل الساخن بعد رفضها وإعادة إرسالها، وهي بانتظار مراجعتك';
+                    $body = '';
                     $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
                     $notificationController->sendNotification($title, $body, [$data['safety_reviewer_id']], $url, $creatorId);
                     $emailController->sendEmail($title, $body, [$data['safety_reviewer_id']]);
@@ -474,6 +514,18 @@ class HotWorkPermitController
                 }
             }
 
+            // Clear and insert control measures
+            $stmtDelControl = $this->db->prepare("DELETE FROM hot_work_control_measures WHERE hot_work_permit_id = ?");
+            $stmtDelControl->execute([$permitId]);
+            if (!empty($data['control_measures'])) {
+                $stmtControl = $this->db->prepare("INSERT INTO hot_work_control_measures (
+                    hot_work_permit_id, measure_text, status
+                ) VALUES (?, ?, ?)");
+                foreach ($data['control_measures'] as $measure) {
+                    $stmtControl->execute([$permitId, $measure['text'], $measure['answer']]);
+                }
+            }
+
             // Clear and insert performers check
             $stmtDelPerf = $this->db->prepare("DELETE FROM hot_work_performers_check WHERE hot_work_permit_id = ?");
             $stmtDelPerf->execute([$permitId]);
@@ -531,7 +583,8 @@ class HotWorkPermitController
         try {
             $stmt = $this->db->prepare("SELECT h.*, u.name as assigned_to_name, c.name as creator_name,
                                                 cm.name as critical_manager_name, cs.name as critical_supervisor_name,
-                                                ft.name as finishing_time_updated_by, sr.name as safety_reviewer_name
+                                                ft.name as finishing_time_updated_by, sr.name as safety_reviewer_name,
+                                                sr.signature as safety_reviewer_signature, h.safety_reviewed_at
                                         FROM hot_work_permit h
                                         LEFT JOIN users u ON h.assigned_to = u.id
                                         LEFT JOIN users c ON h.created_by = c.id
@@ -550,6 +603,10 @@ class HotWorkPermitController
             $stmtAdd = $this->db->prepare("SELECT * FROM additional_hot_permits WHERE hot_work_permit_id = ?");
             $stmtAdd->execute([$id]);
             $permit['additional_permits'] = $stmtAdd->fetchAll(PDO::FETCH_ASSOC);
+
+            $stmtControl = $this->db->prepare("SELECT * FROM hot_work_control_measures WHERE hot_work_permit_id = ?");
+            $stmtControl->execute([$id]);
+            $permit['control_measures'] = $stmtControl->fetchAll(PDO::FETCH_ASSOC);
 
             $stmtPerf = $this->db->prepare("SELECT * FROM hot_work_performers_check WHERE hot_work_permit_id = ?");
             $stmtPerf->execute([$id]);
