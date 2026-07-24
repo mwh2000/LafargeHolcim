@@ -55,7 +55,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                                 <th class="px-6 py-3">Permit No</th>
                                 <th class="px-6 py-3">Issuing Date</th>
                                 <th class="px-6 py-3">Finishing Time</th>
-                                <th class="px-6 py-3">Company</th>
+                                <th class="px-6 py-3">Requester Name</th>
                                 <th class="px-6 py-3">Location</th>
                                 <th class="px-6 py-3">Requester</th>
                                 <th class="px-6 py-3">Assigned To</th>

@@ -244,8 +244,8 @@ $userName = $userData['name'] ?? 'N/A';
                                                 </div>
                                                 <div><span class="text-gray-500">تم الإنشاء بواسطة:</span> <span id="val-creator" class="font-medium text-gray-800"></span></div>
                                                 <div><span class="text-gray-500">مسند إلى (Assigned To):</span> <span id="val-assigned" class="font-bold text-[#0b6f76]"></span></div>
-                                                <div><span class="text-gray-500" id="critical_manager_info">موافقة قسم سلامة:</span> <span id="critical_manager_name" class="font-bold text-[#0b6f76]"></span></div>
-                                                <div><span class="text-gray-500" id="critical_supervisor_info">موافقة مدير المصنع:</span> <span id="critical_supervisor_name" class="font-bold text-[#0b6f76]"></span></div>
+                                                <!-- <div><span class="text-gray-500" id="critical_manager_info">موافقة قسم سلامة:</span> <span id="critical_manager_name" class="font-bold text-[#0b6f76]"></span></div>
+                                                <div><span class="text-gray-500" id="critical_supervisor_info">موافقة مدير المصنع:</span> <span id="critical_supervisor_name" class="font-bold text-[#0b6f76]"></span></div> -->
                                                 <div><span class="text-gray-500">رقم أمر العمل (WO):</span> <span id="val-wo" class="font-medium text-gray-800"></span></div>
                                                 <div><span class="text-gray-500">نوع الرخصة:</span> <span id="val-permit-type" class="font-medium text-gray-800"></span></div>
                                             </div>
@@ -405,6 +405,9 @@ $userName = $userData['name'] ?? 'N/A';
             }
 
             document.getElementById('val-permit-type').textContent = (parseInt(data.is_critical) === 1) ? 'رخصة العمل الساخن (الحرجة)' : 'رخصة العمل الساخن (عاديه)';
+            if (data.WO) {
+                document.getElementById('val-wo').textContent = data.WO;
+            }
 
             // Critical status handling
             if (data.is_critical && parseInt(data.is_critical) === 1) {
@@ -421,18 +424,14 @@ $userName = $userData['name'] ?? 'N/A';
                 badge.textContent = badgeText;
 
                 // Display critical manager and supervisor names
-                if (data.critical_manager_name) {
-                    document.getElementById('critical_manager_info').style.display = 'inline-block';
-                    document.getElementById('critical_manager_name').textContent = data.critical_manager_name;
-                }
-                if (data.critical_supervisor_name) {
-                    document.getElementById('critical_supervisor_info').style.display = 'inline-block';
-                    document.getElementById('critical_supervisor_name').textContent = data.critical_supervisor_name;
-                }
-                if (data.WO) {
-                    document.getElementById('val-wo').textContent = data.WO;
-                }
-
+                // if (data.critical_manager_name) {
+                //     document.getElementById('critical_manager_info').style.display = 'inline-block';
+                //     document.getElementById('critical_manager_name').textContent = data.critical_manager_name;
+                // }
+                // if (data.critical_supervisor_name) {
+                //     document.getElementById('critical_supervisor_info').style.display = 'inline-block';
+                //     document.getElementById('critical_supervisor_name').textContent = data.critical_supervisor_name;
+                // }
                 const actions = document.getElementById('critical_actions');
                 actions.innerHTML = '';
 
