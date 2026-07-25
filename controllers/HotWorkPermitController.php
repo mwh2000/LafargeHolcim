@@ -174,7 +174,7 @@ class HotWorkPermitController
     public function getManagers()
     {
         try {
-            $stmt = $this->db->prepare("SELECT id, name FROM users WHERE role_id IN (1, 4)");
+            $stmt = $this->db->prepare("SELECT id, name FROM users WHERE role_id = 6");
             $stmt->execute();
             return ['success' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
         } catch (Exception $e) {
