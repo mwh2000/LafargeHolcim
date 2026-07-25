@@ -70,7 +70,11 @@ try {
                 $res = $controller->updateFinishingTime($permitId, $finishingTime, $decoded->id);
             } elseif ($action === 'approveSafety') {
                 $permitId = $input['permit_id'] ?? null;
-                $res = $controller->approveBySafety($permitId, $decoded->id);
+                $criticalManagerId = $input['critical_manager_id'] ?? null;
+                $res = $controller->approveBySafety($permitId, $decoded->id, $criticalManagerId);
+            } elseif ($action === 'approveManager') {
+                $permitId = $input['permit_id'] ?? null;
+                $res = $controller->approveByManager($permitId, $decoded->id);
             } elseif ($action === 'rejectSafety') {
                 $permitId = $input['permit_id'] ?? null;
                 $comment = $input['comment'] ?? '';

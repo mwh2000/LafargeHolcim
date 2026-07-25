@@ -123,10 +123,6 @@ $currentUserId = $userData['id'] ?? 0;
                                         <span class="text-sm">رخصة عمل حرجة</span>
                                     </label>
                                 </div>
-                                <div id="critical_manager_container" style="display:none;">
-                                    <label class="block text-sm font-medium text-green-700 mb-1">موافقة قسم السلامة</label>
-                                    <select id="critical_manager_id" name="critical_manager_id" class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]"></select>
-                                </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1" ب>الموقع الدقيق</label>
                                     <input type="text" name="supervisor" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
@@ -349,20 +345,105 @@ $currentUserId = $userData['id'] ?? 0;
                 onChange: () => updateButtonStates()
             });
 
-            // Critical manager select (TomSelect)
-            let criticalManagerSelect = new TomSelect('#critical_manager_id', {
-                persist: false,
-                create: false,
-                placeholder: 'اختر موافقة القسم...'
-            });
-
             const isCriticalCheckbox = document.getElementById('is_critical');
-            const criticalManagerContainer = document.getElementById('critical_manager_container');
             const locationSelect = document.getElementById('location');
 
             let resumeMode = false;
             let resubmitMode = false;
             let resubmitPermitId = null;
+
+            function populateExistingPermitData(p) {
+                const isCritical = parseInt(p.is_critical || 0) === 1;
+                isCriticalCheckbox.checked = isCritical;
+                populateLocation(isCritical);
+
+                document.querySelectorAll('.step-content[data-step="1"] input, .step-content[data-step="1"] textarea').forEach(el => {
+                    el.readOnly = false;
+                    el.disabled = false;
+                });
+                setPointerEventsForStep1(true);
+
+                document.querySelector('input[name="permit_no"]').value = p.permit_no || '';
+                document.querySelector('input[name="wo"]').value = p.WO || '';
+                document.querySelector('input[name="company_name"]').value = p.company_name || '';
+                document.getElementById('location').value = p.location || '';
+                document.querySelector('input[name="supervisor"]').value = p.supervisor || '';
+                document.getElementById('equipment_used').value = p.equipment_used || '';
+                document.getElementById('maintenance_type').value = p.maintenance_type || 'طارئة';
+                if (p.task_start_datetime) document.querySelector('input[name="task_start_datetime"]').value = p.task_start_datetime.replace(' ', 'T');
+                if (p.finishing_time) document.querySelector('input[name="finishing_time"]').value = p.finishing_time.replace(' ', 'T');
+
+                document.querySelector('textarea[name="work_description"]').value = p.work_description || '';
+
+                if (p.additional_permits && p.additional_permits.length) {
+                    const hiddenInputs = document.querySelectorAll('input[type="hidden"][name^="permit_name_"]');
+                    p.additional_permits.forEach(ap => {
+                        hiddenInputs.forEach(hidden => {
+                            if (hidden.value === ap.permit_name) {
+                                const catalogId = hidden.name.replace('permit_name_', '');
+                                const cb = document.querySelector(`input[name="additional_permits_selected[]"][value="${catalogId}"]`);
+                                if (cb) cb.checked = true;
+                                const numInput = document.querySelector(`input[name="permit_no_${catalogId}"]`);
+                                if (numInput) numInput.value = ap.permit_number || '';
+                            }
+                        });
+                    });
+                }
+
+                if (p.control_measures && p.control_measures.length) {
+                    const controlTextInputs = Array.from(document.querySelectorAll('input[name^="control_measure_text_"]'));
+                    p.control_measures.forEach((cm, index) => {
+                        const savedAnswer = cm.status ?? cm.answer ?? '';
+                        const savedText = cm.measure_text ?? cm.text ?? '';
+                        let targetIndex = index;
+
+                        if (savedText) {
+                            const matchedIndex = controlTextInputs.findIndex(input => input.value === savedText);
+                            if (matchedIndex >= 0) targetIndex = matchedIndex;
+                        }
+
+                        const radio = document.querySelector(`input[name="control_measure_answer_${targetIndex}"][value="${savedAnswer}"]`);
+                        if (radio) radio.checked = true;
+                    });
+                }
+
+                if (p.performers_check && p.performers_check.length) {
+                    const performerTextInputs = Array.from(document.querySelectorAll('input[name^="performer_check_text_"]'));
+                    p.performers_check.forEach((pc, index) => {
+                        const savedAnswer = pc.answer ?? pc.status ?? '';
+                        const savedText = pc.question_text ?? pc.text ?? '';
+                        let targetIndex = index;
+
+                        if (savedText) {
+                            const matchedIndex = performerTextInputs.findIndex(input => input.value === savedText);
+                            if (matchedIndex >= 0) targetIndex = matchedIndex;
+                        }
+
+                        const radio = document.querySelector(`input[name="performer_check_answer_${targetIndex}"][value="${savedAnswer}"]`);
+                        if (radio) radio.checked = true;
+                    });
+                }
+
+                if (p.approvals && p.approvals.length) {
+                    const roleLabelToKey = {
+                        'Welding Name': 'welding',
+                        'Supervisor': 'supervisor',
+                        'Fire Sentry': 'fire_sentry',
+                        'PTW Issuer': 'ptw_issuer'
+                    };
+                    p.approvals.forEach(app => {
+                        const key = roleLabelToKey[app.role_name];
+                        if (!key) return;
+                        const parts = (app.approval_status || '').split(' - ');
+                        const name = parts[0] || '';
+                        const approved = (app.approval_status || '').includes('Approved');
+                        const nameInput = document.querySelector(`input[name="approval_name_${key}"]`);
+                        if (nameInput && !nameInput.readOnly) nameInput.value = name;
+                        const statusCb = document.querySelector(`input[name="approval_status_${key}"]`);
+                        if (statusCb) statusCb.checked = approved;
+                    });
+                }
+            }
 
             function setPointerEventsForStep1(enabled) {
                 document.querySelectorAll('.step-content[data-step="1"] select').forEach(el => {
@@ -400,50 +481,9 @@ $currentUserId = $userData['id'] ?? 0;
             // initial populate (normal)
             populateLocation(false);
 
-            isCriticalCheckbox.addEventListener('change', async (e) => {
-                const checked = e.target.checked;
-                populateLocation(checked);
-                document.getElementById('critical_manager_id').required = checked;
-                if (checked) {
-                    criticalManagerContainer.style.display = 'block';
-                    if (!resumeMode) {
-                        // hide steps 2-6 and disable their controls so validation won't block
-                        document.querySelectorAll('.step-content').forEach(c => {
-                            if (c.dataset.step !== '1') c.style.display = 'none';
-                        });
-                        disableNonStep1Controls(true);
-                        nextBtn.textContent = 'إرسال الرخصة الحرجة';
-                        // load managers
-                        try {
-                            const res = await fetch('../../api/requester/hot_work_permit.php?action=getManagers', {
-                                headers: {
-                                    'Authorization': `Bearer ${TOKEN}`
-                                }
-                            });
-                            const data = await res.json();
-                            if (data.success) {
-                                criticalManagerSelect.clearOptions();
-                                data.data.forEach(m => criticalManagerSelect.addOption({
-                                    value: m.id,
-                                    text: m.name
-                                }));
-                                criticalManagerSelect.refreshOptions(false);
-                            }
-                        } catch (err) {
-                            console.error('Failed to load managers', err);
-                        }
-                    } else {
-                        // resume mode: keep steps visible and enabled
-                        document.querySelectorAll('.step-content').forEach(c => c.style.display = '');
-                        disableNonStep1Controls(false);
-                        nextBtn.textContent = 'التالي';
-                    }
-                } else {
-                    criticalManagerContainer.style.display = 'none';
-                    document.querySelectorAll('.step-content').forEach(c => c.style.display = '');
-                    disableNonStep1Controls(false);
-                    nextBtn.textContent = 'التالي';
-                }
+            isCriticalCheckbox.addEventListener('change', () => {
+                populateLocation(isCriticalCheckbox.checked);
+                updateButtonStates();
             });
 
             // If editing/resuming (id param), load permit and prepare resume mode
@@ -459,102 +499,34 @@ $currentUserId = $userData['id'] ?? 0;
                     const jr = await res.json();
                     if (jr.success) {
                         const p = jr.data;
-                        // If critical and pending_creator, enable resume mode
-                        if (p.is_critical && p.critical_status === 'pending_creator') {
-                            // enable resume mode: indicate critical but allow steps 2-6 to be edited
-                            resumeMode = true;
-                            isCriticalCheckbox.checked = true;
-                            populateLocation(true);
-                            criticalManagerContainer.style.display = 'block';
+                        if (p.is_critical && p.safety_status === 'rejected' && parseInt(p.created_by) === CURRENT_USER_ID) {
+                            resubmitMode = true;
+                            resubmitPermitId = editId;
+                            populateExistingPermitData(p);
 
-                            // lock step 1 inputs (readonly) but keep them enabled for submission
+                            await loadAssignees();
+                            assigneeSelect.setValue(p.assigned_to ? String(p.assigned_to) : null);
+                            await loadSafetyReviewers();
+                            safetyReviewerSelect.setValue(p.safety_reviewer_id ? String(p.safety_reviewer_id) : null);
+
+                            updateUI();
+                        } else if (p.is_critical && p.critical_status === 'pending_creator') {
+                            resumeMode = true;
+                            populateExistingPermitData(p);
+
                             document.querySelectorAll('.step-content[data-step="1"] input, .step-content[data-step="1"] textarea').forEach(el => {
                                 el.readOnly = true;
                             });
-                            // for selects, prevent pointer events but keep enabled so their values are submitted
                             setPointerEventsForStep1(false);
 
-                            // populate basic fields
-                            document.querySelector('input[name="permit_no"]').value = p.permit_no || '';
-                            document.querySelector('input[name="wo"]').value = p.WO || '';
-                            document.querySelector('input[name="company_name"]').value = p.company_name || '';
-                            document.getElementById('location').value = p.location || '';
-                            document.querySelector('input[name="supervisor"]').value = p.supervisor || '';
-                            document.getElementById('equipment_used').value = p.equipment_used || '';
-                            document.getElementById('maintenance_type').value = p.maintenance_type || 'طارئة';
-                            if (p.task_start_datetime) document.querySelector('input[name="task_start_datetime"]').value = p.task_start_datetime.replace(' ', 'T');
-                            if (p.finishing_time) document.querySelector('input[name="finishing_time"]').value = p.finishing_time.replace(' ', 'T');
-
-                            // show steps 2-6 and ensure their controls are enabled
                             document.querySelectorAll('.step-content').forEach(c => c.style.display = '');
                             disableNonStep1Controls(false);
                             currentStep = 2;
                             updateUI();
                         } else if (!parseInt(p.is_critical || 0) && p.safety_status === 'rejected' && parseInt(p.created_by) === CURRENT_USER_ID) {
-                            // Normal permit rejected by Safety: allow the creator to edit everything and resend it
                             resubmitMode = true;
                             resubmitPermitId = editId;
-
-                            document.querySelector('input[name="permit_no"]').value = p.permit_no || '';
-                            document.querySelector('input[name="wo"]').value = p.WO || '';
-                            document.querySelector('input[name="company_name"]').value = p.company_name || '';
-                            document.getElementById('location').value = p.location || '';
-                            document.querySelector('input[name="supervisor"]').value = p.supervisor || '';
-                            document.getElementById('equipment_used').value = p.equipment_used || '';
-                            document.getElementById('maintenance_type').value = p.maintenance_type || 'طارئة';
-                            if (p.task_start_datetime) document.querySelector('input[name="task_start_datetime"]').value = p.task_start_datetime.replace(' ', 'T');
-                            if (p.finishing_time) document.querySelector('input[name="finishing_time"]').value = p.finishing_time.replace(' ', 'T');
-
-                            document.querySelector('textarea[name="work_description"]').value = p.work_description || '';
-
-                            if (p.additional_permits && p.additional_permits.length) {
-                                const hiddenInputs = document.querySelectorAll('input[type="hidden"][name^="permit_name_"]');
-                                p.additional_permits.forEach(ap => {
-                                    hiddenInputs.forEach(hidden => {
-                                        if (hidden.value === ap.permit_name) {
-                                            const catalogId = hidden.name.replace('permit_name_', '');
-                                            const cb = document.querySelector(`input[name="additional_permits_selected[]"][value="${catalogId}"]`);
-                                            if (cb) cb.checked = true;
-                                            const numInput = document.querySelector(`input[name="permit_no_${catalogId}"]`);
-                                            if (numInput) numInput.value = ap.permit_number || '';
-                                        }
-                                    });
-                                });
-                            }
-
-                            if (p.control_measures && p.control_measures.length) {
-                                p.control_measures.forEach((cm, index) => {
-                                    const radio = document.querySelector(`input[name="control_measure_answer_${index}"][value="${cm.answer}"]`);
-                                    if (radio) radio.checked = true;
-                                });
-                            }
-
-                            if (p.performers_check && p.performers_check.length) {
-                                p.performers_check.forEach((pc, index) => {
-                                    const radio = document.querySelector(`input[name="performer_check_answer_${index}"][value="${pc.answer}"]`);
-                                    if (radio) radio.checked = true;
-                                });
-                            }
-
-                            if (p.approvals && p.approvals.length) {
-                                const roleLabelToKey = {
-                                    'Welding Name': 'welding',
-                                    'Supervisor': 'supervisor',
-                                    'Fire Sentry': 'fire_sentry',
-                                    'PTW Issuer': 'ptw_issuer'
-                                };
-                                p.approvals.forEach(app => {
-                                    const key = roleLabelToKey[app.role_name];
-                                    if (!key) return;
-                                    const parts = (app.approval_status || '').split(' - ');
-                                    const name = parts[0] || '';
-                                    const approved = (app.approval_status || '').includes('Approved');
-                                    const nameInput = document.querySelector(`input[name="approval_name_${key}"]`);
-                                    if (nameInput && !nameInput.readOnly) nameInput.value = name;
-                                    const statusCb = document.querySelector(`input[name="approval_status_${key}"]`);
-                                    if (statusCb) statusCb.checked = approved;
-                                });
-                            }
+                            populateExistingPermitData(p);
 
                             await loadAssignees();
                             assigneeSelect.setValue(p.assigned_to ? String(p.assigned_to) : null);
@@ -608,15 +580,11 @@ $currentUserId = $userData['id'] ?? 0;
                 nextBtn.disabled = !isValid;
                 submitBtn.disabled = !isValid;
 
-                // Update highestStepReached based on current step's validity
-                if (isCriticalCheckbox.checked && !resumeMode) {
-                    highestStepReached = 1;
-                } else if (isValid) {
+                if (isValid) {
                     if (currentStep >= highestStepReached) {
                         highestStepReached = currentStep + 1;
                     }
                 } else {
-                    // If current step becomes invalid, we can't go beyond it
                     if (currentStep <= highestStepReached) {
                         highestStepReached = currentStep;
                     }
@@ -664,11 +632,6 @@ $currentUserId = $userData['id'] ?? 0;
             }
 
             nextBtn.addEventListener('click', () => {
-                if (isCriticalCheckbox.checked && !resumeMode) {
-                    // submit immediately for critical permits (only if not resuming)
-                    form.requestSubmit();
-                    return;
-                }
                 if (checkStepValidity(currentStep)) {
                     currentStep++;
                     updateUI();
@@ -752,66 +715,6 @@ $currentUserId = $userData['id'] ?? 0;
 
                 const formData = new FormData(form);
 
-                // If critical (and not resuming), send minimal payload to create a critical permit
-                if (isCriticalCheckbox.checked && !resumeMode) {
-                    const payload = {
-                        permit_no: formData.get('permit_no'),
-                        wo: formData.get('wo'),
-                        company_name: formData.get('company_name'),
-                        location: formData.get('location'),
-                        supervisor: formData.get('supervisor'),
-                        equipment_used: formData.get('equipment_used'),
-                        maintenance_type: formData.get('maintenance_type'),
-                        task_start_datetime: formData.get('task_start_datetime'),
-                        finishing_time: formData.get('finishing_time'),
-                        is_critical: 1,
-                        critical_manager_id: criticalManagerSelect.getValue(),
-                        critical_status: 'pending_manager'
-                    };
-
-                    try {
-                        submitBtn.disabled = true;
-                        submitBtn.textContent = 'جاري الإرسال...';
-
-                        const res = await fetch('../../api/requester/hot_work_permit.php', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${TOKEN}`
-                            },
-                            body: JSON.stringify(payload)
-                        });
-                        const result = await res.json();
-                        if (result.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'تم بنجاح',
-                                text: result.message,
-                                confirmButtonText: 'حسناً',
-                                confirmButtonColor: '#0b6f76'
-                            }).then(() => {
-                                const redirectId = result.id || editId;
-                                window.location.href = `view_hot_work_license.php?id=${redirectId}`;
-                            });
-                        } else {
-                            throw new Error(result.message);
-                        }
-                    } catch (err) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'خطأ',
-                            text: err.message || 'حدث خطأ ما',
-                            confirmButtonText: 'حسناً',
-                            confirmButtonColor: '#0b6f76'
-                        });
-                    } finally {
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'إرسال الرخصة';
-                    }
-
-                    return;
-                }
-
                 const data = {
                     permit_no: formData.get('permit_no'),
                     wo: formData.get('wo'),
@@ -828,7 +731,9 @@ $currentUserId = $userData['id'] ?? 0;
                     additional_permits: [],
                     control_measures: [],
                     performers_check: [],
-                    approvals: []
+                    approvals: [],
+                    is_critical: isCriticalCheckbox.checked ? 1 : 0,
+                    critical_status: isCriticalCheckbox.checked ? 'pending_manager' : null
                 };
 
                 // Collection of Additional Permits

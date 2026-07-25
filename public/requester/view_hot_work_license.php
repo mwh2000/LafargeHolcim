@@ -327,6 +327,35 @@ $userName = $userData['name'] ?? 'N/A';
         const USER_ROLE = <?= (int)$userRole ?>;
         const API_BASE = "../../api/requester/hot_work_permit.php";
 
+        function setActionButtonLoading(button, isLoading, loadingText = 'جاري المعالجة...') {
+            if (!button) return;
+            const originalText = button.dataset.originalText || button.textContent;
+            button.dataset.originalText = originalText;
+            button.disabled = isLoading;
+            button.classList.toggle('opacity-70', isLoading);
+            button.classList.toggle('cursor-not-allowed', isLoading);
+            button.classList.toggle('pointer-events-none', isLoading);
+            button.textContent = isLoading ? loadingText : originalText;
+        }
+
+        async function requestJson(url, options = {}) {
+            const response = await fetch(url, options);
+            const text = await response.text();
+            let data = null;
+            try {
+                data = text ? JSON.parse(text) : null;
+            } catch (e) {
+                data = {
+                    success: false,
+                    message: text || 'استجابة غير صالحة من الخادم'
+                };
+            }
+            return {
+                response,
+                data
+            };
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             await loadPermitData();
         });
@@ -410,12 +439,12 @@ $userName = $userData['name'] ?? 'N/A';
             }
 
             // Critical status handling
-            if (data.is_critical && parseInt(data.is_critical) === 1) {
+            const isCritical = parseInt(data.is_critical || 0) === 1;
+            if (isCritical) {
                 document.getElementById('critical_status_container').classList.remove('hidden');
                 const status = data.critical_status || 'pending_manager';
                 let badgeText = '';
-                if (status === 'pending_manager') badgeText = 'بأنتظار موافقة قسم السلامة';
-                else if (status === 'pending_supervisor') badgeText = 'بأنتظار موافقة مدير المصنع';
+                if (status === 'pending_manager') badgeText = 'بأنتظار موافقة مدير المصنع';
                 else if (status === 'pending_creator') badgeText = 'تمت الموافقة للعمل (جاهز للعمل)';
                 else if (status === 'completed') badgeText = 'مكتمل';
                 else badgeText = status;
@@ -423,83 +452,21 @@ $userName = $userData['name'] ?? 'N/A';
                 const badge = document.getElementById('critical_status_badge');
                 badge.textContent = badgeText;
 
-                // Display critical manager and supervisor names
-                // if (data.critical_manager_name) {
-                //     document.getElementById('critical_manager_info').style.display = 'inline-block';
-                //     document.getElementById('critical_manager_name').textContent = data.critical_manager_name;
-                // }
-                // if (data.critical_supervisor_name) {
-                //     document.getElementById('critical_supervisor_info').style.display = 'inline-block';
-                //     document.getElementById('critical_supervisor_name').textContent = data.critical_supervisor_name;
-                // }
-                const actions = document.getElementById('critical_actions');
-                actions.innerHTML = '';
+                const criticalActions = document.getElementById('critical_actions');
+                criticalActions.innerHTML = '';
 
                 const canAct = [3, 5, 7].includes(USER_ROLE);
-                // Manager view: if pending_manager and current user is critical_manager or has role 3/5/7
-                if (status === 'pending_manager' && (USER_ID === parseInt(data.critical_manager_id || 0) || canAct)) {
-                    // show supervisor select and assign button
-                    const sel = document.createElement('select');
-                    sel.id = 'assign_supervisor_select';
-                    sel.className = 'px-3 py-2 border rounded';
-                    actions.appendChild(sel);
-
+                if (data.safety_status === 'approved' && status === 'pending_manager' && (USER_ID === parseInt(data.critical_manager_id || 0) || canAct)) {
                     const btn = document.createElement('button');
                     btn.className = 'px-3 py-2 bg-[#0b6f76] text-white rounded';
-                    btn.textContent = 'تمت الموافقة';
-                    actions.appendChild(btn);
-
-                    // load supervisors
-                    fetch(`${API_BASE}?action=getSupervisors`, {
-                            headers: {
-                                'Authorization': `Bearer ${TOKEN}`
-                            }
-                        })
-                        .then(r => r.json()).then(j => {
-                            if (j.success) {
-                                j.data.forEach(s => {
-                                    const o = document.createElement('option');
-                                    o.value = s.id;
-                                    o.textContent = s.name;
-                                    sel.appendChild(o);
-                                });
-                            }
-                        }).catch(() => {});
-
+                    btn.textContent = 'موافقة مدير المصنع';
+                    criticalActions.appendChild(btn);
                     btn.addEventListener('click', async () => {
-                        const supId = sel.value;
-                        if (!supId) return Swal.fire('خطأ', 'اختر مشرفاً', 'error');
+                        setActionButtonLoading(btn, true);
                         try {
-                            const res = await fetch(API_BASE + '?action=assignSupervisor', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${TOKEN}`
-                                },
-                                body: JSON.stringify({
-                                    permit_id: PERMIT_ID,
-                                    supervisor_id: supId
-                                })
-                            });
-                            const jr = await res.json();
-                            if (jr.success) {
-                                Swal.fire('تم', jr.message, 'success').then(() => location.reload());
-                            } else Swal.fire('خطأ', jr.message || 'فشل', 'error');
-                        } catch (e) {
-                            Swal.fire('خطأ', 'فشل الطلب', 'error');
-                        }
-                    });
-                }
-
-                // Supervisor view: if pending_supervisor and current user is critical_supervisor or has role 3/5/7
-                if (status === 'pending_supervisor' && (USER_ID === parseInt(data.critical_supervisor_id || 0) || canAct)) {
-                    const btn = document.createElement('button');
-                    btn.className = 'px-3 py-2 bg-[#0b6f76] text-white rounded';
-                    btn.textContent = 'تمت الموافقة';
-                    actions.appendChild(btn);
-                    btn.addEventListener('click', async () => {
-                        try {
-                            const res = await fetch(API_BASE + '?action=markDone', {
+                            const {
+                                data: jr
+                            } = await requestJson(API_BASE + '?action=approveManager', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -509,16 +476,16 @@ $userName = $userData['name'] ?? 'N/A';
                                     permit_id: PERMIT_ID
                                 })
                             });
-                            const jr = await res.json();
-                            if (jr.success) Swal.fire('تم', jr.message, 'success').then(() => location.reload());
-                            else Swal.fire('خطأ', jr.message || 'فشل', 'error');
+                            if (jr?.success) Swal.fire('تم', jr.message, 'success').then(() => location.reload());
+                            else Swal.fire('خطأ', jr?.message || 'فشل الطلب', 'error');
                         } catch (e) {
                             Swal.fire('خطأ', 'فشل الطلب', 'error');
+                        } finally {
+                            setActionButtonLoading(btn, false);
                         }
                     });
                 }
 
-                // Creator view: if pending_creator and current user is creator or has role 3/5/7
                 if (status === 'pending_creator' && (USER_ID === parseInt(data.created_by || 0) || canAct)) {
                     const btn = document.createElement('button');
                     btn.className = 'px-3 py-2 bg-[#0b6f76] text-white rounded';
@@ -526,124 +493,169 @@ $userName = $userData['name'] ?? 'N/A';
                     btn.addEventListener('click', () => {
                         window.location.href = `add_hot_work_license.php?id=${PERMIT_ID}`;
                     });
-                    actions.appendChild(btn);
+                    criticalActions.appendChild(btn);
                 }
-            } else {
-                // Normal permit: Safety review status handling
-                const status = data.safety_status || 'pending';
-                document.getElementById('safety_status_container').classList.remove('hidden');
+            }
 
-                const badge = document.getElementById('safety_status_badge');
-                if (status === 'pending') {
-                    badge.textContent = 'بانتظار موافقة قسم السلامة' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');
-                    badge.className = 'font-bold px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800';
-                } else if (status === 'approved') {
-                    badge.textContent = 'تمت الموافقة من قبل قسم السلامة' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');
-                    badge.className = 'font-bold px-3 py-1 rounded-full text-sm bg-green-100 text-green-800';
-                } else if (status === 'rejected') {
-                    badge.textContent = 'مرفوضة من قبل قسم السلامة' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');
-                    badge.className = 'font-bold px-3 py-1 rounded-full text-sm bg-red-100 text-red-800';
-                }
+            // Safety review status handling
+            const safetyStatus = data.safety_status || 'pending';
+            document.getElementById('safety_status_container').classList.remove('hidden');
 
-                if (status === 'rejected' && data.safety_comment) {
-                    document.getElementById('safety_comment_container').classList.remove('hidden');
-                    document.getElementById('safety_comment_text').textContent = data.safety_comment;
-                }
+            const badge = document.getElementById('safety_status_badge');
+            if (safetyStatus === 'pending') {
+                badge.textContent = 'بانتظار موافقة قسم السلامة' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');
+                badge.className = 'font-bold px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800';
+            } else if (safetyStatus === 'approved') {
+                badge.textContent = 'تمت الموافقة من قبل قسم السلامة' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');
+                badge.className = 'font-bold px-3 py-1 rounded-full text-sm bg-green-100 text-green-800';
+            } else if (safetyStatus === 'rejected') {
+                badge.textContent = 'مرفوضة من قبل قسم السلامة' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');
+                badge.className = 'font-bold px-3 py-1 rounded-full text-sm bg-red-100 text-red-800';
+            }
 
-                const actions = document.getElementById('safety_actions');
-                actions.innerHTML = '';
+            if (safetyStatus === 'rejected' && data.safety_comment) {
+                document.getElementById('safety_comment_container').classList.remove('hidden');
+                document.getElementById('safety_comment_text').textContent = data.safety_comment;
+            }
 
-                // Safety reviewer view: pending review, current user is the assigned safety reviewer
-                if (status === 'pending' && USER_ID === parseInt(data.safety_reviewer_id || 0)) {
-                    const approveBtn = document.createElement('button');
-                    approveBtn.className = 'px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition';
-                    approveBtn.textContent = 'موافقة';
-                    actions.appendChild(approveBtn);
+            const safetyActions = document.getElementById('safety_actions');
+            safetyActions.innerHTML = '';
 
-                    const rejectBtn = document.createElement('button');
-                    rejectBtn.className = 'px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition';
-                    rejectBtn.textContent = 'مراجعة الرخصة';
-                    actions.appendChild(rejectBtn);
+            if (safetyStatus === 'pending' && USER_ID === parseInt(data.safety_reviewer_id || 0)) {
+                let managerSelect = null;
+                if (isCritical) {
+                    managerSelect = document.createElement('select');
+                    managerSelect.className = 'px-3 py-2 border rounded';
+                    managerSelect.innerHTML = '<option value="">اختر مدير المصنع...</option>';
+                    safetyActions.appendChild(managerSelect);
 
-                    approveBtn.addEventListener('click', async () => {
-                        const result = await Swal.fire({
-                            title: 'تأكيد الموافقة',
-                            text: 'هل أنت متأكد من الموافقة على رخصة العمل الساخن؟',
-                            icon: 'question',
-                            showCancelButton: true,
-                            confirmButtonText: 'نعم، موافقة',
-                            cancelButtonText: 'إلغاء',
-                            confirmButtonColor: '#059669'
-                        });
-                        if (!result.isConfirmed) return;
-                        try {
-                            const res = await fetch(API_BASE + '?action=approveSafety', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${TOKEN}`
-                                },
-                                body: JSON.stringify({
-                                    permit_id: PERMIT_ID
-                                })
-                            });
-                            const jr = await res.json();
-                            if (jr.success) Swal.fire('تم', jr.message, 'success').then(() => location.reload());
-                            else Swal.fire('خطأ', jr.message || 'فشل', 'error');
-                        } catch (e) {
-                            Swal.fire('خطأ', 'فشل الطلب', 'error');
-                        }
-                    });
-
-                    rejectBtn.addEventListener('click', async () => {
-                        const result = await Swal.fire({
-                            title: 'مراجعة الرخصة',
-                            input: 'textarea',
-                            inputLabel: 'سبب عدم قبول الرخصة',
-                            inputPlaceholder: 'اكتب سبب الرفض هنا...',
-                            inputAttributes: {
-                                'dir': 'rtl'
-                            },
-                            showCancelButton: true,
-                            confirmButtonText: 'رفض الرخصة',
-                            cancelButtonText: 'إلغاء',
-                            confirmButtonColor: '#dc2626',
-                            inputValidator: (value) => {
-                                if (!value || !value.trim()) return 'سبب الرفض مطلوب';
+                    fetch(`${API_BASE}?action=getManagers`, {
+                            headers: {
+                                'Authorization': `Bearer ${TOKEN}`
                             }
-                        });
-                        if (!result.isConfirmed) return;
-                        try {
-                            const res = await fetch(API_BASE + '?action=rejectSafety', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${TOKEN}`
-                                },
-                                body: JSON.stringify({
-                                    permit_id: PERMIT_ID,
-                                    comment: result.value
-                                })
-                            });
-                            const jr = await res.json();
-                            if (jr.success) Swal.fire('تم', jr.message, 'success').then(() => location.reload());
-                            else Swal.fire('خطأ', jr.message || 'فشل', 'error');
-                        } catch (e) {
-                            Swal.fire('خطأ', 'فشل الطلب', 'error');
-                        }
-                    });
+                        })
+                        .then(r => r.json())
+                        .then(j => {
+                            if (j.success) {
+                                j.data.forEach(m => {
+                                    const opt = document.createElement('option');
+                                    opt.value = m.id;
+                                    opt.textContent = m.name;
+                                    managerSelect.appendChild(opt);
+                                });
+                            }
+                        })
+                        .catch(() => {});
                 }
 
-                // Creator view: rejected permit, current user is the creator -> allow edit & resend
-                if (status === 'rejected' && USER_ID === parseInt(data.created_by || 0)) {
-                    const editBtn = document.createElement('button');
-                    editBtn.className = 'px-3 py-2 bg-[#0b6f76] text-white rounded hover:bg-[#085a60] transition';
-                    editBtn.textContent = 'تعديل الرخصة';
-                    editBtn.addEventListener('click', () => {
-                        window.location.href = `add_hot_work_license.php?id=${PERMIT_ID}`;
+                const approveBtn = document.createElement('button');
+                approveBtn.className = 'px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition';
+                approveBtn.textContent = 'موافقة';
+                safetyActions.appendChild(approveBtn);
+
+                const rejectBtn = document.createElement('button');
+                rejectBtn.className = 'px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition';
+                rejectBtn.textContent = 'مراجعة الرخصة';
+                safetyActions.appendChild(rejectBtn);
+
+                approveBtn.addEventListener('click', async () => {
+                    if (isCritical && !managerSelect?.value) {
+                        Swal.fire('خطأ', 'اختر مدير المصنع قبل الموافقة', 'error');
+                        return;
+                    }
+                    const result = await Swal.fire({
+                        title: 'تأكيد الموافقة',
+                        text: 'هل أنت متأكد من الموافقة على رخصة العمل الساخن؟',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'نعم، موافقة',
+                        cancelButtonText: 'إلغاء',
+                        confirmButtonColor: '#059669'
                     });
-                    actions.appendChild(editBtn);
-                }
+                    if (!result.isConfirmed) return;
+                    setActionButtonLoading(approveBtn, true, 'جاري الموافقة...');
+                    setActionButtonLoading(rejectBtn, true, 'جاري المعالجة...');
+                    if (managerSelect) managerSelect.disabled = true;
+                    try {
+                        const {
+                            data: jr
+                        } = await requestJson(API_BASE + '?action=approveSafety', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${TOKEN}`
+                            },
+                            body: JSON.stringify({
+                                permit_id: PERMIT_ID,
+                                critical_manager_id: isCritical ? managerSelect?.value : null
+                            })
+                        });
+                        if (jr?.success) Swal.fire('تم', jr.message, 'success').then(() => location.reload());
+                        else Swal.fire('خطأ', jr?.message || 'فشل الطلب', 'error');
+                    } catch (e) {
+                        Swal.fire('خطأ', 'فشل الطلب', 'error');
+                    } finally {
+                        setActionButtonLoading(approveBtn, false);
+                        setActionButtonLoading(rejectBtn, false);
+                        if (managerSelect) managerSelect.disabled = false;
+                    }
+                });
+
+                rejectBtn.addEventListener('click', async () => {
+                    const result = await Swal.fire({
+                        title: 'مراجعة الرخصة',
+                        input: 'textarea',
+                        inputLabel: 'سبب عدم قبول الرخصة',
+                        inputPlaceholder: 'اكتب سبب الرفض هنا...',
+                        inputAttributes: {
+                            'dir': 'rtl'
+                        },
+                        showCancelButton: true,
+                        confirmButtonText: 'رفض الرخصة',
+                        cancelButtonText: 'إلغاء',
+                        confirmButtonColor: '#dc2626',
+                        inputValidator: (value) => {
+                            if (!value || !value.trim()) return 'سبب الرفض مطلوب';
+                        }
+                    });
+                    if (!result.isConfirmed) return;
+                    setActionButtonLoading(approveBtn, true, 'جاري المعالجة...');
+                    setActionButtonLoading(rejectBtn, true, 'جاري الرفض...');
+                    if (managerSelect) managerSelect.disabled = true;
+                    try {
+                        const {
+                            data: jr
+                        } = await requestJson(API_BASE + '?action=rejectSafety', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${TOKEN}`
+                            },
+                            body: JSON.stringify({
+                                permit_id: PERMIT_ID,
+                                comment: result.value
+                            })
+                        });
+                        if (jr?.success) Swal.fire('تم', jr.message, 'success').then(() => location.reload());
+                        else Swal.fire('خطأ', jr?.message || 'فشل الطلب', 'error');
+                    } catch (e) {
+                        Swal.fire('خطأ', 'فشل الطلب', 'error');
+                    } finally {
+                        setActionButtonLoading(approveBtn, false);
+                        setActionButtonLoading(rejectBtn, false);
+                        if (managerSelect) managerSelect.disabled = false;
+                    }
+                });
+            }
+
+            if (safetyStatus === 'rejected' && USER_ID === parseInt(data.created_by || 0)) {
+                const editBtn = document.createElement('button');
+                editBtn.className = 'px-3 py-2 bg-[#0b6f76] text-white rounded hover:bg-[#085a60] transition';
+                editBtn.textContent = 'تعديل الرخصة';
+                editBtn.addEventListener('click', () => {
+                    window.location.href = `add_hot_work_license.php?id=${PERMIT_ID}`;
+                });
+                safetyActions.appendChild(editBtn);
             }
 
             // Additional Permits
@@ -753,8 +765,12 @@ $userName = $userData['name'] ?? 'N/A';
                 Swal.fire('تنبيه', 'يرجى تحديد وقت الانتهاء', 'warning');
                 return;
             }
+            const saveBtn = document.querySelector('#editFinishModal button:last-child');
+            setActionButtonLoading(saveBtn, true, 'جاري الحفظ...');
             try {
-                const res = await fetch(`${API_BASE}?action=updateFinishingTime`, {
+                const {
+                    data: result
+                } = await requestJson(`${API_BASE}?action=updateFinishingTime`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${TOKEN}`,
@@ -765,12 +781,13 @@ $userName = $userData['name'] ?? 'N/A';
                         finishing_time: newTime
                     })
                 });
-                const result = await res.json();
-                if (!result.success) throw new Error(result.message);
+                if (!result?.success) throw new Error(result?.message || 'حدث خطأ في الاتصال');
                 document.getElementById('editFinishModal').classList.add('hidden');
-                Swal.fire('تم', 'تم تحديث وقت الانتهاء بنجاح', 'success').then(() => loadLicenseData());
+                Swal.fire('تم', 'تم تحديث وقت الانتهاء بنجاح', 'success').then(() => loadPermitData());
             } catch (e) {
                 Swal.fire('خطأ', e.message || 'حدث خطأ في الاتصال', 'error');
+            } finally {
+                setActionButtonLoading(saveBtn, false);
             }
         }
     </script>
