@@ -204,6 +204,17 @@ class HotWorkPermitController
         }
     }
 
+    public function getShiftLeaders()
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT id, name FROM users WHERE role_id = 7");
+            $stmt->execute();
+            return ['success' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error fetching shift leaders: ' . $e->getMessage()];
+        }
+    }
+
     public function approveBySafety($permitId, $safetyUserId, $criticalManagerId = null)
     {
         try {

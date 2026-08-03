@@ -191,7 +191,7 @@ $userName = $userData['name'] ?? 'N/A';
                                         <!-- Safety review status and actions (normal permits only) -->
                                         <div id="safety_status_container" class="bg-white p-4 rounded-lg shadow-md hidden text-right no-print">
                                             <div class="inline-flex flex-wrap items-center justify-end gap-4 w-full">
-                                                <div id="safety_status_badge" class="font-bold px-3 py-1 rounded-full text-sm"></div>
+                                                <div id="safety_status_badge" class="font-bold px-3 py-1 rounded-full text-sm" dir="rtl"></div>
                                                 <div id="safety_actions" class="flex gap-2 start"></div>
                                             </div>
                                             <div id="safety_comment_container" class="hidden mt-3 p-3 bg-red-50 border border-red-200 rounded-md text-right" dir="rtl">
@@ -503,7 +503,7 @@ $userName = $userData['name'] ?? 'N/A';
 
             const badge = document.getElementById('safety_status_badge');
             if (safetyStatus === 'pending') {
-                badge.textContent = 'بانتظار موافقة قسم السلامة' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');
+                badge.textContent = 'بانتظار موافقة قسم السلامة' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '') + 'او shiftleader';
                 badge.className = 'font-bold px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800';
             } else if (safetyStatus === 'approved') {
                 badge.textContent = 'تمت الموافقة من قبل قسم السلامة' + (data.safety_reviewer_name ? ` (${data.safety_reviewer_name})` : '');

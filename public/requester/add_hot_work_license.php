@@ -132,7 +132,7 @@ $currentUserId = $userData['id'] ?? 0;
                                     <select id="equipment_used" name="equipment_used" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
                                         <option selected value="كوسره">كوسره</option>
                                         <option value="ماكنة لحام">ماكنة لحام</option>
-                                        <option value="OXE">OXE</option>
+                                        <option value="اوكسي استيلين">اوكسي استيلين</option>
                                     </select>
                                 </div>
                                 <div>
@@ -204,10 +204,6 @@ $currentUserId = $userData['id'] ?? 0;
                                                     <span class="text-xs">نعم</span>
                                                 </label>
                                                 <label class="flex items-center gap-1 cursor-pointer">
-                                                    <input type="radio" name="control_measure_answer_<?= $index ?>" value="كلا" class="w-4 h-4 text-red-600">
-                                                    <span class="text-xs">كلا</span>
-                                                </label>
-                                                <label class="flex items-center gap-1 cursor-pointer">
                                                     <input type="radio" name="control_measure_answer_<?= $index ?>" value="غير متاح" class="w-4 h-4 text-gray-500">
                                                     <span class="text-xs">غير متاح</span>
                                                 </label>
@@ -233,10 +229,6 @@ $currentUserId = $userData['id'] ?? 0;
                                                     <span class="text-xs">نعم</span>
                                                 </label>
                                                 <label class="flex items-center gap-1 cursor-pointer">
-                                                    <input type="radio" name="performer_check_answer_<?= $index ?>" value="كلا" class="w-4 h-4 text-red-600">
-                                                    <span class="text-xs">كلا</span>
-                                                </label>
-                                                <label class="flex items-center gap-1 cursor-pointer">
                                                     <input type="radio" name="performer_check_answer_<?= $index ?>" value="غير متاح" class="w-4 h-4 text-gray-500">
                                                     <span class="text-xs">غير متاح</span>
                                                 </label>
@@ -254,6 +246,25 @@ $currentUserId = $userData['id'] ?? 0;
                                 <?php
                                 $userData = json_decode($_COOKIE['user_data'] ?? '{}', true);
                                 $currentUserName = $userData['name'] ?? '';
+                                $roleNameOptions = [
+                                    'fire_sentry' => [
+                                        'معين سهل امين', 'وضاح نعمه حمود', 'امير محمد يوسف', 'محمد صاحب مزعل',
+                                        'علي شريف رضا', 'مصطفى محمد مهدي', 'حسين هادي جاسم', 'زيد صباح عليوي',
+                                        'مرتضى محمد مهدي', 'علي حسين جياد', 'بدر معيوف ابراهيم', 'محمد ياسين غضيب',
+                                        'جاسم كنوبي عباس', 'حسن حازم كشموط', 'سعد خزعل مغير', 'علي كاظم جياد',
+                                        'عادل جبر لفته', 'انور خليل هادي', 'مرتجى ياس خضير', 'عبدالله طالب نعمه',
+                                        'حامد هاشم حميد', 'عادل ناصر حسين', 'رافد مهدي جاسم', 'ثائر رشيد صالح',
+                                        'حامد هاشم كريم', 'علي ياس بشير', 'علي خضير حميد', 'نصير عبدالحسين وحيد',
+                                        'حسين عبدمحمد قاطع', 'مشتاق نوري سويد', 'عوني عطية راشد', 'ليث ابراهيم محمود'
+                                    ],
+                                    'welding' => [
+                                        'علي عامر', 'رسول محمد چلوب', 'علي حمود', 'سالم عبدالكاظم',
+                                        'زمان كاظم', 'ياسر نيسان', 'علي صباح', 'كاظم علي مجيد'
+                                    ],
+                                    'supervisor' => [
+                                        'حسام حاتم', 'مصطفى تركي', 'حسين عبدالرسول', 'محمد عبدالحسين', 'صباح نوري'
+                                    ]
+                                ];
                                 $roles = [
                                     ['id' => 'welding', 'label' => 'اللحام (Welding Name)'],
                                     ['id' => 'supervisor', 'label' => 'المشرف (Supervisor)'],
@@ -262,15 +273,32 @@ $currentUserId = $userData['id'] ?? 0;
                                 ];
                                 foreach ($roles as $role):
                                     $isIssuer = ($role['id'] === 'ptw_issuer');
+                                    $nameOptions = $roleNameOptions[$role['id']] ?? null;
                                 ?>
                                     <div class="p-4 border rounded-lg bg-gray-50">
                                         <label class="block text-sm font-medium text-green-700 mb-1"><?= $role['label'] ?></label>
-                                        <input type="text"
-                                            name="approval_name_<?= $role['id'] ?>"
-                                            value="<?= $isIssuer ? $currentUserName : '' ?>"
-                                            <?= $isIssuer ? 'readonly' : '' ?>
-                                            placeholder="الاسم الكامل"
-                                            class="w-full px-3 py-2 border rounded-md mb-2 focus:ring-[#0b6f76] outline-none <?= $isIssuer ? 'bg-gray-100 cursor-not-allowed' : '' ?>">
+                                        <?php if ($isIssuer): ?>
+                                            <input type="text"
+                                                name="approval_name_<?= $role['id'] ?>"
+                                                value="<?= $currentUserName ?>"
+                                                readonly
+                                                placeholder="الاسم الكامل"
+                                                class="w-full px-3 py-2 border rounded-md mb-2 focus:ring-[#0b6f76] outline-none bg-gray-100 cursor-not-allowed">
+                                        <?php elseif ($nameOptions): ?>
+                                            <select
+                                                name="approval_name_<?= $role['id'] ?>"
+                                                class="w-full px-3 py-2 border rounded-md mb-2 focus:ring-[#0b6f76] outline-none">
+                                                <option value="" disabled selected>اختر الاسم...</option>
+                                                <?php foreach ($nameOptions as $name): ?>
+                                                    <option value="<?= htmlspecialchars($name) ?>"><?= htmlspecialchars($name) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        <?php else: ?>
+                                            <input type="text"
+                                                name="approval_name_<?= $role['id'] ?>"
+                                                placeholder="الاسم الكامل"
+                                                class="w-full px-3 py-2 border rounded-md mb-2 focus:ring-[#0b6f76] outline-none">
+                                        <?php endif; ?>
                                         <label class="flex items-center gap-2 cursor-pointer">
                                             <input type="checkbox" name="approval_status_<?= $role['id'] ?>" value="1" class="w-5 h-5 text-[#0b6f76] rounded">
                                             <span class="text-xs font-medium text-gray-700">تمت المطابقة والموافقة</span>
@@ -285,12 +313,16 @@ $currentUserId = $userData['id'] ?? 0;
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">القسم السادس: إسناد الرخصة</h2>
                             <div class="max-w-md mx-auto space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-green-700 mb-2">Assigned To</label>
+                                    <label class="block text-sm font-medium text-green-700 mb-2">Area Manager</label>
                                     <select id="assigned_to" name="assigned_to" required class="w-full"></select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-green-700 mb-2">طلب موافقة السلامة لتنفيذ الرخصة</label>
-                                    <select id="safety_reviewer_id" name="safety_reviewer_id" required class="w-full"></select>
+                                    <label class="block text-sm font-medium text-green-700 mb-2">طلب موافقة قسم السلامة لتنفيذ الرخصة (صباحاً)</label>
+                                    <select id="safety_reviewer_id" name="safety_reviewer_id" class="w-full"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-green-700 mb-2">موافقة Shift Leader لتنفيذ الرخصة (مساءً) بعد الرابعة عصراً</label>
+                                    <select id="shift_leader_id" name="shift_leader_id" class="w-full"></select>
                                 </div>
                             </div>
                         </div>
@@ -342,7 +374,21 @@ $currentUserId = $userData['id'] ?? 0;
                 persist: false,
                 create: false,
                 placeholder: 'اختر مسؤول السلامة...',
-                onChange: () => updateButtonStates()
+                onChange: (value) => {
+                    if (value) shiftLeaderSelect.clear();
+                    updateButtonStates();
+                }
+            });
+
+            // Initialize TomSelect for Shift Leader (evening approval)
+            let shiftLeaderSelect = new TomSelect('#shift_leader_id', {
+                persist: false,
+                create: false,
+                placeholder: 'اختر Shift Leader...',
+                onChange: (value) => {
+                    if (value) safetyReviewerSelect.clear();
+                    updateButtonStates();
+                }
             });
 
             const isCriticalCheckbox = document.getElementById('is_critical');
@@ -437,7 +483,7 @@ $currentUserId = $userData['id'] ?? 0;
                         const parts = (app.approval_status || '').split(' - ');
                         const name = parts[0] || '';
                         const approved = (app.approval_status || '').includes('Approved');
-                        const nameInput = document.querySelector(`input[name="approval_name_${key}"]`);
+                        const nameInput = document.querySelector(`[name="approval_name_${key}"]`);
                         if (nameInput && !nameInput.readOnly) nameInput.value = name;
                         const statusCb = document.querySelector(`input[name="approval_status_${key}"]`);
                         if (statusCb) statusCb.checked = approved;
@@ -506,8 +552,8 @@ $currentUserId = $userData['id'] ?? 0;
 
                             await loadAssignees();
                             assigneeSelect.setValue(p.assigned_to ? String(p.assigned_to) : null);
-                            await loadSafetyReviewers();
-                            safetyReviewerSelect.setValue(p.safety_reviewer_id ? String(p.safety_reviewer_id) : null);
+                            await Promise.all([loadSafetyReviewers(), loadShiftLeaders()]);
+                            setSafetyOrShiftLeaderValue(p.safety_reviewer_id);
 
                             updateUI();
                         } else if (p.is_critical && p.critical_status === 'pending_creator') {
@@ -530,8 +576,8 @@ $currentUserId = $userData['id'] ?? 0;
 
                             await loadAssignees();
                             assigneeSelect.setValue(p.assigned_to ? String(p.assigned_to) : null);
-                            await loadSafetyReviewers();
-                            safetyReviewerSelect.setValue(p.safety_reviewer_id ? String(p.safety_reviewer_id) : null);
+                            await Promise.all([loadSafetyReviewers(), loadShiftLeaders()]);
+                            setSafetyOrShiftLeaderValue(p.safety_reviewer_id);
 
                             updateUI();
                         }
@@ -563,13 +609,13 @@ $currentUserId = $userData['id'] ?? 0;
                     if (radioChecked < questionsCount) return false;
                 } else if (step === 5) {
                     // Assuming all 4 names are mandatory as section is mandatory
-                    const names = currentContent.querySelectorAll('input[type="text"]');
+                    const names = currentContent.querySelectorAll('[name^="approval_name_"]');
                     for (let input of names) {
                         if (!input.value.trim()) return false;
                     }
                 } else if (step === 6) {
                     if (!assigneeSelect.getValue()) return false;
-                    if (!safetyReviewerSelect.getValue()) return false;
+                    if (!safetyReviewerSelect.getValue() && !shiftLeaderSelect.getValue()) return false;
                 }
 
                 return true;
@@ -624,7 +670,7 @@ $currentUserId = $userData['id'] ?? 0;
                 submitBtn.classList.toggle('hidden', currentStep !== totalSteps);
 
                 if (currentStep === 6) {
-                    Promise.all([loadAssignees(), loadSafetyReviewers()]).then(() => updateButtonStates());
+                    Promise.all([loadAssignees(), loadSafetyReviewers(), loadShiftLeaders()]).then(() => updateButtonStates());
                 } else {
                     updateButtonStates();
                 }
@@ -710,6 +756,40 @@ $currentUserId = $userData['id'] ?? 0;
                 }
             }
 
+            async function loadShiftLeaders() {
+                if (shiftLeaderSelect.options.length > 0) return;
+
+                try {
+                    const res = await fetch('../../api/requester/hot_work_permit.php?action=getShiftLeaders', {
+                        headers: {
+                            'Authorization': `Bearer ${TOKEN}`
+                        }
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        data.data.forEach(user => {
+                            shiftLeaderSelect.addOption({
+                                value: user.id,
+                                text: user.name
+                            });
+                        });
+                        shiftLeaderSelect.refreshOptions(false);
+                    }
+                } catch (e) {
+                    console.error('Failed to load shift leaders');
+                }
+            }
+
+            function setSafetyOrShiftLeaderValue(id) {
+                if (!id) return;
+                const idStr = String(id);
+                if (safetyReviewerSelect.options[idStr]) {
+                    safetyReviewerSelect.setValue(idStr);
+                } else if (shiftLeaderSelect.options[idStr]) {
+                    shiftLeaderSelect.setValue(idStr);
+                }
+            }
+
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
 
@@ -726,7 +806,7 @@ $currentUserId = $userData['id'] ?? 0;
                     task_start_datetime: formData.get('task_start_datetime'),
                     finishing_time: formData.get('finishing_time'),
                     assigned_to: assigneeSelect.getValue(),
-                    safety_reviewer_id: safetyReviewerSelect.getValue(),
+                    safety_reviewer_id: safetyReviewerSelect.getValue() || shiftLeaderSelect.getValue(),
                     work_description: formData.get('work_description'),
                     additional_permits: [],
                     control_measures: [],

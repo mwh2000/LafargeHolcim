@@ -34,6 +34,8 @@ try {
                 $res = $controller->getSupervisors();
             } elseif ($action === 'getSafetyReviewers') {
                 $res = $controller->getSafetyReviewers();
+            } elseif ($action === 'getShiftLeaders') {
+                $res = $controller->getShiftLeaders();
             } elseif ($action === 'show' && isset($_GET['id'])) {
                 $res = $controller->getPermit($_GET['id']);
             } elseif ($action === 'getStatistics') {
