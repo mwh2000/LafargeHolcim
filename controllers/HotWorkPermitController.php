@@ -218,7 +218,7 @@ class HotWorkPermitController
     public function approveBySafety($permitId, $safetyUserId, $criticalManagerId = null)
     {
         try {
-            $stmt = $this->db->prepare("SELECT assigned_to, is_critical, critical_manager_id, safety_reviewer_id, safety_status FROM hot_work_permit WHERE id = ?");
+            $stmt = $this->db->prepare("SELECT created_by, assigned_to, is_critical, critical_manager_id, safety_reviewer_id, safety_status FROM hot_work_permit WHERE id = ?");
             $stmt->execute([$permitId]);
             $permit = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -259,6 +259,13 @@ class HotWorkPermitController
                     $body = 'وافق السيفتي على رخصة العمل الساخن وتم إسنادها إليك';
                     $notificationController->sendNotification($title, $body, [$permit['assigned_to']], $url, $safetyUserId);
                     $emailController->sendEmail($title, $body, [$permit['assigned_to']]);
+
+                    if (!empty($permit['created_by']) && (int)$permit['created_by'] !== (int)$permit['assigned_to']) {
+                        $creatorTitle = 'تمت الموافقة على رخصة عمل ساخن';
+                        $creatorBody = 'وافق قسم السلامة على رخصة العمل الساخن';
+                        $notificationController->sendNotification($creatorTitle, $creatorBody, [$permit['created_by']], $url, $safetyUserId);
+                        $emailController->sendEmail($creatorTitle, $creatorBody, [$permit['created_by']]);
+                    }
                 }
 
                 if (!empty($this->safetyApprovalExtraNotifyUserIds) && (int)$permit['is_critical'] !== 1) {

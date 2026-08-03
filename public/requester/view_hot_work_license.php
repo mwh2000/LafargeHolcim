@@ -401,9 +401,12 @@ $userName = $userData['name'] ?? 'N/A';
             const isOpen = !data.finishing_time || new Date(data.finishing_time) >= new Date();
             if (isOpen) {
                 openBadge.classList.remove('hidden');
-                printBtn.classList.remove('hidden');
             } else {
                 notActiveBadge.classList.remove('hidden');
+            }
+
+            if (isOpen || data.safety_status === 'approved') {
+                printBtn.classList.remove('hidden');
             }
 
             if (data.finishing_time_updated_by) {
