@@ -129,8 +129,8 @@ $currentUserId = $userData['id'] ?? 0;
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">المعدة المستخدمة</label>
-                                    <select id="equipment_used" name="equipment_used" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
-                                        <option selected value="كوسره">كوسره</option>
+                                    <select id="equipment_used" name="equipment_used" multiple class="w-full">
+                                        <option value="كوسره">كوسره</option>
                                         <option value="ماكنة لحام">ماكنة لحام</option>
                                         <option value="اوكسي استيلين">اوكسي استيلين</option>
                                     </select>
@@ -395,6 +395,16 @@ $currentUserId = $userData['id'] ?? 0;
             const indicators = document.querySelectorAll('.step-indicator');
             const contents = document.querySelectorAll('.step-content');
 
+            // Initialize TomSelect for Equipment Used (multi-select)
+            let equipmentSelect = new TomSelect('#equipment_used', {
+                persist: false,
+                create: false,
+                maxItems: null,
+                plugins: ['remove_button'],
+                placeholder: 'اختر المعدة المستخدمة...',
+                onChange: () => updateButtonStates()
+            });
+
             // Initialize TomSelect for Assignee
             let assigneeSelect = new TomSelect('#assigned_to', {
                 persist: false,
@@ -448,7 +458,7 @@ $currentUserId = $userData['id'] ?? 0;
                 document.querySelector('input[name="company_name"]').value = p.company_name || '';
                 document.getElementById('location').value = p.location || '';
                 document.querySelector('input[name="supervisor"]').value = p.supervisor || '';
-                document.getElementById('equipment_used').value = p.equipment_used || '';
+                equipmentSelect.setValue(Array.isArray(p.equipment_used) ? p.equipment_used : (p.equipment_used ? [p.equipment_used] : []));
                 document.getElementById('maintenance_type').value = p.maintenance_type || 'طارئة';
                 if (p.task_start_datetime) document.querySelector('input[name="task_start_datetime"]').value = p.task_start_datetime.replace(' ', 'T');
                 if (p.finishing_time) document.querySelector('input[name="finishing_time"]').value = p.finishing_time.replace(' ', 'T');
@@ -535,6 +545,11 @@ $currentUserId = $userData['id'] ?? 0;
                         el.style.background = '#f3f4f6';
                     }
                 });
+                if (enabled) {
+                    equipmentSelect.enable();
+                } else {
+                    equipmentSelect.disable();
+                }
             }
 
             function disableNonStep1Controls(disable) {
@@ -629,6 +644,7 @@ $currentUserId = $userData['id'] ?? 0;
                     for (let field of requiredFields) {
                         if (!field.value.trim()) return false;
                     }
+                    if (equipmentSelect.getValue().length === 0) return false;
                 } else if (step === 2) {
                     const checkedCount = currentContent.querySelectorAll('input[name="additional_permits_selected[]"]:checked').length;
                     const workDesc = currentContent.querySelector('textarea[name="work_description"]').value.trim();
@@ -835,7 +851,7 @@ $currentUserId = $userData['id'] ?? 0;
                     company_name: formData.get('company_name'),
                     location: formData.get('location'),
                     supervisor: formData.get('supervisor'),
-                    equipment_used: formData.get('equipment_used'),
+                    equipment_used: equipmentSelect.getValue(),
                     maintenance_type: formData.get('maintenance_type'),
                     task_start_datetime: formData.get('task_start_datetime'),
                     finishing_time: formData.get('finishing_time'),

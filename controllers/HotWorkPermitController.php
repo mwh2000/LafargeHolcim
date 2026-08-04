@@ -25,10 +25,10 @@ class HotWorkPermitController
             // Support critical workflow columns if provided
             $stmt = $this->db->prepare("INSERT INTO hot_work_permit (
                 permit_no, issuing_date_time, wo, company_name, location, supervisor,
-                equipment_used, maintenance_type, task_start_datetime, finishing_time, assigned_to,
+                maintenance_type, task_start_datetime, finishing_time, assigned_to,
                 safety_reviewer_id, safety_status,
                 work_description, created_by, created_at, is_critical, critical_manager_id, critical_supervisor_id, critical_status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
             $isCritical = !empty($data['is_critical']) ? 1 : 0;
             $criticalManager = $data['critical_manager_id'] ?? null;
@@ -44,7 +44,6 @@ class HotWorkPermitController
                 $data['company_name'],
                 $data['location'],
                 $data['supervisor'] ?? null,
-                $data['equipment_used'] ?? null,
                 $data['maintenance_type'] ?? null,
                 $data['task_start_datetime'] ?? null,
                 $data['finishing_time'] ?? null,
@@ -62,7 +61,19 @@ class HotWorkPermitController
 
             $permitId = $this->db->lastInsertId();
 
-            // 2. Insert Additional Permits
+            // 2. Insert Equipment Used
+            if (!empty($data['equipment_used'])) {
+                $stmtEquip = $this->db->prepare("INSERT INTO hot_work_equipment_used (
+                    hot_work_permit_id, equipment_name
+                ) VALUES (?, ?)");
+                foreach ((array)$data['equipment_used'] as $equipmentName) {
+                    if ($equipmentName !== '' && $equipmentName !== null) {
+                        $stmtEquip->execute([$permitId, $equipmentName]);
+                    }
+                }
+            }
+
+            // 3. Insert Additional Permits
             if (!empty($data['additional_permits'])) {
                 $stmtAdd = $this->db->prepare("INSERT INTO additional_hot_permits (
                     hot_work_permit_id, permit_name, permit_number
@@ -78,7 +89,7 @@ class HotWorkPermitController
                 }
             }
 
-            // 3. Insert Control Measures
+            // 4. Insert Control Measures
             if (!empty($data['control_measures'])) {
                 $stmtControl = $this->db->prepare("INSERT INTO hot_work_control_measures (
                     hot_work_permit_id, measure_text, status
@@ -92,7 +103,7 @@ class HotWorkPermitController
                 }
             }
 
-            // 4. Insert Performers Check
+            // 5. Insert Performers Check
             if (!empty($data['performers_check'])) {
                 $stmtPerf = $this->db->prepare("INSERT INTO hot_work_performers_check (
                     hot_work_permit_id, question_text, answer
@@ -106,7 +117,7 @@ class HotWorkPermitController
                 }
             }
 
-            // 5. Insert Approvals
+            // 6. Insert Approvals
             if (!empty($data['approvals'])) {
                 $stmtAppr = $this->db->prepare("INSERT INTO hot_permit_approvals (
                     hot_work_permit_id, role_name, approval_status
@@ -395,7 +406,7 @@ class HotWorkPermitController
 
             $stmt = $this->db->prepare("UPDATE hot_work_permit SET
                 wo = ?, company_name = ?, location = ?, supervisor = ?,
-                equipment_used = ?, maintenance_type = ?, task_start_datetime = ?, finishing_time = ?,
+                maintenance_type = ?, task_start_datetime = ?, finishing_time = ?,
                 assigned_to = ?, safety_reviewer_id = ?, work_description = ?,
                 safety_status = 'pending', safety_comment = NULL, safety_reviewed_at = NULL
                 WHERE id = ?");
@@ -404,7 +415,6 @@ class HotWorkPermitController
                 $data['company_name'],
                 $data['location'],
                 $data['supervisor'] ?? null,
-                $data['equipment_used'] ?? null,
                 $data['maintenance_type'] ?? null,
                 $data['task_start_datetime'] ?? null,
                 $data['finishing_time'] ?? null,
@@ -413,6 +423,19 @@ class HotWorkPermitController
                 $data['work_description'] ?? '',
                 $permitId
             ]);
+
+            $stmtDelEquip = $this->db->prepare("DELETE FROM hot_work_equipment_used WHERE hot_work_permit_id = ?");
+            $stmtDelEquip->execute([$permitId]);
+            if (!empty($data['equipment_used'])) {
+                $stmtEquip = $this->db->prepare("INSERT INTO hot_work_equipment_used (
+                    hot_work_permit_id, equipment_name
+                ) VALUES (?, ?)");
+                foreach ((array)$data['equipment_used'] as $equipmentName) {
+                    if ($equipmentName !== '' && $equipmentName !== null) {
+                        $stmtEquip->execute([$permitId, $equipmentName]);
+                    }
+                }
+            }
 
             $stmtDelAdd = $this->db->prepare("DELETE FROM additional_hot_permits WHERE hot_work_permit_id = ?");
             $stmtDelAdd->execute([$permitId]);
@@ -555,18 +578,31 @@ class HotWorkPermitController
             $finishingTime = !empty($data['finishing_time']) ? $data['finishing_time'] : null;
 
             // Update main permit fields and set status to completed
-            $stmt = $this->db->prepare("UPDATE hot_work_permit SET 
-                location = ?, supervisor = ?, equipment_used = ?, task_start_datetime = ?, finishing_time = ?, work_description = ?, assigned_to = ?, critical_status = 'completed' WHERE id = ?");
+            $stmt = $this->db->prepare("UPDATE hot_work_permit SET
+                location = ?, supervisor = ?, task_start_datetime = ?, finishing_time = ?, work_description = ?, assigned_to = ?, critical_status = 'completed' WHERE id = ?");
             $stmt->execute([
                 $data['location'],
                 $data['supervisor'],
-                $data['equipment_used'],
                 $taskStartDatetime,
                 $finishingTime,
                 $data['work_description'] ?? '',
                 $data['assigned_to'] ?: null,
                 $permitId
             ]);
+
+            // Clear and insert equipment_used
+            $stmtDelEquip = $this->db->prepare("DELETE FROM hot_work_equipment_used WHERE hot_work_permit_id = ?");
+            $stmtDelEquip->execute([$permitId]);
+            if (!empty($data['equipment_used'])) {
+                $stmtEquip = $this->db->prepare("INSERT INTO hot_work_equipment_used (
+                    hot_work_permit_id, equipment_name
+                ) VALUES (?, ?)");
+                foreach ((array)$data['equipment_used'] as $equipmentName) {
+                    if ($equipmentName !== '' && $equipmentName !== null) {
+                        $stmtEquip->execute([$permitId, $equipmentName]);
+                    }
+                }
+            }
 
             // Clear and insert additional_permits
             $stmtDelAdd = $this->db->prepare("DELETE FROM additional_hot_permits WHERE hot_work_permit_id = ?");
@@ -667,6 +703,11 @@ class HotWorkPermitController
             if (!$permit) {
                 return ['success' => false, 'message' => 'Permit not found'];
             }
+
+            $stmtEquip = $this->db->prepare("SELECT equipment_name FROM hot_work_equipment_used WHERE hot_work_permit_id = ?");
+            $stmtEquip->execute([$id]);
+            $equipmentList = $stmtEquip->fetchAll(PDO::FETCH_COLUMN);
+            $permit['equipment_used'] = !empty($equipmentList) ? $equipmentList : (!empty($permit['equipment_used']) ? [$permit['equipment_used']] : []);
 
             $stmtAdd = $this->db->prepare("SELECT * FROM additional_hot_permits WHERE hot_work_permit_id = ?");
             $stmtAdd->execute([$id]);

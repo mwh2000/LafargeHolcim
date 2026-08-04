@@ -389,7 +389,7 @@ $userName = $userData['name'] ?? 'N/A';
             document.getElementById('val-company').textContent = data.company_name || '-';
             document.getElementById('val-location').textContent = data.location || '-';
             document.getElementById('val-supervisor').textContent = data.supervisor || '-';
-            document.getElementById('val-equipment').textContent = data.equipment_used || '-';
+            document.getElementById('val-equipment').textContent = Array.isArray(data.equipment_used) ? (data.equipment_used.join('، ') || '-') : (data.equipment_used || '-');
             document.getElementById('val-start').textContent = data.task_start_datetime ? data.task_start_datetime.replace('T', ' ') : '-';
             document.getElementById('val-finish').textContent = data.finishing_time ? data.finishing_time.replace('T', ' ') : '-';
 
