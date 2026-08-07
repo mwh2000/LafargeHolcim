@@ -16,7 +16,6 @@ $jwtHandler = new JWTHandler($config['jwt_secret']);
 
 $auth = new AuthMiddleware();
 $decoded = $auth->verifyToken();
-$auth->requireAdmin($decoded);
 
 $equipmentController = new EquipmentController($conn);
 
@@ -31,11 +30,14 @@ try {
         // 🔸 Create
         case 'POST':
             if ($action === 'create') {
+                // Anyone allowed to create a license (energy isolation / hot work) may also add new equipment
+                $auth->requireRoles($decoded, ['requester', 'safety', 'area_manager', 'manager', 'plant manager', 'shift leader and issurs', 'مسؤل العزل']);
                 $data = $_POST;
                 $data['image_file'] = $_FILES['image'] ?? null;
                 $res = $equipmentController->create($data);
                 sendJson($res);
             } elseif ($action === 'update' && isset($queryParams['id'])) {
+                $auth->requireAdmin($decoded);
                 $data = $_POST;
                 $data['image_file'] = $_FILES['image'] ?? null;
                 $res = $equipmentController->update((int) $queryParams['id'], $data);
@@ -48,6 +50,7 @@ try {
 
         // 🔸 Get All / Get One
         case 'GET':
+            $auth->requireAdmin($decoded);
             if ($action === 'all') {
                 $filters = [
                     'search' => $queryParams['search'] ?? null,
@@ -68,6 +71,7 @@ try {
 
         // 🔸 Update (Legacy or if No File)
         case 'PUT':
+            $auth->requireAdmin($decoded);
             if ($action === 'update' && isset($queryParams['id'])) {
                 $res = $equipmentController->update((int) $queryParams['id'], $input);
                 sendJson($res);
@@ -79,6 +83,7 @@ try {
 
         // 🔸 Delete
         case 'DELETE':
+            $auth->requireAdmin($decoded);
             if ($action === 'delete' && isset($queryParams['id'])) {
                 $res = $equipmentController->delete((int) $queryParams['id']);
                 sendJson($res);

@@ -183,7 +183,12 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
                         <!-- Step 3: Equipment Selection -->
                         <div class="step-content" data-step="3">
-                            <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">المعدات المراد عزلها</h2>
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-medium text-[#0b6f76]">المعدات المراد عزلها</h2>
+                                <button type="button" id="addNewEquipmentBtn" class="text-sm px-3 py-1.5 bg-[#0b6f76] text-white rounded-md hover:bg-opacity-90 transition">
+                                    + إضافة معدة جديدة
+                                </button>
+                            </div>
 
                             <!-- Search Bar -->
                             <div class="mb-4 relative">
@@ -429,6 +434,63 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
             const equipmentSearchInput = document.getElementById('equipment-search');
             let searchTimeout = null;
+
+            const addNewEquipmentBtn = document.getElementById('addNewEquipmentBtn');
+            addNewEquipmentBtn.addEventListener('click', async () => {
+                const sectionId = document.getElementById('equipment_section_id').value;
+                if (!sectionId) {
+                    Swal.fire('تنبيه', 'يرجى اختيار القسم أولاً من الخطوة الأولى.', 'warning');
+                    return;
+                }
+
+                const { value: formValues } = await Swal.fire({
+                    title: 'إضافة معدة جديدة',
+                    html:
+                        '<input id="swal-eq-name" class="swal2-input" placeholder="اسم المعدة">' +
+                        '<input id="swal-eq-image" type="file" accept="image/*" class="swal2-file">',
+                    focusConfirm: false,
+                    showCancelButton: true,
+                    confirmButtonText: 'حفظ',
+                    cancelButtonText: 'إلغاء',
+                    confirmButtonColor: '#0b6f76',
+                    preConfirm: () => {
+                        const name = document.getElementById('swal-eq-name').value.trim();
+                        const imageFile = document.getElementById('swal-eq-image').files[0];
+                        if (!name) {
+                            Swal.showValidationMessage('يرجى إدخال اسم المعدة');
+                            return false;
+                        }
+                        return { name, imageFile };
+                    }
+                });
+
+                if (!formValues) return;
+
+                const fd = new FormData();
+                fd.append('name', formValues.name);
+                fd.append('section_id', sectionId);
+                if (formValues.imageFile) fd.append('image', formValues.imageFile);
+
+                try {
+                    const res = await fetch('../../api/admin/equipments.php?action=create', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${TOKEN}` },
+                        body: fd
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        Swal.fire('نجاح', 'تمت إضافة المعدة بنجاح', 'success');
+                        equipmentSearch = '';
+                        equipmentSearchInput.value = '';
+                        equipmentPage = 1;
+                        await loadEquipments();
+                    } else {
+                        Swal.fire('خطأ', result.message || 'حدث خطأ ما', 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('خطأ', 'فشل الاتصال بالخادم', 'error');
+                }
+            });
 
             equipmentSearchInput.addEventListener('input', (e) => {
                 equipmentSearch = e.target.value;

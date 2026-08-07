@@ -751,15 +751,19 @@ $userName = $userData['name'] ?? 'N/A';
                     const data = result.data;
                     displayData(data);
 
-                    // Show AM actions if pending and user is the assigned AM or has role 3/5/7
-                    if (data.status === 'pending' && (data.area_manager_id == CURRENT_USER_ID || canActAsAM)) {
+                    // The user assigned as this license's area manager is view-only: no action on this page,
+                    // even if they are also the creator or hold another privileged role.
+                    const isAssignedAM = data.area_manager_id == CURRENT_USER_ID;
+
+                    // Show AM actions if pending and user has role 3/5/7 (but not the assigned AM themselves)
+                    if (!isAssignedAM && data.status === 'pending' && canActAsAM) {
                         document.getElementById('am-action-section').classList.remove('hidden');
                     }
 
                     // Show edit buttons for energy types and equipments (only when not completed)
                     const editEnergyBtn = document.getElementById('editEnergyTypesBtn');
                     const editEquipBtn = document.getElementById('editEquipmentsBtn');
-                    if (data.status !== 'completed') {
+                    if (!isAssignedAM && data.status !== 'completed') {
                         if (editEnergyBtn) {
                             editEnergyBtn.classList.remove('hidden');
                             editEnergyBtn.addEventListener('click', openManageEnergyModal);
@@ -770,10 +774,10 @@ $userName = $userData['name'] ?? 'N/A';
                         }
                     }
 
-                    // Show Requester actions if active_isolation and user is creator or has role 3/5/7
+                    // Show Requester actions if active_isolation and user is creator or has role 3/5/7 (but not the assigned AM themselves)
                     const requesterSection = document.getElementById('requester-action-section');
                     if (requesterSection) {
-                        if (data.status === 'active_isolation' && (data.created_by == CURRENT_USER_ID || canActAsAM)) {
+                        if (!isAssignedAM && data.status === 'active_isolation' && (data.created_by == CURRENT_USER_ID || canActAsAM)) {
                             // show on screen but hide from print/PDF until isolation is actually removed
                             requesterSection.classList.remove('hidden');
                             requesterSection.classList.add('no-print');
@@ -813,6 +817,10 @@ $userName = $userData['name'] ?? 'N/A';
         }
 
         function displayData(data) {
+            // The user assigned as this license's area manager is view-only: no action on this page,
+            // even if they are also the creator or hold another privileged role.
+            const isAssignedAM = data.area_manager_id == CURRENT_USER_ID;
+
             document.getElementById('val-no').textContent = data.equipment_no;
             document.getElementById('val-date').textContent = data.date;
             document.getElementById('val-location').textContent = data.exact_location;
@@ -927,8 +935,8 @@ $userName = $userData['name'] ?? 'N/A';
 
                     const leftContainer = document.createElement('div');
 
-                    // Show interactive checkbox to license creator or roles 3/5/7
-                    if ((CURRENT_USER_ID == data.created_by || canActAsAM) && g.id) {
+                    // Show interactive checkbox to license creator or roles 3/5/7 (but not the assigned AM themselves)
+                    if (!isAssignedAM && (CURRENT_USER_ID == data.created_by || canActAsAM) && g.id) {
                         // if not checked, add .no-print to hide from print/PDF until checked
                         if (!g.is_done) {
                             leftContainer.classList.add('no-print');
@@ -1006,8 +1014,8 @@ $userName = $userData['name'] ?? 'N/A';
                 document.getElementById('pdfDownloadBtn').classList.remove('hidden');
             }
 
-            // Edit Staff Button Logic - show to creator or roles 3/5/7
-            if (CURRENT_USER_ID == data.created_by || canActAsAM) {
+            // Edit Staff Button Logic - show to creator or roles 3/5/7 (but not the assigned AM themselves)
+            if (!isAssignedAM && (CURRENT_USER_ID == data.created_by || canActAsAM)) {
                 document.getElementById('editStaffBtn').classList.remove('hidden');
             }
         }
