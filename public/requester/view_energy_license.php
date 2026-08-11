@@ -754,17 +754,17 @@ $userName = $userData['name'] ?? 'N/A';
                     // The creator may act, and admins can always manage the license.
                     const isAssignedAM = Number(data.area_manager_id) === Number(CURRENT_USER_ID);
                     const isLicenseCreator = Number(data.created_by) === Number(CURRENT_USER_ID);
-                    const canManageLicense = !isAssignedAM && (isLicenseCreator || IS_ADMIN);
+                    const canManageLicense = isLicenseCreator || IS_ADMIN;
 
                     // Show AM actions only when the license is still pending and the current user is allowed to act.
-                    if (!isAssignedAM && data.status === 'pending' && canManageLicense) {
+                    if (data.status === 'pending' && canManageLicense) {
                         document.getElementById('am-action-section').classList.remove('hidden');
                     }
 
                     // Show edit buttons for energy types and equipments only for allowed users and only when not completed.
                     const editEnergyBtn = document.getElementById('editEnergyTypesBtn');
                     const editEquipBtn = document.getElementById('editEquipmentsBtn');
-                    if (!isAssignedAM && canManageLicense && data.status !== 'completed') {
+                    if (canManageLicense && data.status !== 'completed') {
                         if (editEnergyBtn) {
                             editEnergyBtn.classList.remove('hidden');
                             editEnergyBtn.addEventListener('click', openManageEnergyModal);
@@ -778,7 +778,7 @@ $userName = $userData['name'] ?? 'N/A';
                     // Show requester actions for allowed users while the license is active.
                     const requesterSection = document.getElementById('requester-action-section');
                     if (requesterSection) {
-                        if (!isAssignedAM && data.status === 'active_isolation' && canManageLicense) {
+                        if (data.status === 'active_isolation' && canManageLicense) {
                             requesterSection.classList.remove('hidden');
                             requesterSection.classList.add('no-print');
                         } else {
@@ -819,7 +819,7 @@ $userName = $userData['name'] ?? 'N/A';
         function displayData(data) {
             const isAssignedAM = Number(data.area_manager_id) === Number(CURRENT_USER_ID);
             const isLicenseCreator = Number(data.created_by) === Number(CURRENT_USER_ID);
-            const canManageLicense = !isAssignedAM && (isLicenseCreator || IS_ADMIN);
+            const canManageLicense = isLicenseCreator || IS_ADMIN;
 
             document.getElementById('val-no').textContent = data.equipment_no;
             document.getElementById('val-date').textContent = data.date;
