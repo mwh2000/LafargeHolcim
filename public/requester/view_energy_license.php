@@ -704,7 +704,7 @@ $userName = $userData['name'] ?? 'N/A';
         const CURRENT_USER_ROLE = "<?= $userRole ?>";
         const CURRENT_USER_NAME = "<?= $userName ?>";
         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
-        const canActAsAM = [3, 5, 7].includes(parseInt(CURRENT_USER_ROLE));
+        const IS_ADMIN = [1, 7].includes(Number(CURRENT_USER_ROLE));
         const API_BASE = "../../api/requester/energy_insulation.php";
 
         let currentLicenseData = null;
@@ -751,19 +751,20 @@ $userName = $userData['name'] ?? 'N/A';
                     const data = result.data;
                     displayData(data);
 
-                    // The user assigned as this license's area manager is view-only: no action on this page,
-                    // even if they are also the creator or hold another privileged role.
-                    const isAssignedAM = data.area_manager_id == CURRENT_USER_ID;
+                    // The creator may act, and admins can always manage the license.
+                    const isAssignedAM = Number(data.area_manager_id) === Number(CURRENT_USER_ID);
+                    const isLicenseCreator = Number(data.created_by) === Number(CURRENT_USER_ID);
+                    const canManageLicense = !isAssignedAM && (isLicenseCreator || IS_ADMIN);
 
-                    // Show AM actions if pending and user has role 3/5/7 (but not the assigned AM themselves)
-                    if (!isAssignedAM && data.status === 'pending' && canActAsAM) {
+                    // Show AM actions only when the license is still pending and the current user is allowed to act.
+                    if (!isAssignedAM && data.status === 'pending' && canManageLicense) {
                         document.getElementById('am-action-section').classList.remove('hidden');
                     }
 
-                    // Show edit buttons for energy types and equipments (only when not completed)
+                    // Show edit buttons for energy types and equipments only for allowed users and only when not completed.
                     const editEnergyBtn = document.getElementById('editEnergyTypesBtn');
                     const editEquipBtn = document.getElementById('editEquipmentsBtn');
-                    if (!isAssignedAM && data.status !== 'completed') {
+                    if (!isAssignedAM && canManageLicense && data.status !== 'completed') {
                         if (editEnergyBtn) {
                             editEnergyBtn.classList.remove('hidden');
                             editEnergyBtn.addEventListener('click', openManageEnergyModal);
@@ -774,11 +775,10 @@ $userName = $userData['name'] ?? 'N/A';
                         }
                     }
 
-                    // Show Requester actions if active_isolation and user is creator or has role 3/5/7 (but not the assigned AM themselves)
+                    // Show requester actions for allowed users while the license is active.
                     const requesterSection = document.getElementById('requester-action-section');
                     if (requesterSection) {
-                        if (!isAssignedAM && data.status === 'active_isolation' && (data.created_by == CURRENT_USER_ID || canActAsAM)) {
-                            // show on screen but hide from print/PDF until isolation is actually removed
+                        if (!isAssignedAM && data.status === 'active_isolation' && canManageLicense) {
                             requesterSection.classList.remove('hidden');
                             requesterSection.classList.add('no-print');
                         } else {
@@ -817,9 +817,9 @@ $userName = $userData['name'] ?? 'N/A';
         }
 
         function displayData(data) {
-            // The user assigned as this license's area manager is view-only: no action on this page,
-            // even if they are also the creator or hold another privileged role.
-            const isAssignedAM = data.area_manager_id == CURRENT_USER_ID;
+            const isAssignedAM = Number(data.area_manager_id) === Number(CURRENT_USER_ID);
+            const isLicenseCreator = Number(data.created_by) === Number(CURRENT_USER_ID);
+            const canManageLicense = !isAssignedAM && (isLicenseCreator || IS_ADMIN);
 
             document.getElementById('val-no').textContent = data.equipment_no;
             document.getElementById('val-date').textContent = data.date;
@@ -935,9 +935,8 @@ $userName = $userData['name'] ?? 'N/A';
 
                     const leftContainer = document.createElement('div');
 
-                    // Show interactive checkbox to license creator or roles 3/5/7 (but not the assigned AM themselves)
-                    if (!isAssignedAM && (CURRENT_USER_ID == data.created_by || canActAsAM) && g.id) {
-                        // if not checked, add .no-print to hide from print/PDF until checked
+                    // Only the license creator can mark work as done.
+                    if (canManageLicense && g.id) {
                         if (!g.is_done) {
                             leftContainer.classList.add('no-print');
                         }
@@ -1014,8 +1013,8 @@ $userName = $userData['name'] ?? 'N/A';
                 document.getElementById('pdfDownloadBtn').classList.remove('hidden');
             }
 
-            // Edit Staff Button Logic - show to creator or roles 3/5/7 (but not the assigned AM themselves)
-            if (!isAssignedAM && (CURRENT_USER_ID == data.created_by || canActAsAM)) {
+            // Edit Staff Button Logic - only the license creator can edit staff.
+            if (canManageLicense) {
                 document.getElementById('editStaffBtn').classList.remove('hidden');
             }
         }
