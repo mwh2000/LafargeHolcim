@@ -38,8 +38,9 @@ require_once __DIR__ . '/helpers/authCheck.php';
                         </button>
                         <select id="statusFilter" class="border px-4 py-2 rounded-md text-sm">
                             <option value="">All Status</option>
-                            <option value="active_isolation">Open</option>
-                            <option value="completed">Completed</option>
+                            <option value="open">Open</option>
+                            <option value="not_active">Not Active</option>
+                            <option value="close">Closed</option>
                             <option value="rejected">Rejected</option>
                         </select>
                         <select id="sectionFilter" class="border px-4 py-2 rounded-md text-sm">
@@ -117,23 +118,31 @@ require_once __DIR__ . '/helpers/authCheck.php';
             }
         }
 
-        function getStatusText(status) {
+        function getStatusText(status, effectiveStatus = null) {
+            const resolved = effectiveStatus || status;
             const map = {
+                'open': 'Open',
+                'not_active': 'Not Active',
+                'close': 'Closed',
                 'active_isolation': 'Open',
                 'rejected': 'Rejected',
-                'completed': 'Completed'
+                'completed': 'Closed'
             };
-            return map[status] || status;
+            return map[resolved] || status || 'Unknown';
         }
 
-        function getStatusClass(status) {
+        function getStatusClass(status, effectiveStatus = null) {
+            const resolved = effectiveStatus || status;
             const map = {
                 'pending': 'bg-yellow-100 text-yellow-800',
+                'open': 'bg-blue-100 text-blue-800',
+                'not_active': 'bg-red-100 text-red-800',
+                'close': 'bg-green-100 text-green-800',
                 'active_isolation': 'bg-blue-100 text-blue-800',
                 'rejected': 'bg-red-100 text-red-800',
                 'completed': 'bg-green-100 text-green-800'
             };
-            return map[status] || 'bg-gray-100 text-gray-800';
+            return map[resolved] || 'bg-gray-100 text-gray-800';
         }
 
         let currentPage = 1;
@@ -202,8 +211,8 @@ require_once __DIR__ . '/helpers/authCheck.php';
                         <td class="px-6 py-4 text-xs font-semibold text-blue-800">${p.am_approved_at || '-'}</td>
                         <td class="px-6 py-4 text-xs font-semibold text-green-800">${p.isolation_removed_at || '-'}</td>
                         <td class="px-6 py-4">
-                            <span class="px-3 py-1 rounded-full text-[10px] font-bold ${getStatusClass(p.status)}">
-                                ${getStatusText(p.status)}
+                            <span class="px-3 py-1 rounded-full text-[10px] font-bold ${getStatusClass(p.status, p.effective_status || p.status)}">
+                                ${getStatusText(p.status, p.effective_status || p.status)}
                             </span>
                         </td>
                         <td class="px-6 py-4 text-right">

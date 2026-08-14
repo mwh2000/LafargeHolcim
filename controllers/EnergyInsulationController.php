@@ -16,6 +16,53 @@ class EnergyInsulationController
         $this->emailController = $emailController;
     }
 
+    private function normalizeLicenseExpiry($value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if ($value instanceof DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s');
+        }
+
+        $raw = trim((string)$value);
+        if ($raw === '') {
+            return null;
+        }
+
+        $candidate = str_replace('T', ' ', $raw);
+        if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/', $candidate)) {
+            return $candidate . ':00';
+        }
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $candidate)) {
+            return $candidate;
+        }
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', $raw)) {
+            return str_replace('T', ' ', $raw) . ':00';
+        }
+
+        return $candidate;
+    }
+
+    public function getEffectiveStatus(?string $status, ?string $expiry): string
+    {
+        if ($status === 'completed') {
+            return 'close';
+        }
+
+        if ($status === 'active_isolation') {
+            if (!empty($expiry) && strtotime($expiry) < time()) {
+                return 'not_active';
+            }
+            return 'open';
+        }
+
+        return $status ?? 'pending';
+    }
+
     public function createLicense(array $data)
     {
         try {
@@ -34,7 +81,7 @@ class EnergyInsulationController
                 $data['equipment_no'] ?? null,
                 $data['date'] ?? null,
                 $data['reason'] ?? null,
-                $data['license_expiry'] ?? null,
+                $this->normalizeLicenseExpiry($data['license_expiry'] ?? null),
                 isset($data['execution_exceeds_shift_time']) ? (int)$data['execution_exceeds_shift_time'] : 0,
                 $data['work_permit'] ?? null,
                 $data['equipment_section_id'] ?? null,
@@ -197,6 +244,9 @@ class EnergyInsulationController
         if (!$license) {
             return $this->respond(false, 'License not found', null, ['code' => 404], 404);
         }
+
+        $license['effective_status'] = $this->getEffectiveStatus($license['status'] ?? null, $license['license_expiry'] ?? null);
+        $license['is_expired'] = ($license['effective_status'] === 'not_active');
 
         // Get Energy Types
         $energyStmt = $this->conn->prepare("
@@ -508,12 +558,17 @@ class EnergyInsulationController
     {
         try {
             // Fetch license info for notification
-            $stmt = $this->conn->prepare("SELECT area_manager_id, equipment_name FROM energy_insulation_license WHERE id = ?");
+            $stmt = $this->conn->prepare("SELECT area_manager_id, equipment_name, status, license_expiry FROM energy_insulation_license WHERE id = ?");
             $stmt->execute([$licenseId]);
             $license = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$license) {
                 return $this->respond(false, 'License not found', null, ['code' => 404], 404);
+            }
+
+            $effectiveStatus = $this->getEffectiveStatus($license['status'] ?? null, $license['license_expiry'] ?? null);
+            if ($effectiveStatus === 'not_active') {
+                return $this->respond(false, 'لا يمكن رفع العزل لأن وقت انتهاء الرخصة انتهى', null, ['code' => 400], 400);
             }
 
             // Check if there are any incomplete staff groups
@@ -594,7 +649,8 @@ class EnergyInsulationController
             $query = "SELECT 
                         COUNT(*) as total,
                         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-                        SUM(CASE WHEN status = 'active_isolation' THEN 1 ELSE 0 END) as active_isolation,
+                        SUM(CASE WHEN status = 'active_isolation' AND (license_expiry IS NULL OR license_expiry >= NOW()) THEN 1 ELSE 0 END) as active_isolation,
+                        SUM(CASE WHEN status = 'active_isolation' AND license_expiry IS NOT NULL AND license_expiry < NOW() THEN 1 ELSE 0 END) as not_active,
                         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
                       FROM energy_insulation_license WHERE 1=1";
 
@@ -629,6 +685,7 @@ class EnergyInsulationController
                 'total' => (int)$stats['total'],
                 'pending' => (int)$stats['pending'],
                 'active_isolation' => (int)$stats['active_isolation'],
+                'not_active' => (int)$stats['not_active'],
                 'completed' => (int)$stats['completed']
             ]);
         } catch (Exception $e) {
@@ -645,14 +702,23 @@ class EnergyInsulationController
 
             $where = " WHERE 1=1";
             $params = [];
+            $statusFilter = $filters['status'] ?? '';
 
             if (!empty($filters['section'])) {
                 $where .= " AND l.equipment_section_id = ?";
                 $params[] = $filters['section'];
             }
-            if (!empty($filters['status'])) {
-                $where .= " AND l.status = ?";
-                $params[] = $filters['status'];
+            if (!empty($statusFilter)) {
+                if ($statusFilter === 'open') {
+                    $where .= " AND l.status = 'active_isolation' AND (l.license_expiry IS NULL OR l.license_expiry >= NOW())";
+                } elseif ($statusFilter === 'close') {
+                    $where .= " AND l.status = 'completed'";
+                } elseif ($statusFilter === 'not_active') {
+                    $where .= " AND l.status = 'active_isolation' AND l.license_expiry IS NOT NULL AND l.license_expiry < NOW()";
+                } elseif ($statusFilter === 'active_isolation' || $statusFilter === 'completed' || $statusFilter === 'pending' || $statusFilter === 'rejected') {
+                    $where .= " AND l.status = ?";
+                    $params[] = $statusFilter;
+                }
             }
             if (!empty($filters['from_date'])) {
                 $where .= " AND l.date >= ?";
@@ -679,7 +745,13 @@ class EnergyInsulationController
             $countStmt->execute($params);
             $total = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-            $query = "SELECT l.*, es.name as section_name, am.name as area_manager_name 
+            $query = "SELECT l.*, es.name as section_name, am.name as area_manager_name,
+                      CASE
+                        WHEN l.status = 'completed' THEN 'close'
+                        WHEN l.status = 'active_isolation' AND (l.license_expiry IS NOT NULL AND l.license_expiry < NOW()) THEN 'not_active'
+                        WHEN l.status = 'active_isolation' THEN 'open'
+                        ELSE l.status
+                      END as effective_status
                       FROM energy_insulation_license l
                       LEFT JOIN equipment_sections es ON l.equipment_section_id = es.id
                       LEFT JOIN users am ON l.area_manager_id = am.id

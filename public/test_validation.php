@@ -76,6 +76,19 @@ try {
         echo "Response Message: " . ($res['message'] ?? 'Unknown error') . "\n";
     }
 
+    // 8. Test 3: Expired license must not allow lifting isolation.
+    $db->prepare("UPDATE energy_insulation_license SET license_expiry = DATE_SUB(NOW(), INTERVAL 1 HOUR), status = 'active_isolation' WHERE id = ?")->execute([$licenseId]);
+    echo "Test 3: Attempting to lift isolation after expiry time...\n";
+    $resJson = $controller->removeIsolationAction($licenseId, 1);
+    $res = json_decode($resJson, true);
+
+    if (isset($res['success']) && $res['success'] === false && stripos($res['message'] ?? '', 'انتهى') !== false) {
+        echo "✅ Test 3 Passed: Expired license was blocked correctly.\n";
+    } else {
+        echo "❌ Test 3 Failed: Expired license was incorrectly allowed or message mismatch.\n";
+        echo "Response Message: " . ($res['message'] ?? 'Unknown error') . "\n";
+    }
+
     $db->rollBack();
     echo "\nVerification tests completed successfully. Database changes rolled back.\n";
 } catch (Exception $e) {

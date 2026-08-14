@@ -113,18 +113,19 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
         function renderStatusChart(stats) {
             const ctx = document.getElementById('permitStatusChart');
-            const total = stats.pending + stats.active_isolation + stats.completed;
+            const total = stats.pending + stats.active_isolation + stats.not_active + stats.completed;
 
             const chartData = {
                 labels: [
-                    `open: ${stats.active_isolation}`,
+                    `Open: ${stats.active_isolation}`,
+                    `Not Active: ${stats.not_active}`,
                     `Completed: ${stats.completed}`
                 ],
                 datasets: [{
-                    data: [stats.pending, stats.active_isolation, stats.completed],
+                    data: [stats.active_isolation, stats.not_active, stats.completed],
                     backgroundColor: [
-                        '#fbbf24', // yellow
                         '#3b82f6', // blue
+                        '#ef4444', // red
                         '#10b981' // green
                     ],
                     hoverOffset: 6
@@ -189,15 +190,21 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <p class="mt-2 text-2xl font-semibold text-gray-700">${d.total}</p>
                         </div>
 
-                        <div onclick="location.href='${getPermitsUrl('active_isolation')}'"
+                        <div onclick="location.href='${getPermitsUrl('open')}'"
                              class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-blue-400 hover:shadow-lg transition">
-                            <p class="text-sm text-gray-500">open</p>
+                            <p class="text-sm text-gray-500">Open</p>
                             <p class="mt-2 text-2xl font-semibold text-blue-600">${d.active_isolation}</p>
                         </div>
 
-                        <div onclick="location.href='${getPermitsUrl('completed')}'"
+                        <div onclick="location.href='${getPermitsUrl('not_active')}'"
+                             class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-red-400 hover:shadow-lg transition">
+                            <p class="text-sm text-gray-500">Not Active</p>
+                            <p class="mt-2 text-2xl font-semibold text-red-600">${d.not_active ?? 0}</p>
+                        </div>
+
+                        <div onclick="location.href='${getPermitsUrl('close')}'"
                              class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-green-400 hover:shadow-lg transition">
-                            <p class="text-sm text-gray-500">Completed</p>
+                            <p class="text-sm text-gray-500">Closed</p>
                             <p class="mt-2 text-2xl font-semibold text-green-600">${d.completed}</p>
                         </div>
                     `;

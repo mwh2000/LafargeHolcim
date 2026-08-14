@@ -716,12 +716,15 @@ $userName = $userData['name'] ?? 'N/A';
             const removeBtn = document.getElementById('removeIsolationBtn');
             if (!permitCb || !removeSectionLockCb || !removeBtn) return;
 
+            const effectiveStatus = currentLicenseData?.effective_status || currentLicenseData?.status || '';
+            const isExpired = effectiveStatus === 'not_active';
+
             let allGroupsDone = true;
             if (currentLicenseData && currentLicenseData.staff_groups && currentLicenseData.staff_groups.length > 0) {
                 allGroupsDone = currentLicenseData.staff_groups.every(g => parseInt(g.is_done) === 1);
             }
 
-            removeBtn.disabled = !(permitCb.checked && removeSectionLockCb.checked && allGroupsDone);
+            removeBtn.disabled = isExpired || !(permitCb.checked && removeSectionLockCb.checked && allGroupsDone);
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -777,8 +780,9 @@ $userName = $userData['name'] ?? 'N/A';
 
                     // Show requester actions for allowed users while the license is active.
                     const requesterSection = document.getElementById('requester-action-section');
+                    const effectiveStatus = data.effective_status || data.status;
                     if (requesterSection) {
-                        if (data.status === 'active_isolation' && canManageLicense) {
+                        if ((effectiveStatus === 'open' || data.status === 'active_isolation') && canManageLicense && effectiveStatus !== 'not_active') {
                             requesterSection.classList.remove('hidden');
                             requesterSection.classList.add('no-print');
                         } else {
@@ -846,10 +850,11 @@ $userName = $userData['name'] ?? 'N/A';
                 document.getElementById('val-end-at').textContent = data.end_at;
             }
 
+            const effectiveStatus = data.effective_status || (data.status === 'completed' ? 'close' : data.status === 'active_isolation' && data.license_expiry && new Date(data.license_expiry) < new Date() ? 'not_active' : data.status);
             const statusEl = document.getElementById('license-status');
             const statusByEl = document.getElementById('status-by');
-            statusEl.textContent = getStatusText(data.status);
-            statusEl.className = `px-3 py-1 rounded-full text-sm font-medium ${getStatusClass(data.status)}`;
+            statusEl.textContent = getStatusText(effectiveStatus);
+            statusEl.className = `px-3 py-1 rounded-full text-sm font-medium ${getStatusClass(effectiveStatus)}`;
 
             // Display who approved/signed this status
             statusByEl.textContent = '';
@@ -1022,6 +1027,9 @@ $userName = $userData['name'] ?? 'N/A';
         function getStatusText(status) {
             const map = {
                 'pending': 'بانتظار الموافقة',
+                'open': 'تم العزل - Isolation Active',
+                'not_active': 'غير نشط - Not Active',
+                'close': 'مكتملة - Isolation Removed',
                 'active_isolation': 'تم العزل - Isolation Active',
                 'rejected': 'مرفوضة',
                 'completed': 'مكتملة - Isolation Removed'
@@ -1032,6 +1040,9 @@ $userName = $userData['name'] ?? 'N/A';
         function getStatusClass(status) {
             const map = {
                 'pending': 'bg-yellow-100 text-yellow-800',
+                'open': 'bg-blue-100 text-blue-800',
+                'not_active': 'bg-red-100 text-red-800',
+                'close': 'bg-green-100 text-green-800',
                 'active_isolation': 'bg-blue-100 text-blue-800',
                 'rejected': 'bg-red-100 text-red-800',
                 'completed': 'bg-green-100 text-green-800'

@@ -131,13 +131,9 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-green-700 mb-1">تاريخ انتهاء الرخصة</label>
-                                    <select id="license_expiry_select" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76] mb-2">
-                                        <option value="بعد 8 ساعات اجباريا" selected>بعد 8 ساعات اجباريا</option>
-                                        <option value="بعد 4 ساعات">بعد 4 ساعات</option>
-                                        <!-- <option value="manual">كتابة يدوية (أخرى)</option> -->
-                                    </select>
-                                    <input type="text" id="license_expiry_manual" placeholder="اكتب التاريخ هنا..." class="hidden w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76]">
+                                    <label class="block text-sm font-medium text-green-700 mb-1">تاريخ ووقت انتهاء الرخصة</label>
+                                    <input type="datetime-local" id="license_expiry" name="license_expiry" required class="w-full px-4 py-2 border border-black rounded-md focus:ring-[#0b6f76] mb-2">
+                                    <p class="text-xs text-gray-500">سيتم اعتبار الرخصة غير نشطة تلقائياً عند تجاوز وقت الانتهاء.</p>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-green-700 mb-1">تصريح العمل</label>
@@ -316,23 +312,8 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
             });
 
 
-            // Toggle Manual Expiry Input
-            const licenseExpirySelect = document.getElementById('license_expiry_select');
-            const licenseExpiryManual = document.getElementById('license_expiry_manual');
-
-            licenseExpirySelect.addEventListener('change', () => {
-                if (licenseExpirySelect.value === 'manual') {
-                    licenseExpiryManual.classList.remove('hidden');
-                    licenseExpiryManual.required = true;
-                } else {
-                    licenseExpiryManual.classList.add('hidden');
-                    licenseExpiryManual.required = false;
-                    licenseExpiryManual.value = '';
-                }
-                updateButtonStates();
-            });
-
-            licenseExpiryManual.addEventListener('input', updateButtonStates);
+            const licenseExpiryInput = document.getElementById('license_expiry');
+            licenseExpiryInput.addEventListener('input', updateButtonStates);
 
             // Staff dynamic groups logic
             const staffGroupsContainer = document.getElementById('staff-groups-container');
@@ -443,10 +424,11 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     return;
                 }
 
-                const { value: formValues } = await Swal.fire({
+                const {
+                    value: formValues
+                } = await Swal.fire({
                     title: 'إضافة معدة جديدة',
-                    html:
-                        '<input id="swal-eq-name" class="swal2-input" placeholder="اسم المعدة">' +
+                    html: '<input id="swal-eq-name" class="swal2-input" placeholder="اسم المعدة">' +
                         '<input id="swal-eq-image" type="file" accept="image/*" class="swal2-file">',
                     focusConfirm: false,
                     showCancelButton: true,
@@ -460,7 +442,10 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                             Swal.showValidationMessage('يرجى إدخال اسم المعدة');
                             return false;
                         }
-                        return { name, imageFile };
+                        return {
+                            name,
+                            imageFile
+                        };
                     }
                 });
 
@@ -474,7 +459,9 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 try {
                     const res = await fetch('../../api/admin/equipments.php?action=create', {
                         method: 'POST',
-                        headers: { 'Authorization': `Bearer ${TOKEN}` },
+                        headers: {
+                            'Authorization': `Bearer ${TOKEN}`
+                        },
                         body: fd
                     });
                     const result = await res.json();
@@ -771,8 +758,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     equipment_section_id: formData.get('equipment_section_id'),
                     date: formData.get('date'),
                     reason: formData.get('reason'),
-                    license_expiry: document.getElementById('license_expiry_select').value === 'manual' ?
-                        document.getElementById('license_expiry_manual').value.trim() : document.getElementById('license_expiry_select').value,
+                    license_expiry: document.getElementById('license_expiry').value,
                     work_permit: formData.get('work_permit'),
                     exact_location: formData.get('exact_location'),
                     requester_name: formData.get('requester_name'),

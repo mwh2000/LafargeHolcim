@@ -8,7 +8,7 @@ return function (PDO $pdo) {
             `equipment_no` varchar(255) DEFAULT NULL,
             `date` timestamp NULL DEFAULT NULL,
             `reason` varchar(255) DEFAULT NULL,
-            `license_expiry` varchar(255) DEFAULT NULL,
+            `license_expiry` datetime DEFAULT NULL,
             `execution_exceeds_shift_time` int DEFAULT NULL,
             `exact_location` int DEFAULT NULL,
             `created_by` bigint UNSIGNED DEFAULT NULL,
