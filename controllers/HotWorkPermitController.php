@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/notificationsController.php';
 require_once __DIR__ . '/emailController.php';
+require_once __DIR__ . '/LicensePdfController.php';
 
 
 class HotWorkPermitController
@@ -14,6 +15,21 @@ class HotWorkPermitController
     public function __construct($db)
     {
         $this->db = $db;
+    }
+
+    /**
+     * Builds a fresh PDF snapshot of the permit as an email attachment. PDF
+     * generation failures must never block the underlying workflow action or
+     * the notification email itself, so any error just yields no attachment.
+     */
+    private function buildPermitPdfAttachment($permitId)
+    {
+        try {
+            $pdf = LicensePdfController::generateHotWorkPermitPdf($this->db, (int)$permitId);
+            return [['content' => $pdf, 'filename' => "hot-work-permit-{$permitId}.pdf"]];
+        } catch (Exception $e) {
+            return [];
+        }
     }
 
     public function createPermit($data)
@@ -158,7 +174,7 @@ class HotWorkPermitController
                     $body = "{$creatorName} | {$creatorDepartment}";
                     $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
                     $notificationController->sendNotification($title, $body, [$safetyReviewerId], $url, $creatorId);
-                    $emailController->sendEmail($title, $body, [$safetyReviewerId]);
+                    $emailController->sendEmail($title, $body, [$safetyReviewerId], null, false, $this->buildPermitPdfAttachment($permitId));
                 }
             } catch (Exception $e) {
                 // Ignore notification/email errors
@@ -264,18 +280,18 @@ class HotWorkPermitController
                     $title = 'بأنتظار موافقة مدير المصنع';
                     $body = 'تمت موافقة قسم السلامة على الرخصة ويحتاج موافقة مدير المصنع';
                     $notificationController->sendNotification($title, $body, [$selectedCriticalManagerId], $url, $safetyUserId);
-                    $emailController->sendEmail($title, $body, [$selectedCriticalManagerId]);
+                    $emailController->sendEmail($title, $body, [$selectedCriticalManagerId], null, false, $this->buildPermitPdfAttachment($permitId));
                 } elseif (!empty($permit['assigned_to'])) {
                     $title = 'رخصة عمل ساخن جديدة';
                     $body = 'وافق السيفتي على رخصة العمل الساخن وتم إسنادها إليك';
                     $notificationController->sendNotification($title, $body, [$permit['assigned_to']], $url, $safetyUserId);
-                    $emailController->sendEmail($title, $body, [$permit['assigned_to']]);
+                    $emailController->sendEmail($title, $body, [$permit['assigned_to']], null, false, $this->buildPermitPdfAttachment($permitId));
 
                     if (!empty($permit['created_by']) && (int)$permit['created_by'] !== (int)$permit['assigned_to']) {
                         $creatorTitle = 'تمت الموافقة على رخصة عمل ساخن';
                         $creatorBody = 'وافق قسم السلامة على رخصة العمل الساخن';
                         $notificationController->sendNotification($creatorTitle, $creatorBody, [$permit['created_by']], $url, $safetyUserId);
-                        $emailController->sendEmail($creatorTitle, $creatorBody, [$permit['created_by']]);
+                        $emailController->sendEmail($creatorTitle, $creatorBody, [$permit['created_by']], null, false, $this->buildPermitPdfAttachment($permitId));
                     }
                 }
 
@@ -283,7 +299,7 @@ class HotWorkPermitController
                     $title = 'تمت الموافقة على رخصة عمل ساخن';
                     $body = 'وافق السيفتي على رخصة عمل ساخن';
                     $notificationController->sendNotification($title, $body, $this->safetyApprovalExtraNotifyUserIds, $url, $safetyUserId);
-                    $emailController->sendEmail($title, $body, $this->safetyApprovalExtraNotifyUserIds);
+                    $emailController->sendEmail($title, $body, $this->safetyApprovalExtraNotifyUserIds, null, false, $this->buildPermitPdfAttachment($permitId));
                 }
             } catch (Exception $e) {
                 // Ignore notification/email errors
@@ -327,7 +343,7 @@ class HotWorkPermitController
                 $recipients = array_filter(array_unique([(int)($permit['created_by'] ?? 0), (int)($permit['assigned_to'] ?? 0)]));
                 if (!empty($recipients)) {
                     $notificationController->sendNotification($title, $body, array_values($recipients), $url, $managerUserId);
-                    $emailController->sendEmail($title, $body, array_values($recipients));
+                    $emailController->sendEmail($title, $body, array_values($recipients), null, false, $this->buildPermitPdfAttachment($permitId));
                 }
             } catch (Exception $e) {
                 // Ignore notification/email errors
@@ -373,7 +389,7 @@ class HotWorkPermitController
                 $recipients = array_filter(array_unique([$permit['created_by'], $permit['assigned_to']]));
                 if (!empty($recipients)) {
                     $notificationController->sendNotification($title, $body, array_values($recipients), $url, $safetyUserId);
-                    $emailController->sendEmail($title, $body, array_values($recipients));
+                    $emailController->sendEmail($title, $body, array_values($recipients), null, false, $this->buildPermitPdfAttachment($permitId));
                 }
             } catch (Exception $e) {
                 // Ignore notification/email errors
@@ -494,7 +510,7 @@ class HotWorkPermitController
                     $body = '';
                     $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
                     $notificationController->sendNotification($title, $body, [$data['safety_reviewer_id']], $url, $creatorId);
-                    $emailController->sendEmail($title, $body, [$data['safety_reviewer_id']]);
+                    $emailController->sendEmail($title, $body, [$data['safety_reviewer_id']], null, false, $this->buildPermitPdfAttachment($permitId));
                 }
             } catch (Exception $e) {
                 // Ignore notification/email errors
@@ -522,7 +538,7 @@ class HotWorkPermitController
                 $body = 'تم إسناد رخصة عمل حرجة برقم إلى المشرف. الرجاء المراجعة.';
                 $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
                 $notificationController->sendNotification($title, $body, [$supervisorId], $url, $managerId);
-                $emailController->sendEmail($title, $body, [$supervisorId]);
+                $emailController->sendEmail($title, $body, [$supervisorId], null, false, $this->buildPermitPdfAttachment($permitId));
             } catch (Exception $e) {
                 // ignore notification/email errors
             }
@@ -557,7 +573,7 @@ class HotWorkPermitController
                 $body = 'يمكنك الآن إكمال بقية خطوات الرخصة.';
                 $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
                 $notificationController->sendNotification($title, $body, [$creatorId], $url, $supervisorId);
-                $emailController->sendEmail($title, $body, [$creatorId]);
+                $emailController->sendEmail($title, $body, [$creatorId], null, false, $this->buildPermitPdfAttachment($permitId));
             } catch (Exception $e) {
                 // ignore
             }
@@ -669,7 +685,7 @@ class HotWorkPermitController
                     $body = 'تمت إكمال الرخصة وتم إسنادها.';
                     $url = BASE_URL . "/public/requester/view_hot_work_license.php?id=" . $permitId;
                     $notificationController->sendNotification($title, $body, [$row['assigned_to']], $url, $row['created_by']);
-                    $emailController->sendEmail($title, $body, [$row['assigned_to']]);
+                    $emailController->sendEmail($title, $body, [$row['assigned_to']], null, false, $this->buildPermitPdfAttachment($permitId));
                 }
             } catch (Exception $e) {
                 // ignore

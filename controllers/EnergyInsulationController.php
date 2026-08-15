@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../core/ApiResponseTrait.php';
+require_once __DIR__ . '/LicensePdfController.php';
 
 class EnergyInsulationController
 {
@@ -14,6 +15,21 @@ class EnergyInsulationController
         $this->conn = $conn;
         $this->notificationController = $notificationController;
         $this->emailController = $emailController;
+    }
+
+    /**
+     * Builds a fresh PDF snapshot of the license as an email attachment. PDF
+     * generation failures must never block the underlying workflow action or
+     * the notification email itself, so any error just yields no attachment.
+     */
+    private function buildLicensePdfAttachment(int $licenseId): array
+    {
+        try {
+            $pdf = LicensePdfController::generateEnergyIsolationPdf($this->conn, $licenseId);
+            return [['content' => $pdf, 'filename' => "energy-isolation-license-{$licenseId}.pdf"]];
+        } catch (Exception $e) {
+            return [];
+        }
     }
 
     private function normalizeLicenseExpiry($value): ?string
@@ -155,7 +171,7 @@ class EnergyInsulationController
                 $this->notificationController->sendNotification($title, $body, [$data['area_manager_id']], $url, $data['created_by']);
 
                 if ($this->emailController) {
-                    $this->emailController->sendEmail($title, $emailBody, [$data['area_manager_id']]);
+                    $this->emailController->sendEmail($title, $emailBody, [$data['area_manager_id']], null, false, $this->buildLicensePdfAttachment($licenseId));
                 }
             }
 
@@ -168,7 +184,7 @@ class EnergyInsulationController
                 $this->notificationController->sendNotification($titleCreator, $bodyCreator, [$data['created_by']], $urlCreator, $data['created_by']);
 
                 if ($this->emailController) {
-                    $this->emailController->sendEmail($titleCreator, $bodyCreator, [$data['created_by']]);
+                    $this->emailController->sendEmail($titleCreator, $bodyCreator, [$data['created_by']], null, false, $this->buildLicensePdfAttachment($licenseId));
                 }
             }
 
@@ -441,7 +457,7 @@ class EnergyInsulationController
                 $this->notificationController->sendNotification($title, $body, [$officerId], $url, $updatedBy);
 
                 if ($this->emailController) {
-                    $this->emailController->sendEmail($title, $body, [$officerId]);
+                    $this->emailController->sendEmail($title, $body, [$officerId], null, false, $this->buildLicensePdfAttachment($licenseId));
                 }
             }
             return $this->respond(true, 'Isolation officer assigned successfully');
@@ -477,7 +493,7 @@ class EnergyInsulationController
                 $this->notificationController->sendNotification($title, $body, [$shiftLeaderId], $url, $updatedBy);
 
                 if ($this->emailController) {
-                    $this->emailController->sendEmail($title, $body, [$shiftLeaderId]);
+                    $this->emailController->sendEmail($title, $body, [$shiftLeaderId], null, false, $this->buildLicensePdfAttachment($licenseId));
                 }
             }
             return $this->respond(true, 'License confirmed by isolation officer successfully');
@@ -510,7 +526,7 @@ class EnergyInsulationController
                 $this->notificationController->sendNotification($title, $body, $recipients, $url, $updatedBy);
 
                 if ($this->emailController) {
-                    $this->emailController->sendEmail($title, $body, $recipients);
+                    $this->emailController->sendEmail($title, $body, $recipients, null, false, $this->buildLicensePdfAttachment($licenseId));
                 }
             }
             return $this->respond(true, 'License completed successfully');
@@ -543,7 +559,7 @@ class EnergyInsulationController
                     $this->notificationController->sendNotification($title, $body, [$license['created_by']], $url, $userId);
 
                     if ($this->emailController) {
-                        $this->emailController->sendEmail($title, $body, [$license['created_by']]);
+                        $this->emailController->sendEmail($title, $body, [$license['created_by']], null, false, $this->buildLicensePdfAttachment($licenseId));
                     }
                 }
                 return $this->respond(true, 'Isolation confirmed by Area Manager successfully');
@@ -596,7 +612,7 @@ class EnergyInsulationController
                     $this->notificationController->sendNotification($title, $body, [$license['area_manager_id']], $url, $userId);
 
                     if ($this->emailController) {
-                        $this->emailController->sendEmail($title, $body, [$license['area_manager_id']]);
+                        $this->emailController->sendEmail($title, $body, [$license['area_manager_id']], null, false, $this->buildLicensePdfAttachment($licenseId));
                     }
                 }
                 return $this->respond(true, 'تم رفع العزل بنجاح');
@@ -635,7 +651,7 @@ class EnergyInsulationController
                 $this->notificationController->sendNotification($title, $body, [$license['created_by']], $url, $rejectedBy);
 
                 if ($this->emailController) {
-                    $this->emailController->sendEmail($title, $body, [$license['created_by']]);
+                    $this->emailController->sendEmail($title, $body, [$license['created_by']], null, false, $this->buildLicensePdfAttachment($licenseId));
                 }
             }
             return $this->respond(true, 'License rejected successfully');

@@ -21,7 +21,8 @@ class EmailController
         string $body,
         array $target_user_ids = [],
         ?int $target_type = null,
-        bool $include_managers = false
+        bool $include_managers = false,
+        array $attachments = []
     ) {
         if (empty($subject)) {
             return ['success' => false, 'message' => 'Subject is required'];
@@ -115,6 +116,18 @@ class EmailController
             $mail->isHTML(true);
             $mail->Subject = $subject;
             $mail->Body    = $body;
+
+            foreach ($attachments as $attachment) {
+                if (empty($attachment['content'])) {
+                    continue;
+                }
+                $mail->addStringAttachment(
+                    $attachment['content'],
+                    $attachment['filename'] ?? 'attachment.pdf',
+                    'base64',
+                    $attachment['type'] ?? 'application/pdf'
+                );
+            }
 
             $mail->send();
 
