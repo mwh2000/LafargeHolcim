@@ -398,14 +398,21 @@ $userName = $userData['name'] ?? 'N/A';
             const openBadge = document.getElementById('open-badge');
             const notActiveBadge = document.getElementById('not-active-badge');
 
-            const isOpen = !data.finishing_time || new Date(data.finishing_time) >= new Date();
-            if (isOpen) {
+            const isClosed = !!data.done_at && (!data.finishing_time || new Date(data.done_at) <= new Date(data.finishing_time));
+            const isOpen = !isClosed && (!data.finishing_time || new Date(data.finishing_time) >= new Date());
+            if (isClosed) {
+                openBadge.textContent = 'Close';
                 openBadge.classList.remove('hidden');
+                openBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700';
+            } else if (isOpen) {
+                openBadge.textContent = 'Open';
+                openBadge.classList.remove('hidden');
+                openBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700';
             } else {
                 notActiveBadge.classList.remove('hidden');
             }
 
-            if (isOpen || data.safety_status === 'approved') {
+            if (isOpen || data.safety_status === 'approved' || isClosed) {
                 printBtn.classList.remove('hidden');
             }
 
@@ -659,6 +666,49 @@ $userName = $userData['name'] ?? 'N/A';
                     window.location.href = `add_hot_work_license.php?id=${PERMIT_ID}`;
                 });
                 safetyActions.appendChild(editBtn);
+            }
+
+            if (safetyStatus === 'approved' && USER_ID === parseInt(data.created_by || 0) && !data.done_at && (!data.finishing_time || new Date(data.finishing_time) >= new Date())) {
+                const doneBtn = document.createElement('button');
+                doneBtn.className = 'px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition';
+                doneBtn.textContent = 'اغلاق الرخصة';
+                doneBtn.addEventListener('click', async () => {
+                    const result = await Swal.fire({
+                        title: 'تأكيد الإغلاق',
+                        text: 'هل تريد إغلاق هذه الرخصة الآن؟',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'نعم، إغلاق',
+                        cancelButtonText: 'إلغاء',
+                        confirmButtonColor: '#10b981'
+                    });
+
+                    if (!result.isConfirmed) return;
+
+                    try {
+                        const {
+                            data: jr
+                        } = await requestJson(API_BASE + '?action=markPermitDone', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${TOKEN}`
+                            },
+                            body: JSON.stringify({
+                                permit_id: PERMIT_ID
+                            })
+                        });
+
+                        if (jr?.success) {
+                            Swal.fire('تم', jr.message, 'success').then(() => location.reload());
+                        } else {
+                            Swal.fire('خطأ', jr?.message || 'فشل إغلاق الرخصة', 'error');
+                        }
+                    } catch (e) {
+                        Swal.fire('خطأ', 'فشل إغلاق الرخصة', 'error');
+                    }
+                });
+                safetyActions.appendChild(doneBtn);
             }
 
             // Additional Permits

@@ -742,13 +742,42 @@ class HotWorkPermitController
         }
     }
 
+    public function markPermitDone($permitId, $userId)
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT created_by, done_at FROM hot_work_permit WHERE id = ?");
+            $stmt->execute([$permitId]);
+            $permit = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$permit) {
+                return ['success' => false, 'message' => 'Permit not found'];
+            }
+
+            if ((int)$permit['created_by'] !== (int)$userId) {
+                return ['success' => false, 'message' => 'Not authorized to close this permit'];
+            }
+
+            if (!empty($permit['done_at'])) {
+                return ['success' => false, 'message' => 'This permit has already been closed'];
+            }
+
+            $stmt = $this->db->prepare("UPDATE hot_work_permit SET done_at = ? WHERE id = ?");
+            $stmt->execute([date('Y-m-d H:i:s'), $permitId]);
+
+            return ['success' => true, 'message' => 'تم إغلاق الرخصة بنجاح'];
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Failed to close permit: ' . $e->getMessage()];
+        }
+    }
+
     public function getStatistics($filters)
     {
         try {
             $query = "SELECT
                 COUNT(*) as total,
-                SUM(CASE WHEN finishing_time IS NOT NULL AND finishing_time < NOW() THEN 1 ELSE 0 END) as not_active,
-                SUM(CASE WHEN finishing_time IS NULL OR finishing_time >= NOW() THEN 1 ELSE 0 END) as open
+                SUM(CASE WHEN done_at IS NOT NULL AND (finishing_time IS NULL OR done_at <= finishing_time) THEN 1 ELSE 0 END) as close,
+                SUM(CASE WHEN done_at IS NULL AND (finishing_time IS NULL OR finishing_time >= NOW()) THEN 1 ELSE 0 END) as open,
+                SUM(CASE WHEN (done_at IS NULL AND finishing_time IS NOT NULL AND finishing_time < NOW()) OR (done_at IS NOT NULL AND finishing_time IS NOT NULL AND done_at > finishing_time) THEN 1 ELSE 0 END) as not_active
             FROM hot_work_permit WHERE 1=1";
             $params = [];
 
@@ -778,7 +807,8 @@ class HotWorkPermitController
             return ['success' => true, 'data' => [
                 'total'      => (int)$stats['total'],
                 'not_active' => (int)$stats['not_active'],
-                'open'       => (int)$stats['open']
+                'open'       => (int)$stats['open'],
+                'close'      => (int)$stats['close']
             ]];
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Failed to fetch statistics: ' . $e->getMessage()];
@@ -805,9 +835,11 @@ class HotWorkPermitController
             }
             if (!empty($filters['status'])) {
                 if ($filters['status'] === 'open') {
-                    $where .= " AND (h.finishing_time IS NULL OR h.finishing_time >= NOW())";
+                    $where .= " AND h.done_at IS NULL AND (h.finishing_time IS NULL OR h.finishing_time >= NOW())";
                 } elseif ($filters['status'] === 'not_active') {
-                    $where .= " AND (h.finishing_time IS NOT NULL AND h.finishing_time < NOW())";
+                    $where .= " AND ((h.done_at IS NULL AND h.finishing_time IS NOT NULL AND h.finishing_time < NOW()) OR (h.done_at IS NOT NULL AND h.finishing_time IS NOT NULL AND h.done_at > h.finishing_time))";
+                } elseif ($filters['status'] === 'close') {
+                    $where .= " AND h.done_at IS NOT NULL AND (h.finishing_time IS NULL OR h.done_at <= h.finishing_time)";
                 }
             }
 

@@ -43,6 +43,15 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <label class="text-sm text-gray-600">To:</label>
                             <input type="date" id="filterToDate" class="border px-2 py-1 rounded-md text-sm">
                         </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-gray-600">Status:</label>
+                            <select id="statusFilter" class="border px-2 py-1 rounded-md text-sm">
+                                <option value="">All</option>
+                                <option value="open">Open</option>
+                                <option value="not_active">Not Active</option>
+                                <option value="close">Close</option>
+                            </select>
+                        </div>
                         <button id="applyFiltersBtn" class="bg-[#0b6f76] text-white px-4 py-1.5 rounded-md text-sm hover:bg-[#085a60] transition">Apply</button>
                         <button id="resetFilters" class="hidden text-gray-500 hover:text-gray-700 px-4 py-1.5 text-sm font-medium">Clear</button>
                     </div>
@@ -143,10 +152,13 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
             const now = new Date();
             permits.forEach(p => {
-                const isNotActive = p.finishing_time && new Date(p.finishing_time) < now;
-                const statusChip = isNotActive ?
-                    `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">Not Active</span>` :
-                    `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700">Open</span>`;
+                const isClosed = !!p.done_at && (!p.finishing_time || new Date(p.done_at) <= new Date(p.finishing_time));
+                const isNotActive = !isClosed && p.finishing_time && new Date(p.finishing_time) < now;
+                const statusChip = isClosed ?
+                    `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700">Close</span>` :
+                    (isNotActive ?
+                        `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">Not Active</span>` :
+                        `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">Open</span>`);
 
                 tbody.innerHTML += `
                     <tr class="border-b hover:bg-gray-50 transition ${isNotActive ? 'bg-red-50/30' : ''}">
@@ -175,11 +187,14 @@ require_once __DIR__ . '/helpers/authCheck.php';
             const params = new URLSearchParams(window.location.search);
             const fromDate = document.getElementById('filterFromDate').value;
             const toDate = document.getElementById('filterToDate').value;
+            const status = document.getElementById('statusFilter').value;
 
             if (fromDate) params.set('from_date', fromDate);
             else params.delete('from_date');
             if (toDate) params.set('to_date', toDate);
             else params.delete('to_date');
+            if (status) params.set('status', status);
+            else params.delete('status');
 
             window.location.search = params.toString();
         });
@@ -196,6 +211,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
             if (fromDate) document.getElementById('filterFromDate').value = fromDate;
             if (toDate) document.getElementById('filterToDate').value = toDate;
+            if (status) document.getElementById('statusFilter').value = status;
 
             if (fromDate || toDate || status) {
                 document.getElementById('resetFilters').classList.remove('hidden');
@@ -206,10 +222,13 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 badge.classList.remove('hidden');
                 if (status === 'open') {
                     badge.textContent = 'Open';
-                    badge.classList.add('bg-green-100', 'text-green-700');
+                    badge.classList.add('bg-blue-100', 'text-blue-700');
                 } else if (status === 'not_active') {
                     badge.textContent = 'Not Active';
                     badge.classList.add('bg-red-100', 'text-red-700');
+                } else if (status === 'close') {
+                    badge.textContent = 'Close';
+                    badge.classList.add('bg-green-100', 'text-green-700');
                 }
             }
 

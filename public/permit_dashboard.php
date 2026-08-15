@@ -217,9 +217,9 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <p class="mt-2 text-2xl font-semibold text-gray-700">${d.total}</p>
                         </div>
                         <div onclick="location.href='${getPermitsUrl('open')}'"
-                             class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-green-400 hover:shadow-lg transition">
+                             class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-blue-400 hover:shadow-lg transition">
                             <p class="text-sm text-gray-500">Open</p>
-                            <p class="mt-2 text-2xl font-semibold text-green-600">${d.open ?? 0}</p>
+                            <p class="mt-2 text-2xl font-semibold text-blue-600">${d.open ?? 0}</p>
                             <p class="text-xs text-gray-400 mt-1">Within finishing time</p>
                         </div>
                         <div onclick="location.href='${getPermitsUrl('not_active')}'"
@@ -227,6 +227,12 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <p class="text-sm text-gray-500">Not Active (Expired)</p>
                             <p class="mt-2 text-2xl font-semibold text-red-600">${d.not_active ?? 0}</p>
                             <p class="text-xs text-gray-400 mt-1">Finishing time passed</p>
+                        </div>
+                        <div onclick="location.href='${getPermitsUrl('close')}'"
+                             class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-green-400 hover:shadow-lg transition">
+                            <p class="text-sm text-gray-500">Close</p>
+                            <p class="mt-2 text-2xl font-semibold text-green-600">${d.close ?? 0}</p>
+                            <p class="text-xs text-gray-400 mt-1">Marked done before expiry</p>
                         </div>
                     `;
                 }

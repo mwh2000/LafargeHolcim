@@ -70,6 +70,9 @@ try {
                 $permitId = $input['permit_id'] ?? null;
                 $finishingTime = $input['finishing_time'] ?? null;
                 $res = $controller->updateFinishingTime($permitId, $finishingTime, $decoded->id);
+            } elseif ($action === 'markPermitDone') {
+                $permitId = $input['permit_id'] ?? null;
+                $res = $controller->markPermitDone($permitId, $decoded->id);
             } elseif ($action === 'approveSafety') {
                 $permitId = $input['permit_id'] ?? null;
                 $criticalManagerId = $input['critical_manager_id'] ?? null;
