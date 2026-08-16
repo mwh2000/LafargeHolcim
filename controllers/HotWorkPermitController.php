@@ -27,7 +27,9 @@ class HotWorkPermitController
         try {
             $pdf = LicensePdfController::generateHotWorkPermitPdf($this->db, (int)$permitId);
             return [['content' => $pdf, 'filename' => "hot-work-permit-{$permitId}.pdf"]];
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
+            // Catches fatal errors too (e.g. a PDF dependency missing on this
+            // environment) so a broken attachment never takes down the request.
             return [];
         }
     }

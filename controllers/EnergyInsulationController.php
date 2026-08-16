@@ -27,7 +27,9 @@ class EnergyInsulationController
         try {
             $pdf = LicensePdfController::generateEnergyIsolationPdf($this->conn, $licenseId);
             return [['content' => $pdf, 'filename' => "energy-isolation-license-{$licenseId}.pdf"]];
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
+            // Catches fatal errors too (e.g. a PDF dependency missing on this
+            // environment) so a broken attachment never takes down the request.
             return [];
         }
     }
