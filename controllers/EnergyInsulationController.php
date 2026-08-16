@@ -30,6 +30,7 @@ class EnergyInsulationController
         } catch (\Throwable $e) {
             // Catches fatal errors too (e.g. a PDF dependency missing on this
             // environment) so a broken attachment never takes down the request.
+            error_log('PDF attachment generation failed for energy isolation license #' . $licenseId . ': ' . $e->getMessage());
             return [];
         }
     }
