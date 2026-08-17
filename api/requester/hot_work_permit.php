@@ -52,6 +52,11 @@ try {
             break;
 
         case 'POST':
+            if ($action === 'uploadAdditionalPermitImage') {
+                $res = $controller->uploadAdditionalPermitImage($_FILES['image'] ?? null);
+                break;
+            }
+
             $input = json_decode(file_get_contents("php://input"), true) ?? [];
             $input['created_by'] = $decoded->id;
             // route by action

@@ -163,6 +163,7 @@ $currentUserId = $userData['id'] ?? 0;
                                         <tr class="bg-gray-50">
                                             <th class="p-2 border">التصريح</th>
                                             <th class="p-2 border">رقم التصريح</th>
+                                            <th class="p-2 border">الصورة</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -177,6 +178,16 @@ $currentUserId = $userData['id'] ?? 0;
                                                 </td>
                                                 <td class="p-2 border">
                                                     <input type="text" name="permit_no_<?= $permit['id'] ?>" placeholder="رقم التصريح" class="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#0b6f76] outline-none">
+                                                </td>
+                                                <td class="p-2 border">
+                                                    <?php if ($permit['id'] === 'energy_isolation'): ?>
+                                                        <input type="hidden" name="permit_image_<?= $permit['id'] ?>" id="permit_image_path_<?= $permit['id'] ?>">
+                                                        <input type="file" accept="image/*" id="permit_image_input_<?= $permit['id'] ?>" class="hidden">
+                                                        <div class="flex items-center gap-2">
+                                                            <button type="button" id="permit_image_btn_<?= $permit['id'] ?>" class="text-xs text-[#0b6f76] underline whitespace-nowrap">إرفاق صورة</button>
+                                                            <img id="permit_image_preview_<?= $permit['id'] ?>" src="" alt="صورة <?= $permit['label_ar'] ?>" class="hidden h-12 w-12 object-cover rounded border cursor-pointer">
+                                                        </div>
+                                                    <?php endif; ?>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
@@ -427,6 +438,62 @@ $currentUserId = $userData['id'] ?? 0;
             const indicators = document.querySelectorAll('.step-indicator');
             const contents = document.querySelectorAll('.step-content');
 
+            // Additional permit image upload (currently only for energy_isolation)
+            document.querySelectorAll('[id^="permit_image_btn_"]').forEach(btn => {
+                const catalogId = btn.id.replace('permit_image_btn_', '');
+                const fileInput = document.getElementById(`permit_image_input_${catalogId}`);
+                const pathInput = document.getElementById(`permit_image_path_${catalogId}`);
+                const preview = document.getElementById(`permit_image_preview_${catalogId}`);
+
+                btn.addEventListener('click', () => fileInput.click());
+
+                fileInput.addEventListener('change', async () => {
+                    const file = fileInput.files[0];
+                    if (!file) return;
+
+                    const originalText = btn.textContent;
+                    btn.disabled = true;
+                    btn.textContent = 'جاري الرفع...';
+                    try {
+                        const fd = new FormData();
+                        fd.append('image', file);
+                        const res = await fetch('../../api/requester/hot_work_permit.php?action=uploadAdditionalPermitImage', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${TOKEN}`
+                            },
+                            body: fd
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            pathInput.value = result.path;
+                            preview.src = `../../public/${result.path}`;
+                            preview.classList.remove('hidden');
+                            const cb = document.querySelector(`input[name="additional_permits_selected[]"][value="${catalogId}"]`);
+                            if (cb) cb.checked = true;
+                        } else {
+                            Swal.fire('خطأ', result.message || 'فشل رفع الصورة', 'error');
+                        }
+                    } catch (e) {
+                        Swal.fire('خطأ', 'فشل رفع الصورة', 'error');
+                    } finally {
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                        fileInput.value = '';
+                    }
+                });
+
+                preview.addEventListener('click', () => {
+                    Swal.fire({
+                        imageUrl: preview.src,
+                        imageAlt: preview.alt,
+                        showConfirmButton: false,
+                        showCloseButton: true,
+                        width: 'auto'
+                    });
+                });
+            });
+
             // Initialize TomSelect for Equipment Used (multi-select)
             let equipmentSelect = new TomSelect('#equipment_used', {
                 persist: false,
@@ -507,6 +574,15 @@ $currentUserId = $userData['id'] ?? 0;
                                 if (cb) cb.checked = true;
                                 const numInput = document.querySelector(`input[name="permit_no_${catalogId}"]`);
                                 if (numInput) numInput.value = ap.permit_number || '';
+                                if (ap.image) {
+                                    const pathInput = document.getElementById(`permit_image_path_${catalogId}`);
+                                    const preview = document.getElementById(`permit_image_preview_${catalogId}`);
+                                    if (pathInput) pathInput.value = ap.image;
+                                    if (preview) {
+                                        preview.src = `../../public/${ap.image}`;
+                                        preview.classList.remove('hidden');
+                                    }
+                                }
                             }
                         });
                     });
@@ -903,7 +979,8 @@ $currentUserId = $userData['id'] ?? 0;
                 selectedPermits.forEach(id => {
                     data.additional_permits.push({
                         permit_name: formData.get('permit_name_' + id),
-                        permit_number: formData.get('permit_no_' + id)
+                        permit_number: formData.get('permit_no_' + id),
+                        image: formData.get('permit_image_' + id) || null
                     });
                 });
 

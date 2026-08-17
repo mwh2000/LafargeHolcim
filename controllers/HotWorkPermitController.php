@@ -95,14 +95,15 @@ class HotWorkPermitController
             // 3. Insert Additional Permits
             if (!empty($data['additional_permits'])) {
                 $stmtAdd = $this->db->prepare("INSERT INTO additional_hot_permits (
-                    hot_work_permit_id, permit_name, permit_number
-                ) VALUES (?, ?, ?)");
+                    hot_work_permit_id, permit_name, permit_number, image
+                ) VALUES (?, ?, ?, ?)");
                 foreach ($data['additional_permits'] as $permit) {
                     if (!empty($permit['permit_name'])) {
                         $stmtAdd->execute([
                             $permitId,
                             $permit['permit_name'],
-                            $permit['permit_number'] ?? ''
+                            $permit['permit_number'] ?? '',
+                            $permit['image'] ?? null
                         ]);
                     }
                 }
@@ -460,11 +461,11 @@ class HotWorkPermitController
             $stmtDelAdd->execute([$permitId]);
             if (!empty($data['additional_permits'])) {
                 $stmtAdd = $this->db->prepare("INSERT INTO additional_hot_permits (
-                    hot_work_permit_id, permit_name, permit_number
-                ) VALUES (?, ?, ?)");
+                    hot_work_permit_id, permit_name, permit_number, image
+                ) VALUES (?, ?, ?, ?)");
                 foreach ($data['additional_permits'] as $permitRow) {
                     if (!empty($permitRow['permit_name'])) {
-                        $stmtAdd->execute([$permitId, $permitRow['permit_name'], $permitRow['permit_number'] ?? '']);
+                        $stmtAdd->execute([$permitId, $permitRow['permit_name'], $permitRow['permit_number'] ?? '', $permitRow['image'] ?? null]);
                     }
                 }
             }
@@ -628,11 +629,11 @@ class HotWorkPermitController
             $stmtDelAdd->execute([$permitId]);
             if (!empty($data['additional_permits'])) {
                 $stmtAdd = $this->db->prepare("INSERT INTO additional_hot_permits (
-                    hot_work_permit_id, permit_name, permit_number
-                ) VALUES (?, ?, ?)");
+                    hot_work_permit_id, permit_name, permit_number, image
+                ) VALUES (?, ?, ?, ?)");
                 foreach ($data['additional_permits'] as $permit) {
                     if (!empty($permit['permit_name'])) {
-                        $stmtAdd->execute([$permitId, $permit['permit_name'], $permit['permit_number'] ?? '']);
+                        $stmtAdd->execute([$permitId, $permit['permit_name'], $permit['permit_number'] ?? '', $permit['image'] ?? null]);
                     }
                 }
             }
@@ -705,6 +706,7 @@ class HotWorkPermitController
     {
         try {
             $stmt = $this->db->prepare("SELECT h.*, u.name as assigned_to_name, c.name as creator_name,
+                                                c.signature as creator_signature,
                                                 cm.name as critical_manager_name, cs.name as critical_supervisor_name,
                                                 ft.name as finishing_time_updated_by, sr.name as safety_reviewer_name,
                                                 sr.signature as safety_reviewer_signature, h.safety_reviewed_at
@@ -748,6 +750,33 @@ class HotWorkPermitController
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Error fetching permit: ' . $e->getMessage()];
         }
+    }
+
+    public function uploadAdditionalPermitImage($file)
+    {
+        if (!$file || !isset($file['tmp_name']) || $file['error'] !== UPLOAD_ERR_OK) {
+            return ['success' => false, 'message' => 'لم يتم اختيار صورة صالحة'];
+        }
+
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, $allowedExtensions)) {
+            return ['success' => false, 'message' => 'نوع الملف غير مدعوم'];
+        }
+
+        $uploadDir = __DIR__ . '/../public/uploads/additional_permits/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $filename = uniqid('permit_') . '.' . $ext;
+        $targetPath = $uploadDir . $filename;
+
+        if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+            return ['success' => false, 'message' => 'فشل حفظ الصورة'];
+        }
+
+        return ['success' => true, 'path' => 'uploads/additional_permits/' . $filename];
     }
 
     public function updateFinishingTime($id, $finishingTime, $updatedBy)

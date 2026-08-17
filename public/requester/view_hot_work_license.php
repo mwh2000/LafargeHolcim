@@ -260,6 +260,7 @@ $userName = $userData['name'] ?? 'N/A';
                                                         <tr class="bg-gray-50">
                                                             <th class="p-2 border">اسم التصريح</th>
                                                             <th class="p-2 border">رقم التصريح</th>
+                                                            <th class="p-2 border no-print">الصورة</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="val-additional-permits">
@@ -719,9 +720,13 @@ $userName = $userData['name'] ?? 'N/A';
                 data.additional_permits.forEach(ap => {
                     const tr = document.createElement('tr');
                     tr.className = 'hover:bg-gray-50 transition-colors';
+                    const imageCell = ap.image
+                        ? `<img src="../../public/${ap.image}" alt="${ap.permit_name}" class="h-12 w-12 object-cover rounded border cursor-pointer" onclick="Swal.fire({imageUrl: this.src, imageAlt: this.alt, showConfirmButton: false, showCloseButton: true, width: 'auto'})">`
+                        : '-';
                     tr.innerHTML = `
                         <td class="p-2 border text-gray-700">${ap.permit_name}</td>
                         <td class="p-2 border font-medium">${ap.permit_number || '-'}</td>
+                        <td class="p-2 border no-print">${imageCell}</td>
                     `;
                     apContainer.appendChild(tr);
                 });
@@ -788,9 +793,17 @@ $userName = $userData['name'] ?? 'N/A';
                     let statusParts = app.approval_status.split(' - ');
                     let name = statusParts[0] || 'N/A';
 
+                    let signatureHtml = '';
+                    if (app.role_name === 'PTW Issuer' && data.creator_signature) {
+                        signatureHtml = `<img src="../../public/${data.creator_signature}" alt="توقيع مخول التصريح" class="h-12 object-contain" />`;
+                    }
+
                     div.innerHTML = `
                         <div class="text-gray-500 text-xs mb-1">${app.role_name}</div>
-                        <div class="font-bold text-gray-800 mb-2">${name}</div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                            <div class="font-bold text-gray-800">${name}</div>
+                            ${signatureHtml}
+                        </div>
                         <div class="flex items-center gap-2">
                             ${isApproved
                                 ? '<svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> <span class="text-green-600 text-sm font-medium">تمت الموافقة</span>'
