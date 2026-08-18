@@ -209,7 +209,7 @@ $currentUserId = $userData['id'] ?? 0;
                                         <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
                                             <span class="text-sm text-gray-700 flex-1"><?= ($index + 1) . ". " . $check ?></span>
                                             <input type="hidden" name="control_measure_text_<?= $index ?>" value="<?= htmlspecialchars($check) ?>">
-                                            <div class="flex gap-3">
+                                            <div class="flex items-center gap-3">
                                                 <label class="flex items-center gap-1 cursor-pointer">
                                                     <input type="radio" name="control_measure_answer_<?= $index ?>" value="نعم" class="w-4 h-4 text-[#0b6f76]">
                                                     <span class="text-xs">نعم</span>
@@ -218,6 +218,12 @@ $currentUserId = $userData['id'] ?? 0;
                                                     <input type="radio" name="control_measure_answer_<?= $index ?>" value="غير متاح" class="w-4 h-4 text-gray-500">
                                                     <span class="text-xs">غير متاح</span>
                                                 </label>
+                                                <?php if ($index === 5): ?>
+                                                    <input type="hidden" name="control_measure_image_<?= $index ?>" id="control_measure_image_path_<?= $index ?>">
+                                                    <input type="file" accept="image/*" id="control_measure_image_input_<?= $index ?>" class="hidden">
+                                                    <button type="button" id="control_measure_image_btn_<?= $index ?>" class="text-xs text-[#0b6f76] underline whitespace-nowrap">إرفاق صورة</button>
+                                                    <img id="control_measure_image_preview_<?= $index ?>" src="" alt="صورة تقييم المخاطر" class="hidden h-12 w-12 object-cover rounded border cursor-pointer">
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
@@ -438,61 +444,71 @@ $currentUserId = $userData['id'] ?? 0;
             const indicators = document.querySelectorAll('.step-indicator');
             const contents = document.querySelectorAll('.step-content');
 
-            // Additional permit image upload (currently only for energy_isolation)
-            document.querySelectorAll('[id^="permit_image_btn_"]').forEach(btn => {
-                const catalogId = btn.id.replace('permit_image_btn_', '');
-                const fileInput = document.getElementById(`permit_image_input_${catalogId}`);
-                const pathInput = document.getElementById(`permit_image_path_${catalogId}`);
-                const preview = document.getElementById(`permit_image_preview_${catalogId}`);
+            // Generic wiring for inline image-upload buttons (additional permits, control measures, ...)
+            function wireImageUploadButtons(btnPrefix, onUploaded) {
+                document.querySelectorAll(`[id^="${btnPrefix}"]`).forEach(btn => {
+                    const key = btn.id.replace(btnPrefix, '');
+                    const fileInput = document.getElementById(`${btnPrefix.replace('_btn_', '_input_')}${key}`);
+                    const pathInput = document.getElementById(`${btnPrefix.replace('_btn_', '_path_')}${key}`);
+                    const preview = document.getElementById(`${btnPrefix.replace('_btn_', '_preview_')}${key}`);
 
-                btn.addEventListener('click', () => fileInput.click());
+                    btn.addEventListener('click', () => fileInput.click());
 
-                fileInput.addEventListener('change', async () => {
-                    const file = fileInput.files[0];
-                    if (!file) return;
+                    fileInput.addEventListener('change', async () => {
+                        const file = fileInput.files[0];
+                        if (!file) return;
 
-                    const originalText = btn.textContent;
-                    btn.disabled = true;
-                    btn.textContent = 'جاري الرفع...';
-                    try {
-                        const fd = new FormData();
-                        fd.append('image', file);
-                        const res = await fetch('../../api/requester/hot_work_permit.php?action=uploadAdditionalPermitImage', {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${TOKEN}`
-                            },
-                            body: fd
-                        });
-                        const result = await res.json();
-                        if (result.success) {
-                            pathInput.value = result.path;
-                            preview.src = `../../public/${result.path}`;
-                            preview.classList.remove('hidden');
-                            const cb = document.querySelector(`input[name="additional_permits_selected[]"][value="${catalogId}"]`);
-                            if (cb) cb.checked = true;
-                        } else {
-                            Swal.fire('خطأ', result.message || 'فشل رفع الصورة', 'error');
+                        const originalText = btn.textContent;
+                        btn.disabled = true;
+                        btn.textContent = 'جاري الرفع...';
+                        try {
+                            const fd = new FormData();
+                            fd.append('image', file);
+                            const res = await fetch('../../api/requester/hot_work_permit.php?action=uploadAdditionalPermitImage', {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${TOKEN}`
+                                },
+                                body: fd
+                            });
+                            const result = await res.json();
+                            if (result.success) {
+                                pathInput.value = result.path;
+                                preview.src = `../../public/${result.path}`;
+                                preview.classList.remove('hidden');
+                                if (onUploaded) onUploaded(key);
+                            } else {
+                                Swal.fire('خطأ', result.message || 'فشل رفع الصورة', 'error');
+                            }
+                        } catch (e) {
+                            Swal.fire('خطأ', 'فشل رفع الصورة', 'error');
+                        } finally {
+                            btn.disabled = false;
+                            btn.textContent = originalText;
+                            fileInput.value = '';
                         }
-                    } catch (e) {
-                        Swal.fire('خطأ', 'فشل رفع الصورة', 'error');
-                    } finally {
-                        btn.disabled = false;
-                        btn.textContent = originalText;
-                        fileInput.value = '';
-                    }
-                });
+                    });
 
-                preview.addEventListener('click', () => {
-                    Swal.fire({
-                        imageUrl: preview.src,
-                        imageAlt: preview.alt,
-                        showConfirmButton: false,
-                        showCloseButton: true,
-                        width: 'auto'
+                    preview.addEventListener('click', () => {
+                        Swal.fire({
+                            imageUrl: preview.src,
+                            imageAlt: preview.alt,
+                            showConfirmButton: false,
+                            showCloseButton: true,
+                            width: 'auto'
+                        });
                     });
                 });
+            }
+
+            // Additional permit image upload (currently only for energy_isolation)
+            wireImageUploadButtons('permit_image_btn_', (catalogId) => {
+                const cb = document.querySelector(`input[name="additional_permits_selected[]"][value="${catalogId}"]`);
+                if (cb) cb.checked = true;
             });
+
+            // Control measure image upload (currently only for the risk assessment item)
+            wireImageUploadButtons('control_measure_image_btn_');
 
             // Initialize TomSelect for Equipment Used (multi-select)
             let equipmentSelect = new TomSelect('#equipment_used', {
@@ -602,6 +618,16 @@ $currentUserId = $userData['id'] ?? 0;
 
                         const radio = document.querySelector(`input[name="control_measure_answer_${targetIndex}"][value="${savedAnswer}"]`);
                         if (radio) radio.checked = true;
+
+                        if (cm.image) {
+                            const pathInput = document.getElementById(`control_measure_image_path_${targetIndex}`);
+                            const preview = document.getElementById(`control_measure_image_preview_${targetIndex}`);
+                            if (pathInput) pathInput.value = cm.image;
+                            if (preview) {
+                                preview.src = `../../public/${cm.image}`;
+                                preview.classList.remove('hidden');
+                            }
+                        }
                     });
                 }
 
@@ -988,7 +1014,8 @@ $currentUserId = $userData['id'] ?? 0;
                 <?php foreach ($controlMeasures as $index => $check): ?>
                     data.control_measures.push({
                         text: formData.get('control_measure_text_<?= $index ?>'),
-                        answer: formData.get('control_measure_answer_<?= $index ?>') || 'غير متاح'
+                        answer: formData.get('control_measure_answer_<?= $index ?>') || 'غير متاح',
+                        image: formData.get('control_measure_image_<?= $index ?>') || null
                     });
                 <?php endforeach; ?>
 

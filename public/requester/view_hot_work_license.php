@@ -413,7 +413,7 @@ $userName = $userData['name'] ?? 'N/A';
                 notActiveBadge.classList.remove('hidden');
             }
 
-            if (isOpen || data.safety_status === 'approved' || isClosed) {
+            if (data.safety_status === 'approved') {
                 printBtn.classList.remove('hidden');
             }
 
@@ -747,9 +747,16 @@ $userName = $userData['name'] ?? 'N/A';
                     if (cm.status === 'نعم') answerColor = 'text-[#0b6f76] font-bold';
                     else if (cm.status === 'كلا') answerColor = 'text-red-600 font-bold';
 
+                    const imageHtml = cm.image
+                        ? `<img src="../../public/${cm.image}" alt="صورة" class="h-12 w-12 object-cover rounded border cursor-pointer no-print" onclick="Swal.fire({imageUrl: this.src, imageAlt: this.alt, showConfirmButton: false, showCloseButton: true, width: 'auto'})">`
+                        : '';
+
                     div.innerHTML = `
                         <span class="text-gray-700 flex-1">${index + 1}. ${cm.measure_text}</span>
-                        <span class="${answerColor} w-20 text-right">${cm.status}</span>
+                        <div class="flex items-center gap-2">
+                            ${imageHtml}
+                            <span class="${answerColor} w-20 text-right">${cm.status}</span>
+                        </div>
                     `;
                     cmContainer.appendChild(div);
                 });

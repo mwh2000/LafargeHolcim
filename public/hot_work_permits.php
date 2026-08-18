@@ -36,6 +36,23 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
                     <div class="flex flex-wrap gap-2 items-center bg-white p-3 rounded-md shadow-sm">
                         <div class="flex items-center gap-2">
+                            <label class="text-sm text-gray-600">Permit No:</label>
+                            <input type="text" id="filterPermitNo" placeholder="Search..." class="border px-2 py-1 rounded-md text-sm">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-gray-600">Location:</label>
+                            <select id="filterLocation" class="border px-2 py-1 rounded-md text-sm">
+                                <option value="">All</option>
+                                <option value="كسارة">كسارة</option>
+                                <option value="طحونة مواد">طحونة مواد</option>
+                                <option value="الافران">الافران</option>
+                                <option value="طواحين الاسمنت">طواحين الاسمنت</option>
+                                <option value="التعبئة">التعبئة</option>
+                                <option value="محطة الاساله">محطة الاساله</option>
+                                <option value="اخرى">اخرى</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2">
                             <label class="text-sm text-gray-600">From:</label>
                             <input type="date" id="filterFromDate" class="border px-2 py-1 rounded-md text-sm">
                         </div>
@@ -183,12 +200,22 @@ require_once __DIR__ . '/helpers/authCheck.php';
             });
         }
 
+        document.getElementById('filterPermitNo').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('applyFiltersBtn').click();
+        });
+
         document.getElementById('applyFiltersBtn').addEventListener('click', () => {
             const params = new URLSearchParams(window.location.search);
+            const permitNo = document.getElementById('filterPermitNo').value.trim();
+            const location = document.getElementById('filterLocation').value;
             const fromDate = document.getElementById('filterFromDate').value;
             const toDate = document.getElementById('filterToDate').value;
             const status = document.getElementById('statusFilter').value;
 
+            if (permitNo) params.set('permit_no', permitNo);
+            else params.delete('permit_no');
+            if (location) params.set('location', location);
+            else params.delete('location');
             if (fromDate) params.set('from_date', fromDate);
             else params.delete('from_date');
             if (toDate) params.set('to_date', toDate);
@@ -205,15 +232,19 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
         document.addEventListener("DOMContentLoaded", () => {
             const params = new URLSearchParams(window.location.search);
+            const permitNo = params.get('permit_no');
+            const location = params.get('location');
             const fromDate = params.get('from_date');
             const toDate = params.get('to_date');
             const status = params.get('status');
 
+            if (permitNo) document.getElementById('filterPermitNo').value = permitNo;
+            if (location) document.getElementById('filterLocation').value = location;
             if (fromDate) document.getElementById('filterFromDate').value = fromDate;
             if (toDate) document.getElementById('filterToDate').value = toDate;
             if (status) document.getElementById('statusFilter').value = status;
 
-            if (fromDate || toDate || status) {
+            if (permitNo || location || fromDate || toDate || status) {
                 document.getElementById('resetFilters').classList.remove('hidden');
             }
 

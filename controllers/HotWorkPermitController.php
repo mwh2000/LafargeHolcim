@@ -10,7 +10,7 @@ class HotWorkPermitController
 
     // TODO: fill in once the recipient list is decided — notified in addition to
     // the assignee whenever a normal (non-critical) permit is approved by Safety.
-    private $safetyApprovalExtraNotifyUserIds = [189, 188, 191, 149];
+    private $safetyApprovalExtraNotifyUserIds = [189, 191, 149];
 
     public function __construct($db)
     {
@@ -112,13 +112,14 @@ class HotWorkPermitController
             // 4. Insert Control Measures
             if (!empty($data['control_measures'])) {
                 $stmtControl = $this->db->prepare("INSERT INTO hot_work_control_measures (
-                    hot_work_permit_id, measure_text, status
-                ) VALUES (?, ?, ?)");
+                    hot_work_permit_id, measure_text, status, image
+                ) VALUES (?, ?, ?, ?)");
                 foreach ($data['control_measures'] as $measure) {
                     $stmtControl->execute([
                         $permitId,
                         $measure['text'],
-                        $measure['answer']
+                        $measure['answer'],
+                        $measure['image'] ?? null
                     ]);
                 }
             }
@@ -474,10 +475,10 @@ class HotWorkPermitController
             $stmtDelControl->execute([$permitId]);
             if (!empty($data['control_measures'])) {
                 $stmtControl = $this->db->prepare("INSERT INTO hot_work_control_measures (
-                    hot_work_permit_id, measure_text, status
-                ) VALUES (?, ?, ?)");
+                    hot_work_permit_id, measure_text, status, image
+                ) VALUES (?, ?, ?, ?)");
                 foreach ($data['control_measures'] as $measure) {
-                    $stmtControl->execute([$permitId, $measure['text'], $measure['answer']]);
+                    $stmtControl->execute([$permitId, $measure['text'], $measure['answer'], $measure['image'] ?? null]);
                 }
             }
 
@@ -643,10 +644,10 @@ class HotWorkPermitController
             $stmtDelControl->execute([$permitId]);
             if (!empty($data['control_measures'])) {
                 $stmtControl = $this->db->prepare("INSERT INTO hot_work_control_measures (
-                    hot_work_permit_id, measure_text, status
-                ) VALUES (?, ?, ?)");
+                    hot_work_permit_id, measure_text, status, image
+                ) VALUES (?, ?, ?, ?)");
                 foreach ($data['control_measures'] as $measure) {
-                    $stmtControl->execute([$permitId, $measure['text'], $measure['answer']]);
+                    $stmtControl->execute([$permitId, $measure['text'], $measure['answer'], $measure['image'] ?? null]);
                 }
             }
 
@@ -889,6 +890,14 @@ class HotWorkPermitController
                 } elseif ($filters['status'] === 'close') {
                     $where .= " AND h.done_at IS NOT NULL AND (h.finishing_time IS NULL OR h.done_at <= h.finishing_time)";
                 }
+            }
+            if (!empty($filters['permit_no'])) {
+                $where .= " AND h.permit_no LIKE ?";
+                $params[] = '%' . $filters['permit_no'] . '%';
+            }
+            if (!empty($filters['location'])) {
+                $where .= " AND h.location = ?";
+                $params[] = $filters['location'];
             }
 
             // Role-based filtering
