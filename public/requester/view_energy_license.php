@@ -758,6 +758,7 @@ $userName = $userData['name'] ?? 'N/A';
                     const isAssignedAM = Number(data.area_manager_id) === Number(CURRENT_USER_ID);
                     const isLicenseCreator = Number(data.created_by) === Number(CURRENT_USER_ID);
                     const canManageLicense = isLicenseCreator || IS_ADMIN;
+                    const isVcs = Number(data.is_vcs_isolation) === 1;
 
                     // Show AM actions only when the license is still pending and the current user is allowed to act.
                     if (data.status === 'pending' && canManageLicense) {
@@ -782,7 +783,7 @@ $userName = $userData['name'] ?? 'N/A';
                     const requesterSection = document.getElementById('requester-action-section');
                     const effectiveStatus = data.effective_status || data.status;
                     if (requesterSection) {
-                        if ((effectiveStatus === 'open' || data.status === 'active_isolation') && canManageLicense && effectiveStatus !== 'not_active') {
+                        if (!isVcs && (effectiveStatus === 'open' || data.status === 'active_isolation') && canManageLicense && effectiveStatus !== 'not_active') {
                             requesterSection.classList.remove('hidden');
                             requesterSection.classList.add('no-print');
                         } else {
@@ -824,6 +825,7 @@ $userName = $userData['name'] ?? 'N/A';
             const isAssignedAM = Number(data.area_manager_id) === Number(CURRENT_USER_ID);
             const isLicenseCreator = Number(data.created_by) === Number(CURRENT_USER_ID);
             const canManageLicense = isLicenseCreator || IS_ADMIN;
+            const isVcs = Number(data.is_vcs_isolation) === 1;
 
             document.getElementById('val-no').textContent = data.equipment_no;
             document.getElementById('val-date').textContent = data.date;
@@ -940,8 +942,10 @@ $userName = $userData['name'] ?? 'N/A';
 
                     const leftContainer = document.createElement('div');
 
-                    // Only the license creator can mark work as done.
-                    if (canManageLicense && g.id) {
+                    // VCS-isolated licenses close on creation, so the "work completed" action doesn't apply.
+                    if (isVcs) {
+                        // no action rendered
+                    } else if (canManageLicense && g.id) {
                         if (!g.is_done) {
                             leftContainer.classList.add('no-print');
                         }
@@ -1001,9 +1005,10 @@ $userName = $userData['name'] ?? 'N/A';
                 }
             }
 
-            // Print Completion Section (only show when fully completed)
+            // Print Completion Section (only show when fully completed) — not applicable to VCS
+            // licenses since no isolation-removal request was ever submitted for them.
             const pcCard = document.getElementById('print-completion-card');
-            if (data.status === 'completed' && CURRENT_USER_ROLE != '3') {
+            if (!isVcs && data.status === 'completed' && CURRENT_USER_ROLE != '3') {
                 if (pcCard) {
                     pcCard.classList.remove('hidden');
                     document.getElementById('val-remover-name').textContent = data.creator_name;

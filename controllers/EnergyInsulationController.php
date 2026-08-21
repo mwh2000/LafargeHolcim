@@ -87,12 +87,15 @@ class EnergyInsulationController
         try {
             $this->conn->beginTransaction();
 
+            $isVcs = !empty($data['is_vcs_isolation']);
+            $now = date('Y-m-d H:i:s');
+
             $stmt = $this->conn->prepare("
                 INSERT INTO energy_insulation_license (
-                    equipment_name, equipment_no, date, reason, license_expiry, 
-                    execution_exceeds_shift_time, work_permit, equipment_section_id, 
-                    created_by, requester_name, requester_section, status, exact_location, end_at, am_approved_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                    equipment_name, equipment_no, date, reason, license_expiry,
+                    execution_exceeds_shift_time, work_permit, equipment_section_id,
+                    created_by, requester_name, requester_section, status, exact_location, end_at, is_vcs_isolation, am_approved_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
 
             $stmt->execute([
@@ -107,9 +110,11 @@ class EnergyInsulationController
                 $data['created_by'] ?? null,
                 $data['requester_name'] ?? null,
                 $data['requester_section'] ?? null,
-                'active_isolation',
+                $isVcs ? 'completed' : 'active_isolation',
                 $data['exact_location'] ?? null,
-                null
+                $isVcs ? $now : null,
+                $isVcs ? 1 : 0,
+                $isVcs ? null : $now
             ]);
 
             $licenseId = $this->conn->lastInsertId();
@@ -161,33 +166,37 @@ class EnergyInsulationController
 
             $this->conn->commit();
 
-            // Send Notification and Email to Area Manager
-            if ($this->notificationController && !empty($data['area_manager_id'])) {
-                $title = "تم انشاء رخصة العزل من قبل المرخص";
-                $body = "تم إنشاء رخصة عزل طاقة وتم العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A');
-                $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
-                // implementing the URL to view the license details
-                $emailBody = "تم إنشاء رخصة عزل طاقة وتم العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A') .
-                    "<br><br>" .
-                    "<a href='" . $url . "'>اضغط هنا لعرض الرخصة</a>";
+            // VCS-isolated licenses close on creation with no follow-up review chain,
+            // so no notification/email (and the PDF attachment generation behind it) is needed.
+            if (!$isVcs) {
+                // Send Notification and Email to Area Manager
+                if ($this->notificationController && !empty($data['area_manager_id'])) {
+                    $title = "تم انشاء رخصة العزل من قبل المرخص";
+                    $body = "تم إنشاء رخصة عزل طاقة وتم العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A');
+                    $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
+                    // implementing the URL to view the license details
+                    $emailBody = "تم إنشاء رخصة عزل طاقة وتم العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A') .
+                        "<br><br>" .
+                        "<a href='" . $url . "'>اضغط هنا لعرض الرخصة</a>";
 
-                $this->notificationController->sendNotification($title, $body, [$data['area_manager_id']], $url, $data['created_by']);
+                    $this->notificationController->sendNotification($title, $body, [$data['area_manager_id']], $url, $data['created_by']);
 
-                if ($this->emailController) {
-                    $this->emailController->sendEmail($title, $emailBody, [$data['area_manager_id']], null, false, $this->buildLicensePdfAttachment($licenseId));
+                    if ($this->emailController) {
+                        $this->emailController->sendEmail($title, $emailBody, [$data['area_manager_id']], null, false, $this->buildLicensePdfAttachment($licenseId));
+                    }
                 }
-            }
 
-            // Send Notification and Email to Creator
-            if ($this->notificationController && !empty($data['created_by'])) {
-                $titleCreator = "تم العزل - Isolation Active";
-                $bodyCreator = "تم تأكيد العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A');
-                $urlCreator = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
+                // Send Notification and Email to Creator
+                if ($this->notificationController && !empty($data['created_by'])) {
+                    $titleCreator = "تم العزل - Isolation Active";
+                    $bodyCreator = "تم تأكيد العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A');
+                    $urlCreator = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
 
-                $this->notificationController->sendNotification($titleCreator, $bodyCreator, [$data['created_by']], $urlCreator, $data['created_by']);
+                    $this->notificationController->sendNotification($titleCreator, $bodyCreator, [$data['created_by']], $urlCreator, $data['created_by']);
 
-                if ($this->emailController) {
-                    $this->emailController->sendEmail($titleCreator, $bodyCreator, [$data['created_by']], null, false, $this->buildLicensePdfAttachment($licenseId));
+                    if ($this->emailController) {
+                        $this->emailController->sendEmail($titleCreator, $bodyCreator, [$data['created_by']], null, false, $this->buildLicensePdfAttachment($licenseId));
+                    }
                 }
             }
 
@@ -683,6 +692,10 @@ class EnergyInsulationController
                 $query .= " AND date <= ?";
                 $params[] = $filters['to_date'];
             }
+            if (isset($filters['is_vcs_isolation']) && $filters['is_vcs_isolation'] !== '') {
+                $query .= " AND is_vcs_isolation = ?";
+                $params[] = (int)$filters['is_vcs_isolation'];
+            }
 
             // Role-based filtering
             $userRole = (int)$filters['role_id'];
@@ -746,6 +759,10 @@ class EnergyInsulationController
             if (!empty($filters['to_date'])) {
                 $where .= " AND l.date <= ?";
                 $params[] = $filters['to_date'];
+            }
+            if (isset($filters['is_vcs_isolation']) && $filters['is_vcs_isolation'] !== '') {
+                $where .= " AND l.is_vcs_isolation = ?";
+                $params[] = (int)$filters['is_vcs_isolation'];
             }
 
             // Role-based filtering

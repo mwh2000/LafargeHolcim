@@ -20,6 +20,13 @@ use ArPHP\I18N\Arabic;
  * display it correctly. Each label+value or prefix+value pair is combined
  * into a single logical string before reshaping so the whole phrase is
  * reordered as one unit instead of two independently-reshaped fragments.
+ *
+ * The same "dompdf can't be trusted to do RTL on its own" rule applies to
+ * multi-column layout: `dir="rtl"` / `direction: rtl` table-column mirroring
+ * is unreliable across renderers, so every multi-column table/row here is
+ * built as a plain left-to-right table with its cells placed in the exact
+ * DOM order needed to already look right — first logical field emitted
+ * LAST so it lands in the rightmost cell under ordinary LTR flow.
  */
 class LicensePdfController
 {
@@ -103,7 +110,7 @@ class LicensePdfController
         if (empty($energyTypes)) {
             $body .= "<p class='label'>" . self::esc('لا توجد أنواع طاقة') . "</p>";
         } else {
-            foreach ($energyTypes as $et) {
+            foreach (array_reverse($energyTypes) as $et) {
                 $body .= "<span class='tag'>" . self::esc($et['name']) . "</span>";
             }
         }
@@ -113,11 +120,11 @@ class LicensePdfController
         if (empty($equipments)) {
             $body .= "<p class='label'>" . self::esc('لا توجد معدات') . "</p>";
         } else {
-            $body .= "<table class='list'><thead><tr><th>" . self::esc('الصورة') . "</th><th>" . self::esc('الاسم') . "</th><th>" . self::esc('الرقم المرجعي') . "</th></tr></thead><tbody>";
+            $body .= "<table class='list'><thead><tr><th>" . self::esc('الرقم المرجعي') . "</th><th>" . self::esc('الاسم') . "</th><th>" . self::esc('الصورة') . "</th></tr></thead><tbody>";
             foreach ($equipments as $eq) {
                 $imgPath = self::assetPath($eq['image'] ?? null);
                 $imgHtml = $imgPath ? "<img src='{$imgPath}' style='height:32px;width:32px;object-fit:cover;'>" : '-';
-                $body .= "<tr><td>{$imgHtml}</td><td>" . self::esc($eq['name']) . "</td><td>" . self::esc($eq['equipment_no']) . "</td></tr>";
+                $body .= "<tr><td>" . self::esc($eq['equipment_no']) . "</td><td>" . self::esc($eq['name']) . "</td><td>{$imgHtml}</td></tr>";
             }
             $body .= "</tbody></table>";
         }
@@ -140,7 +147,7 @@ class LicensePdfController
                 // Reshape the group name alone, then append the checkmark (not Arabic script, left untouched by reshaping).
                 $titleHtml = self::esc($gName) . ($g['is_done'] ? ' &#10004;' : '');
                 $body .= "<div class='{$cls}'><div class='group-title'>{$titleHtml}</div>";
-                foreach ($g['members'] as $m) {
+                foreach (array_reverse($g['members']) as $m) {
                     $body .= "<span class='tag'>" . self::esc($m) . "</span>";
                 }
                 $body .= "</div>";
@@ -261,7 +268,7 @@ class LicensePdfController
         if (($permit['safety_status'] ?? '') === 'approved') {
             $sigPath = self::assetPath($permit['safety_reviewer_signature'] ?? null);
             $body .= "<div class='card'>" . self::title('معلومات موافقة قسم السلامة');
-            $body .= "<table class='grid'><tr>" . self::infoRow('اسم السلامة الموافق', $permit['safety_reviewer_name']) . self::infoRow('وقت الموافقة', $permit['safety_reviewed_at']) . "</tr></table>";
+            $body .= "<table class='grid'><tr>" . self::infoRow('وقت الموافقة', $permit['safety_reviewed_at']) . self::infoRow('اسم السلامة الموافق', $permit['safety_reviewer_name']) . "</tr></table>";
             if ($sigPath) {
                 $body .= "<img class='signature' src='{$sigPath}' alt='signature'>";
             }
@@ -273,9 +280,9 @@ class LicensePdfController
 
         if (!empty($additionalPermits)) {
             $body .= "<div class='card'>" . self::title('التصاريح الإضافية المرفقة');
-            $body .= "<table class='list'><thead><tr><th>" . self::esc('اسم التصريح') . "</th><th>" . self::esc('رقم التصريح') . "</th></tr></thead><tbody>";
+            $body .= "<table class='list'><thead><tr><th>" . self::esc('رقم التصريح') . "</th><th>" . self::esc('اسم التصريح') . "</th></tr></thead><tbody>";
             foreach ($additionalPermits as $ap) {
-                $body .= "<tr><td>" . self::esc($ap['permit_name']) . "</td><td>" . self::esc($ap['permit_number']) . "</td></tr>";
+                $body .= "<tr><td>" . self::esc($ap['permit_number']) . "</td><td>" . self::esc($ap['permit_name']) . "</td></tr>";
             }
             $body .= "</tbody></table>";
             if (!empty($permit['work_description'])) {
@@ -289,7 +296,7 @@ class LicensePdfController
         if (!empty($controlMeasures)) {
             $body .= "<div class='card'>" . self::title('إجراءات السيطرة') . "<table class='list'><tbody>";
             foreach ($controlMeasures as $i => $cm) {
-                $body .= "<tr><td>" . self::esc(($i + 1) . '. ' . $cm['measure_text']) . "</td><td style='width:70px; text-align:center;'>" . self::esc($cm['status']) . "</td></tr>";
+                $body .= "<tr><td style='width:70px; text-align:center;'>" . self::esc($cm['status']) . "</td><td>" . self::esc(($i + 1) . '. ' . $cm['measure_text']) . "</td></tr>";
             }
             $body .= "</tbody></table></div>";
         }
@@ -297,19 +304,19 @@ class LicensePdfController
         if (!empty($performersCheck)) {
             $body .= "<div class='card'>" . self::title('منفذي الأعمال الساخنة') . "<table class='list'><tbody>";
             foreach ($performersCheck as $i => $pc) {
-                $body .= "<tr><td>" . self::esc(($i + 1) . '. ' . $pc['question_text']) . "</td><td style='width:70px; text-align:center;'>" . self::esc($pc['answer']) . "</td></tr>";
+                $body .= "<tr><td style='width:70px; text-align:center;'>" . self::esc($pc['answer']) . "</td><td>" . self::esc(($i + 1) . '. ' . $pc['question_text']) . "</td></tr>";
             }
             $body .= "</tbody></table></div>";
         }
 
         if (!empty($approvals)) {
-            $body .= "<div class='card'>" . self::title('المطابقة والموافقة') . "<table class='list'><thead><tr><th>" . self::esc('الدور') . "</th><th>" . self::esc('الاسم') . "</th><th>" . self::esc('الحالة') . "</th></tr></thead><tbody>";
+            $body .= "<div class='card'>" . self::title('المطابقة والموافقة') . "<table class='list'><thead><tr><th>" . self::esc('الحالة') . "</th><th>" . self::esc('الاسم') . "</th><th>" . self::esc('الدور') . "</th></tr></thead><tbody>";
             foreach ($approvals as $app) {
                 $isApproved = strpos($app['approval_status'] ?? '', 'Approved') !== false;
                 $parts = explode(' - ', $app['approval_status'] ?? '');
                 $name = $parts[0] ?? 'N/A';
                 $statusLabel = $isApproved ? 'تمت الموافقة' : 'قيد الانتظار';
-                $body .= "<tr><td>" . self::esc($app['role_name']) . "</td><td>" . self::esc($name) . "</td><td>" . self::esc($statusLabel) . "</td></tr>";
+                $body .= "<tr><td>" . self::esc($statusLabel) . "</td><td>" . self::esc($name) . "</td><td>" . self::esc($app['role_name']) . "</td></tr>";
             }
             $body .= "</tbody></table></div>";
         }
@@ -393,12 +400,17 @@ class LicensePdfController
     {
         $html = "<table class='grid'>";
         foreach (array_chunk($pairs, 2) as $chunk) {
+            // Reversed on purpose: under plain left-to-right table layout the
+            // first cell lands leftmost, but the first field in $pairs is the
+            // one that should read rightmost — so it's emitted last.
+            $chunk = array_reverse($chunk);
+            if (count($chunk) === 1) {
+                $html .= "<tr><td></td>" . self::infoRow($chunk[0][0], $chunk[0][1]) . "</tr>";
+                continue;
+            }
             $html .= "<tr>";
             foreach ($chunk as $p) {
                 $html .= self::infoRow($p[0], $p[1]);
-            }
-            if (count($chunk) === 1) {
-                $html .= "<td></td>";
             }
             $html .= "</tr>";
         }
@@ -484,6 +496,9 @@ class LicensePdfController
         $fontMetrics->registerFont(['family' => 'Amiri', 'weight' => 'bold', 'style' => 'normal'], $fontDir . '/Amiri-Bold.ttf');
 
         $css = self::baseCss();
+        // No dir="rtl" here on purpose — dompdf's table-column mirroring for it proved
+        // unreliable across real-world viewers, so every multi-column construct above
+        // is pre-arranged in plain left-to-right DOM order to already look correct.
         $html = "<!DOCTYPE html><html lang=\"ar\"><head><meta charset=\"UTF-8\"><title>" . self::esc($title) . "</title><style>{$css}</style></head><body>{$bodyHtml}</body></html>";
 
         $dompdf->loadHtml($html, 'UTF-8');

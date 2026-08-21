@@ -96,9 +96,17 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     </div>
 
                     <form id="licenseForm" class="bg-white p-6 rounded-lg shadow-md">
-
                         <!-- Step 1: Basic Information -->
                         <div class="step-content active" data-step="1">
+                            <div class="flex items-center justify-between bg-green-50 p-4 rounded-md border border-green-200 mb-4">
+                                <div>
+                                    <h3 class="text-lg font-medium text-green-800">عزل VCS</h3>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="goodPracticeSwitch" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                </label>
+                            </div>
                             <h2 class="text-xl font-medium mb-4 text-[#0b6f76]">إنشاء رخصة</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
@@ -141,7 +149,6 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                                         <option value="عزل بسيط">عزل بسيط</option>
                                         <option value="عزل مركب">عزل مركب</option>
                                         <option value="عزل عن بعد">عزل عن بعد</option>
-                                        <option value="عزل VCS">عزل VCS</option>
                                     </select>
                                 </div>
                                 <div>
@@ -272,8 +279,10 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const ALL_STEPS = [1, 2, 3, 4, 5, 6, 7, 8];
+            const VCS_STEPS = [1, 2, 4, 5];
+            let activeSteps = ALL_STEPS.slice();
             let currentStep = 1;
-            const totalSteps = 8;
             const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
 
             // Equipment search and pagination state
@@ -287,6 +296,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
             const submitBtn = document.getElementById('submitBtn');
             const indicators = document.querySelectorAll('.step-indicator');
             const contents = document.querySelectorAll('.step-content');
+            const vcsSwitch = document.getElementById('goodPracticeSwitch');
 
             // Initialize TomSelect for Manager
             let managerSelect = new TomSelect('#manager_selection', {
@@ -546,7 +556,20 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                 updateButtonStates();
             });
 
-            updateUI();
+            function applyStepVisibility() {
+                const vcsOn = vcsSwitch.checked;
+                activeSteps = vcsOn ? VCS_STEPS.slice() : ALL_STEPS.slice();
+                indicators.forEach(indicator => {
+                    const step = parseInt(indicator.dataset.step);
+                    indicator.classList.toggle('hidden', !activeSteps.includes(step));
+                });
+                currentStep = activeSteps[0];
+                updateUI();
+            }
+
+            vcsSwitch.addEventListener('change', applyStepVisibility);
+
+            applyStepVisibility();
 
             function updateUI() {
                 contents.forEach(content => {
@@ -556,9 +579,12 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     indicator.classList.toggle('active', parseInt(indicator.dataset.step) === currentStep);
                 });
 
-                prevBtn.classList.toggle('hidden', currentStep === 1);
-                nextBtn.classList.toggle('hidden', currentStep === totalSteps);
-                submitBtn.classList.toggle('hidden', currentStep !== totalSteps);
+                const stepIndex = activeSteps.indexOf(currentStep);
+                const isLastStep = stepIndex === activeSteps.length - 1;
+                prevBtn.classList.toggle('hidden', stepIndex === 0);
+                nextBtn.classList.toggle('hidden', isLastStep);
+                submitBtn.classList.toggle('hidden', !isLastStep);
+                submitBtn.textContent = vcsSwitch.checked ? 'تم' : 'تم العزل';
 
                 if (currentStep === 3) {
                     loadEquipments().then(() => updateButtonStates());
@@ -572,14 +598,20 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
 
             nextBtn.addEventListener('click', () => {
                 if (validateStep(currentStep)) {
-                    currentStep++;
-                    updateUI();
+                    const stepIndex = activeSteps.indexOf(currentStep);
+                    if (stepIndex < activeSteps.length - 1) {
+                        currentStep = activeSteps[stepIndex + 1];
+                        updateUI();
+                    }
                 }
             });
 
             prevBtn.addEventListener('click', () => {
-                currentStep--;
-                updateUI();
+                const stepIndex = activeSteps.indexOf(currentStep);
+                if (stepIndex > 0) {
+                    currentStep = activeSteps[stepIndex - 1];
+                    updateUI();
+                }
             });
 
             function validateStep(step) {
@@ -769,7 +801,8 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     staff_groups: [],
                     area_manager_id: managerSelect.getValue(),
                     official_name: officialSelect.getValue(),
-                    official_department: document.getElementById('official_department').value
+                    official_department: document.getElementById('official_department').value,
+                    is_vcs_isolation: vcsSwitch.checked ? 1 : 0
                 };
 
                 // Get Staff Groups
@@ -805,7 +838,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     return;
                 }
 
-                if (data.equipments.length === 0) {
+                if (!vcsSwitch.checked && data.equipments.length === 0) {
                     Swal.fire('خطأ', 'يرجى اختيار معدة واحدة على الأقل.', 'error');
                     return;
                 }
@@ -834,7 +867,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     Swal.fire('خطأ', err.message || 'حدث خطأ ما', 'error');
                 } finally {
                     submitBtn.disabled = false;
-                    submitBtn.textContent = 'تم العزل';
+                    submitBtn.textContent = vcsSwitch.checked ? 'تم' : 'تم العزل';
                 }
             });
         });

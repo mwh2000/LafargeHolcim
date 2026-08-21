@@ -47,6 +47,10 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <option value="">All Sections</option>
                             <!-- Add more section options as needed -->
                         </select>
+                        <select id="vcsFilter" class="border px-4 py-2 rounded-md text-sm">
+                            <option value="">All Types</option>
+                            <option value="1">VCS Isolation Only</option>
+                        </select>
                     </div>
                 </div>
 
@@ -154,6 +158,9 @@ require_once __DIR__ . '/helpers/authCheck.php';
             params.set("action", "getAll");
             params.set("section", document.getElementById('sectionFilter').value);
             params.set("status", document.getElementById('statusFilter').value);
+            const vcsVal = document.getElementById('vcsFilter').value;
+            if (vcsVal) params.set("is_vcs_isolation", vcsVal);
+            else params.delete("is_vcs_isolation");
             params.set("page", currentPage);
             params.set("limit", PAGE_LIMIT);
 
@@ -226,26 +233,25 @@ require_once __DIR__ . '/helpers/authCheck.php';
             });
         }
 
-        document.getElementById('statusFilter').addEventListener('change', e => {
+        function persistFiltersToUrl() {
             const params = new URLSearchParams(window.location.search);
-            if (e.target.value) params.set('status', e.target.value);
-            else params.delete('status');
-            // Update section filter param if present
-            const sectionVal = document.getElementById('sectionFilter').value;
-            if (sectionVal) params.set('section', sectionVal);
-            else params.delete('section');
-            window.location.search = params.toString();
-        });
-        document.getElementById('sectionFilter').addEventListener('change', e => {
-            const params = new URLSearchParams(window.location.search);
-            if (e.target.value) params.set('section', e.target.value);
-            else params.delete('section');
-            // Preserve status param
             const statusVal = document.getElementById('statusFilter').value;
+            const sectionVal = document.getElementById('sectionFilter').value;
+            const vcsVal = document.getElementById('vcsFilter').value;
+
             if (statusVal) params.set('status', statusVal);
             else params.delete('status');
+            if (sectionVal) params.set('section', sectionVal);
+            else params.delete('section');
+            if (vcsVal) params.set('is_vcs_isolation', vcsVal);
+            else params.delete('is_vcs_isolation');
+
             window.location.search = params.toString();
-        });
+        }
+
+        document.getElementById('statusFilter').addEventListener('change', persistFiltersToUrl);
+        document.getElementById('sectionFilter').addEventListener('change', persistFiltersToUrl);
+        document.getElementById('vcsFilter').addEventListener('change', persistFiltersToUrl);
 
         document.getElementById('resetFilters').addEventListener('click', () => {
             window.location.href = 'permits.php';
@@ -256,9 +262,11 @@ require_once __DIR__ . '/helpers/authCheck.php';
             const params = new URLSearchParams(window.location.search);
             const status = params.get('status');
             const section = params.get('section');
+            const vcsOnly = params.get('is_vcs_isolation');
             document.getElementById('statusFilter').value = status || '';
             document.getElementById('sectionFilter').value = section || '';
-            if (status || section) {
+            document.getElementById('vcsFilter').value = vcsOnly || '';
+            if (status || section || vcsOnly) {
                 document.getElementById('resetFilters').classList.remove('hidden');
             }
             // Load sections first, then restore selected section and fetch permits

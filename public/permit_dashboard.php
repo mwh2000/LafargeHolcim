@@ -57,6 +57,14 @@ require_once __DIR__ . '/helpers/authCheck.php';
                         </div>
                     </div>
 
+                    <div id="vcsFilterWrapper" class="hidden">
+                        <label class="block text-sm text-gray-600 mb-1">VCS Isolation</label>
+                        <select id="vcsFilter" class="w-full sm:w-1/3 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-[#0b6f76] focus:border-[#0b6f76]">
+                            <option value="">All</option>
+                            <option value="1">VCS Isolation Only</option>
+                        </select>
+                    </div>
+
                     <div class="flex justify-end gap-2">
                         <button id="clearFilters"
                             class="hidden text-gray-500 hover:text-gray-700 px-4 py-2 text-sm font-medium">
@@ -103,12 +111,24 @@ require_once __DIR__ . '/helpers/authCheck.php';
             const params = new URLSearchParams();
             const fromDate = document.getElementById("from_date").value;
             const toDate = document.getElementById("to_date").value;
+            const vcsOnly = document.getElementById("vcsFilter").value;
 
             if (fromDate) params.append("from_date", fromDate);
             if (toDate) params.append("to_date", toDate);
             if (status) params.append("status", status);
+            if (permitType === 'energy_isolation' && vcsOnly) params.append("is_vcs_isolation", vcsOnly);
 
             return base + '?' + params.toString();
+        }
+
+        function updateVcsFilterVisibility() {
+            const permitType = document.getElementById("permit_type").value;
+            const wrapper = document.getElementById("vcsFilterWrapper");
+            const isEnergyIsolation = permitType === 'energy_isolation';
+            wrapper.classList.toggle("hidden", !isEnergyIsolation);
+            if (!isEnergyIsolation) {
+                document.getElementById("vcsFilter").value = '';
+            }
         }
 
         function renderStatusChart(stats) {
@@ -159,11 +179,13 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 const permitType = document.getElementById("permit_type").value;
                 const fromDate = document.getElementById("from_date").value;
                 const toDate = document.getElementById("to_date").value;
+                const vcsOnly = document.getElementById("vcsFilter").value;
 
                 const params = new URLSearchParams();
                 params.append("action", "getStatistics");
                 if (fromDate) params.append("from_date", fromDate);
                 if (toDate) params.append("to_date", toDate);
+                if (permitType === 'energy_isolation' && vcsOnly) params.append("is_vcs_isolation", vcsOnly);
 
                 const apiUrl = permitType === 'hot_work' ? HOT_WORK_API_URL : ENERGY_API_URL;
 
@@ -238,7 +260,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 }
 
                 // Toggle Clear Button
-                const hasFilters = fromDate || toDate;
+                const hasFilters = fromDate || toDate || (permitType === 'energy_isolation' && vcsOnly);
                 document.getElementById("clearFilters").classList.toggle("hidden", !hasFilters);
 
             } catch (err) {
@@ -247,8 +269,10 @@ require_once __DIR__ . '/helpers/authCheck.php';
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            updateVcsFilterVisibility();
             loadStatistics();
             document.getElementById("permit_type").addEventListener("change", () => {
+                updateVcsFilterVisibility();
                 loadStatistics();
             });
             document.getElementById("applyFilters").addEventListener("click", loadStatistics);
@@ -256,6 +280,8 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 document.getElementById("permit_type").value = "energy_isolation";
                 document.getElementById("from_date").value = "";
                 document.getElementById("to_date").value = "";
+                document.getElementById("vcsFilter").value = "";
+                updateVcsFilterVisibility();
                 loadStatistics();
             });
         });
