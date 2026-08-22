@@ -740,6 +740,10 @@ class EnergyInsulationController
                 $where .= " AND l.equipment_section_id = ?";
                 $params[] = $filters['section'];
             }
+            if (!empty($filters['search'])) {
+                $where .= " AND l.equipment_no LIKE ?";
+                $params[] = '%' . $filters['search'] . '%';
+            }
             if (!empty($statusFilter)) {
                 if ($statusFilter === 'open') {
                     $where .= " AND l.status = 'active_isolation' AND (l.license_expiry IS NULL OR l.license_expiry >= NOW())";
@@ -811,11 +815,40 @@ class EnergyInsulationController
         }
     }
 
+    public function deleteLicense(int $licenseId)
+    {
+        try {
+            $stmt = $this->conn->prepare("SELECT id FROM energy_insulation_license WHERE id = ?");
+            $stmt->execute([$licenseId]);
+            if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+                return $this->respond(false, 'License not found', null, ['code' => 404], 404);
+            }
+
+            $this->conn->beginTransaction();
+
+            // energy_insulation_staff_group has no ON DELETE CASCADE toward the license,
+            // and energy_insulation_staff has none toward its group, so both must be
+            // deleted explicitly (staff first) before the license row itself.
+            $this->conn->prepare("DELETE FROM energy_insulation_staff WHERE license_id = ?")->execute([$licenseId]);
+            $this->conn->prepare("DELETE FROM energy_insulation_staff_group WHERE license_id = ?")->execute([$licenseId]);
+
+            $this->conn->prepare("DELETE FROM energy_insulation_license WHERE id = ?")->execute([$licenseId]);
+
+            $this->conn->commit();
+            return $this->respond(true, 'تم حذف الرخصة بنجاح');
+        } catch (Exception $e) {
+            if ($this->conn->inTransaction()) {
+                $this->conn->rollBack();
+            }
+            return $this->respond(false, 'Failed to delete license: ' . $e->getMessage(), null, ['code' => 500], 500);
+        }
+    }
+
     public function updateStaffGroups(int $licenseId, array $staffGroups, int $userId)
     {
         try {
             // Verify permission: Allow created_by or area_manager_id to edit
-            $stmt = $this->conn->prepare("SELECT created_by, area_manager_id FROM energy_insulation_license WHERE id = ?");
+            $stmt = $this->conn->prepare("SELECT created_by, area_manager_id, is_vcs_isolation FROM energy_insulation_license WHERE id = ?");
             $stmt->execute([$licenseId]);
             $license = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -825,6 +858,10 @@ class EnergyInsulationController
 
             if ($license['created_by'] != $userId) {
                 return $this->respond(false, 'Unauthorized to edit this license staff groups', null, ['code' => 403], 403);
+            }
+
+            if (!empty($license['is_vcs_isolation'])) {
+                return $this->respond(false, 'لا يمكن تعديل طاقم العمل لرخصة عزل VCS', null, ['code' => 403], 403);
             }
 
             $this->conn->beginTransaction();
@@ -858,6 +895,44 @@ class EnergyInsulationController
         } catch (Exception $e) {
             $this->conn->rollBack();
             return $this->respond(false, 'Failed to update staff groups: ' . $e->getMessage(), null, ['code' => 500], 500);
+        }
+    }
+
+    /**
+     * Lets the license creator extend an expired (not-active) license's expiry
+     * date, mirroring hot work permits' finishing-time edit. Not applicable to
+     * VCS licenses, which close immediately on creation and never go not-active.
+     */
+    public function updateLicenseExpiry(int $licenseId, string $licenseExpiry, int $userId)
+    {
+        try {
+            $stmt = $this->conn->prepare("SELECT created_by, is_vcs_isolation FROM energy_insulation_license WHERE id = ?");
+            $stmt->execute([$licenseId]);
+            $license = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$license) {
+                return $this->respond(false, 'License not found', null, ['code' => 404], 404);
+            }
+
+            if ((int)$license['created_by'] !== $userId) {
+                return $this->respond(false, 'Unauthorized to update this license', null, ['code' => 403], 403);
+            }
+
+            if (!empty($license['is_vcs_isolation'])) {
+                return $this->respond(false, 'لا ينطبق تعديل تاريخ الانتهاء على رخصة عزل VCS', null, ['code' => 403], 403);
+            }
+
+            $normalized = $this->normalizeLicenseExpiry($licenseExpiry);
+            if (empty($normalized)) {
+                return $this->respond(false, 'يرجى تحديد تاريخ انتهاء صالح', null, ['code' => 400], 400);
+            }
+
+            $stmt = $this->conn->prepare("UPDATE energy_insulation_license SET license_expiry = ? WHERE id = ?");
+            $stmt->execute([$normalized, $licenseId]);
+
+            return $this->respond(true, 'تم تحديث تاريخ انتهاء الرخصة بنجاح');
+        } catch (Exception $e) {
+            return $this->respond(false, 'Failed to update license expiry: ' . $e->getMessage(), null, ['code' => 500], 500);
         }
     }
 }

@@ -76,6 +76,8 @@ try {
                 $res = $controller->rejectLicense((int)$input['license_id'], $input['reason'] ?? '', $decoded->id);
             } elseif ($action === 'updateStaffGroups') {
                 $res = $controller->updateStaffGroups((int)$input['license_id'], $input['staff_groups'] ?? [], $decoded->id);
+            } elseif ($action === 'updateLicenseExpiry') {
+                $res = $controller->updateLicenseExpiry((int)($input['license_id'] ?? 0), $input['license_expiry'] ?? '', $decoded->id);
             } elseif ($action === 'toggleGroupDone') {
                 $res = $controller->toggleGroupDone((int)($input['group_id'] ?? 0), (int)($input['license_id'] ?? 0), $decoded->id, (int)($input['is_done'] ?? 0));
             } elseif ($action === 'addEnergyTypes') {
@@ -89,6 +91,17 @@ try {
             } else {
                 $input['created_by'] = $decoded->id;
                 $res = $controller->createLicense($input);
+            }
+            break;
+
+        case 'DELETE':
+            if ($action === 'delete' && isset($_GET['id'])) {
+                if ((int)$decoded->role_id !== 1) {
+                    http_response_code(403);
+                    $res = ['success' => false, 'message' => 'Unauthorized to delete this license'];
+                    break;
+                }
+                $res = $controller->deleteLicense((int)$_GET['id']);
             }
             break;
     }

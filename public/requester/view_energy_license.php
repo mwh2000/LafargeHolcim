@@ -223,6 +223,7 @@ $userName = $userData['name'] ?? 'N/A';
                                             <h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">معلومات عامة</h2>
                                             <div class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">
                                                 <div><span class="text-gray-500">رقم الرخصة:</span> <span id="val-no" class="font-medium"></span></div>
+                                                <div><span class="text-gray-500">نوع الرخصة:</span> <span id="val-license-type" class="font-medium"></span></div>
                                                 <div><span class="text-gray-500">التاريخ:</span> <span id="val-date" class="font-medium"></span></div>
                                                 <div><span class="text-gray-500">الموقع:</span> <span id="val-location" class="font-medium"></span></div>
                                                 <div><span class="text-gray-500">اسم المعدة:</span> <span id="val-eq-name" class="font-medium"></span></div>
@@ -234,6 +235,17 @@ $userName = $userData['name'] ?? 'N/A';
                                                 <div><span class="text-gray-500">مسؤول المنطقة:</span> <span id="val-am" class="font-medium"></span></div>
                                                 <div><span class="text-gray-500">اسم العازل:</span> <span id="val-official" class="font-medium text-green-700"></span></div>
                                                 <div id="am-approved-container" class="hidden"><span class="text-gray-500">تاريخ تأكيد العزل:</span> <span id="val-am-approved-at" class="font-medium text-blue-600"></span></div>
+                                                <div class="block">
+                                                    <div class="flex items-center gap-2 flex-wrap">
+                                                        <span class="text-gray-500">تاريخ انتهاء الرخصة:</span>
+                                                        <span id="val-expiry" class="font-medium text-red-600"></span>
+                                                        <button id="edit-expiry-btn" class="hidden no-print p-1 text-gray-400 hover:text-[#0b6f76] transition rounded" title="تعديل تاريخ الانتهاء">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
 
                                             </div>
                                         </div>
@@ -253,7 +265,7 @@ $userName = $userData['name'] ?? 'N/A';
                                         </div>
 
                                         <!-- Equipments Card -->
-                                        <div class="bg-white p-6 rounded-lg shadow-md">
+                                        <div id="equipments-card" class="bg-white p-6 rounded-lg shadow-md">
                                             <div class="flex justify-between items-center mb-4 border-b pb-2">
                                                 <button id="editEquipmentsBtn" class="hidden no-print text-sm flex items-center gap-1 text-[#0b6f76] hover:text-[#085a60] font-medium transition-colors bg-[#0b6f76]/10 px-3 py-1.5 rounded-md hover:bg-[#0b6f76]/20">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -698,6 +710,18 @@ $userName = $userData['name'] ?? 'N/A';
         </div>
     </div>
 
+    <!-- Edit License Expiry Modal -->
+    <div id="editExpiryModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center flex">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4 p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 text-right">تعديل تاريخ انتهاء الرخصة</h3>
+            <input type="datetime-local" id="newLicenseExpiry" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm mb-4 focus:ring-[#0b6f76] focus:border-[#0b6f76]">
+            <div class="flex gap-2 justify-end">
+                <button onclick="document.getElementById('editExpiryModal').classList.add('hidden')" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border rounded-md">إلغاء</button>
+                <button onclick="saveLicenseExpiry()" class="px-4 py-2 bg-[#0b6f76] text-white text-sm rounded-md hover:bg-[#085a60]">حفظ</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const LICENSE_ID = "<?= $licenseId ?>";
         const CURRENT_USER_ID = "<?= $userId ?>";
@@ -759,16 +783,19 @@ $userName = $userData['name'] ?? 'N/A';
                     const isLicenseCreator = Number(data.created_by) === Number(CURRENT_USER_ID);
                     const canManageLicense = isLicenseCreator || IS_ADMIN;
                     const isVcs = Number(data.is_vcs_isolation) === 1;
+                    const effectiveStatus = data.effective_status || data.status;
+                    // Normal (non-VCS) licenses lock all edit actions once expired (not_active) or closed.
+                    const editingLocked = !isVcs && (effectiveStatus === 'not_active' || effectiveStatus === 'close');
 
                     // Show AM actions only when the license is still pending and the current user is allowed to act.
                     if (data.status === 'pending' && canManageLicense) {
                         document.getElementById('am-action-section').classList.remove('hidden');
                     }
 
-                    // Show edit buttons for energy types and equipments only for allowed users and only when not completed.
+                    // Show edit buttons for energy types and equipments only for allowed users and only when not completed/expired.
                     const editEnergyBtn = document.getElementById('editEnergyTypesBtn');
                     const editEquipBtn = document.getElementById('editEquipmentsBtn');
-                    if (canManageLicense && data.status !== 'completed') {
+                    if (canManageLicense && data.status !== 'completed' && !editingLocked) {
                         if (editEnergyBtn) {
                             editEnergyBtn.classList.remove('hidden');
                             editEnergyBtn.addEventListener('click', openManageEnergyModal);
@@ -779,9 +806,15 @@ $userName = $userData['name'] ?? 'N/A';
                         }
                     }
 
+                    // Let the creator extend an expired license's expiry date, same as hot work permits.
+                    const editExpiryBtn = document.getElementById('edit-expiry-btn');
+                    if (editExpiryBtn && !isVcs && canManageLicense && effectiveStatus === 'not_active') {
+                        editExpiryBtn.classList.remove('hidden');
+                        editExpiryBtn.addEventListener('click', () => openEditExpiryModal(data.license_expiry));
+                    }
+
                     // Show requester actions for allowed users while the license is active.
                     const requesterSection = document.getElementById('requester-action-section');
-                    const effectiveStatus = data.effective_status || data.status;
                     if (requesterSection) {
                         if (!isVcs && (effectiveStatus === 'open' || data.status === 'active_isolation') && canManageLicense && effectiveStatus !== 'not_active') {
                             requesterSection.classList.remove('hidden');
@@ -826,8 +859,17 @@ $userName = $userData['name'] ?? 'N/A';
             const isLicenseCreator = Number(data.created_by) === Number(CURRENT_USER_ID);
             const canManageLicense = isLicenseCreator || IS_ADMIN;
             const isVcs = Number(data.is_vcs_isolation) === 1;
+            const effectiveStatus = data.effective_status || (data.status === 'completed' ? 'close' : data.status === 'active_isolation' && data.license_expiry && new Date(data.license_expiry) < new Date() ? 'not_active' : data.status);
+            const editingLocked = !isVcs && (effectiveStatus === 'not_active' || effectiveStatus === 'close');
 
             document.getElementById('val-no').textContent = data.equipment_no;
+            document.getElementById('val-license-type').textContent = isVcs ? 'عزل VCS' : 'عادية';
+
+            const equipmentsCard = document.getElementById('equipments-card');
+            if (equipmentsCard) equipmentsCard.classList.toggle('hidden', isVcs);
+
+            document.getElementById('val-expiry').textContent = data.license_expiry ? String(data.license_expiry).replace('T', ' ') : '-';
+
             document.getElementById('val-date').textContent = data.date;
             document.getElementById('val-location').textContent = data.exact_location;
             document.getElementById('val-eq-name').textContent = data.equipment_name;
@@ -852,7 +894,6 @@ $userName = $userData['name'] ?? 'N/A';
                 document.getElementById('val-end-at').textContent = data.end_at;
             }
 
-            const effectiveStatus = data.effective_status || (data.status === 'completed' ? 'close' : data.status === 'active_isolation' && data.license_expiry && new Date(data.license_expiry) < new Date() ? 'not_active' : data.status);
             const statusEl = document.getElementById('license-status');
             const statusByEl = document.getElementById('status-by');
             statusEl.textContent = getStatusText(effectiveStatus);
@@ -943,9 +984,10 @@ $userName = $userData['name'] ?? 'N/A';
                     const leftContainer = document.createElement('div');
 
                     // VCS-isolated licenses close on creation, so the "work completed" action doesn't apply.
+                    // Once a normal license is expired or closed, its edit actions are locked too.
                     if (isVcs) {
                         // no action rendered
-                    } else if (canManageLicense && g.id) {
+                    } else if (canManageLicense && g.id && !editingLocked) {
                         if (!g.is_done) {
                             leftContainer.classList.add('no-print');
                         }
@@ -1023,8 +1065,9 @@ $userName = $userData['name'] ?? 'N/A';
                 document.getElementById('pdfDownloadBtn').classList.remove('hidden');
             }
 
-            // Edit Staff Button Logic - only the license creator can edit staff.
-            if (canManageLicense) {
+            // Edit Staff Button Logic - only the license creator can edit staff, and not for VCS
+            // licenses or once the license is expired/closed.
+            if (canManageLicense && !isVcs && !editingLocked) {
                 document.getElementById('editStaffBtn').classList.remove('hidden');
             }
         }
@@ -1342,6 +1385,50 @@ $userName = $userData['name'] ?? 'N/A';
                 saveBtn.textContent = 'حفظ التغييرات';
             }
         });
+
+        function openEditExpiryModal(currentExpiry) {
+            const input = document.getElementById('newLicenseExpiry');
+            if (currentExpiry) {
+                input.value = String(currentExpiry).replace(' ', 'T').substring(0, 16);
+            }
+            document.getElementById('editExpiryModal').classList.remove('hidden');
+        }
+
+        async function saveLicenseExpiry() {
+            const newExpiry = document.getElementById('newLicenseExpiry').value;
+            if (!newExpiry) {
+                Swal.fire('تنبيه', 'يرجى تحديد تاريخ الانتهاء', 'warning');
+                return;
+            }
+            const saveBtn = document.querySelector('#editExpiryModal button:last-child');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'جاري الحفظ...';
+            try {
+                const res = await fetch(`${API_BASE}?action=updateLicenseExpiry`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${TOKEN}`
+                    },
+                    body: JSON.stringify({
+                        license_id: LICENSE_ID,
+                        license_expiry: newExpiry
+                    })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    document.getElementById('editExpiryModal').classList.add('hidden');
+                    Swal.fire('تم', 'تم تحديث تاريخ الانتهاء بنجاح', 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('خطأ', result.message || 'حدث خطأ', 'error');
+                }
+            } catch (e) {
+                Swal.fire('خطأ', 'حدث خطأ في الاتصال', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'حفظ';
+            }
+        }
     </script>
 </body>
 

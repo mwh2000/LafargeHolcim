@@ -4,6 +4,9 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/partials/sidebar.php';
 require_once __DIR__ . '/partials/navbar.php';
 require_once __DIR__ . '/helpers/authCheck.php';
+
+$userData = json_decode($_COOKIE['user_data'] ?? '{}', true);
+$userRole = $userData['role_id'] ?? 0;
 ?>
 
 <!DOCTYPE html>
@@ -112,6 +115,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
     <script>
         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
+        const USER_ROLE = <?= (int)$userRole ?>;
         const API_URL = "../api/requester/hot_work_permit.php";
 
         let currentPage = 1;
@@ -189,15 +193,49 @@ require_once __DIR__ . '/helpers/authCheck.php';
                     
                     <td class="px-6 py-4 whitespace-nowrap">${statusChip}</td>
                     
-                    <td class="px-6 py-4 text-right">
+                    <td class="px-6 py-4 text-right whitespace-nowrap">
                         <a href="requester/view_hot_work_license.php?id=${p.id}"
                         class="text-[#0b6f76] hover:underline font-medium">
                             View
                         </a>
+                        ${USER_ROLE === 1 ? `
+                        <button onclick="deletePermit(${p.id})"
+                            class="text-red-600 hover:underline font-medium mr-3">
+                            Delete
+                        </button>` : ''}
                     </td>
                 </tr>
                 `;
             });
+        }
+
+        async function deletePermit(id) {
+            const confirmResult = await Swal.fire({
+                title: 'هل أنت متأكد؟',
+                text: 'سيتم حذف الرخصة وكل بياناتها المرتبطة بشكل نهائي.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'نعم، احذف',
+                cancelButtonText: 'إلغاء',
+                confirmButtonColor: '#dc2626'
+            });
+            if (!confirmResult.isConfirmed) return;
+
+            try {
+                const response = await fetch(`${API_URL}?action=delete&id=${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        "Authorization": `Bearer ${TOKEN}`
+                    }
+                });
+                const result = await response.json();
+                if (!result.success) throw new Error(result.message);
+
+                Swal.fire('تم الحذف', 'تم حذف الرخصة بنجاح', 'success');
+                fetchPermits(currentPage);
+            } catch (error) {
+                Swal.fire('خطأ', error.message, 'error');
+            }
         }
 
         document.getElementById('filterPermitNo').addEventListener('keydown', (e) => {

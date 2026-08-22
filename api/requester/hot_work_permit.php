@@ -97,6 +97,17 @@ try {
             }
             break;
 
+        case 'DELETE':
+            if ($action === 'delete' && isset($_GET['id'])) {
+                if ((int)$decoded->role_id !== 1) {
+                    http_response_code(403);
+                    $res = ['success' => false, 'message' => 'Unauthorized to delete this permit'];
+                    break;
+                }
+                $res = $controller->deletePermit((int)$_GET['id']);
+            }
+            break;
+
         default:
             $res = ['success' => false, 'message' => 'Method Not Allowed'];
             http_response_code(405);

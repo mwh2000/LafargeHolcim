@@ -939,4 +939,46 @@ class HotWorkPermitController
             return ['success' => false, 'message' => 'Failed to fetch permits: ' . $e->getMessage()];
         }
     }
+
+    public function deletePermit(int $permitId)
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT id FROM hot_work_permit WHERE id = ?");
+            $stmt->execute([$permitId]);
+            if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+                return ['success' => false, 'message' => 'Permit not found'];
+            }
+
+            // Collect uploaded image paths before the rows (and their images columns) are gone
+            $imagePaths = [];
+            $stmtAddImg = $this->db->prepare("SELECT image FROM additional_hot_permits WHERE hot_work_permit_id = ? AND image IS NOT NULL AND image <> ''");
+            $stmtAddImg->execute([$permitId]);
+            $imagePaths = array_merge($imagePaths, array_column($stmtAddImg->fetchAll(PDO::FETCH_ASSOC), 'image'));
+
+            $stmtControlImg = $this->db->prepare("SELECT image FROM hot_work_control_measures WHERE hot_work_permit_id = ? AND image IS NOT NULL AND image <> ''");
+            $stmtControlImg->execute([$permitId]);
+            $imagePaths = array_merge($imagePaths, array_column($stmtControlImg->fetchAll(PDO::FETCH_ASSOC), 'image'));
+
+            $this->db->beginTransaction();
+            // Child tables (additional_hot_permits, hot_permit_approvals, hot_work_control_measures,
+            // hot_work_equipment_used, hot_work_performers_check) all cascade on delete.
+            $stmt = $this->db->prepare("DELETE FROM hot_work_permit WHERE id = ?");
+            $stmt->execute([$permitId]);
+            $this->db->commit();
+
+            foreach ($imagePaths as $path) {
+                $fullPath = __DIR__ . '/../public/' . $path;
+                if (file_exists($fullPath)) {
+                    @unlink($fullPath);
+                }
+            }
+
+            return ['success' => true, 'message' => 'Hot Work Permit deleted successfully'];
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            return ['success' => false, 'message' => 'Failed to delete permit: ' . $e->getMessage()];
+        }
+    }
 }

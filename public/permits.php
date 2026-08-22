@@ -4,6 +4,9 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/partials/sidebar.php';
 require_once __DIR__ . '/partials/navbar.php';
 require_once __DIR__ . '/helpers/authCheck.php';
+
+$userData = json_decode($_COOKIE['user_data'] ?? '{}', true);
+$userRole = $userData['role_id'] ?? 0;
 ?>
 
 <!DOCTYPE html>
@@ -36,6 +39,8 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             class="hidden text-gray-500 hover:text-gray-700 px-4 py-2 text-sm font-medium">
                             Clear Filters
                         </button>
+                        <input id="searchFilter" type="text" placeholder="بحث برقم الرخصة"
+                            class="border px-4 py-2 rounded-md text-sm" />
                         <select id="statusFilter" class="border px-4 py-2 rounded-md text-sm">
                             <option value="">All Status</option>
                             <option value="open">Open</option>
@@ -92,6 +97,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
     <script>
         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
+        const USER_ROLE = <?= (int)$userRole ?>;
         const API_URL = "../api/requester/energy_insulation.php";
         const API_URL_SECTIONS = "../api/admin/equipment_sections.php";
 
@@ -158,6 +164,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
             params.set("action", "getAll");
             params.set("section", document.getElementById('sectionFilter').value);
             params.set("status", document.getElementById('statusFilter').value);
+            params.set("search", document.getElementById('searchFilter').value.trim());
             const vcsVal = document.getElementById('vcsFilter').value;
             if (vcsVal) params.set("is_vcs_isolation", vcsVal);
             else params.delete("is_vcs_isolation");
@@ -222,15 +229,49 @@ require_once __DIR__ . '/helpers/authCheck.php';
                                 ${getStatusText(p.status, p.effective_status || p.status)}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-right">
+                        <td class="px-6 py-4 text-right whitespace-nowrap">
                             <a href="requester/view_energy_license.php?id=${p.id}"
                                class="text-[#0b6f76] hover:underline font-medium">
                                 View
                             </a>
+                            ${USER_ROLE === 1 ? `
+                            <button onclick="deleteLicense(${p.id})"
+                                class="text-red-600 hover:underline font-medium mr-3">
+                                Delete
+                            </button>` : ''}
                         </td>
                     </tr>
                 `;
             });
+        }
+
+        async function deleteLicense(id) {
+            const confirmResult = await Swal.fire({
+                title: 'هل أنت متأكد؟',
+                text: 'سيتم حذف الرخصة وكل بياناتها المرتبطة بشكل نهائي.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'نعم، احذف',
+                cancelButtonText: 'إلغاء',
+                confirmButtonColor: '#dc2626'
+            });
+            if (!confirmResult.isConfirmed) return;
+
+            try {
+                const response = await fetch(`${API_URL}?action=delete&id=${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        "Authorization": `Bearer ${TOKEN}`
+                    }
+                });
+                const result = await response.json();
+                if (!result.success) throw new Error(result.message);
+
+                Swal.fire('تم الحذف', 'تم حذف الرخصة بنجاح', 'success');
+                fetchPermits(currentPage);
+            } catch (error) {
+                Swal.fire('خطأ', error.message, 'error');
+            }
         }
 
         function persistFiltersToUrl() {
@@ -238,6 +279,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
             const statusVal = document.getElementById('statusFilter').value;
             const sectionVal = document.getElementById('sectionFilter').value;
             const vcsVal = document.getElementById('vcsFilter').value;
+            const searchVal = document.getElementById('searchFilter').value.trim();
 
             if (statusVal) params.set('status', statusVal);
             else params.delete('status');
@@ -245,13 +287,26 @@ require_once __DIR__ . '/helpers/authCheck.php';
             else params.delete('section');
             if (vcsVal) params.set('is_vcs_isolation', vcsVal);
             else params.delete('is_vcs_isolation');
+            if (searchVal) params.set('search', searchVal);
+            else params.delete('search');
 
             window.location.search = params.toString();
         }
 
+        let searchDebounceTimer;
         document.getElementById('statusFilter').addEventListener('change', persistFiltersToUrl);
         document.getElementById('sectionFilter').addEventListener('change', persistFiltersToUrl);
         document.getElementById('vcsFilter').addEventListener('change', persistFiltersToUrl);
+        document.getElementById('searchFilter').addEventListener('input', () => {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(persistFiltersToUrl, 500);
+        });
+        document.getElementById('searchFilter').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                clearTimeout(searchDebounceTimer);
+                persistFiltersToUrl();
+            }
+        });
 
         document.getElementById('resetFilters').addEventListener('click', () => {
             window.location.href = 'permits.php';
@@ -263,10 +318,12 @@ require_once __DIR__ . '/helpers/authCheck.php';
             const status = params.get('status');
             const section = params.get('section');
             const vcsOnly = params.get('is_vcs_isolation');
+            const search = params.get('search');
             document.getElementById('statusFilter').value = status || '';
             document.getElementById('sectionFilter').value = section || '';
             document.getElementById('vcsFilter').value = vcsOnly || '';
-            if (status || section || vcsOnly) {
+            document.getElementById('searchFilter').value = search || '';
+            if (status || section || vcsOnly || search) {
                 document.getElementById('resetFilters').classList.remove('hidden');
             }
             // Load sections first, then restore selected section and fetch permits
