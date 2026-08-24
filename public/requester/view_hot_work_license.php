@@ -421,9 +421,9 @@ $userName = $userData['name'] ?? 'N/A';
                 document.getElementById('updated-by').textContent = `تم التحديث بواسطة: ${data.finishing_time_updated_by }`;
             }
 
-            // Show edit finishing time button only for creator, and only when the permit is Not Active
+            // Show edit finishing time button only for the creator or an admin, and only when the permit is Not Active
             const isNotActive = !isClosed && !isOpen;
-            if (data.created_by == USER_ID && isNotActive) {
+            if ((data.created_by == USER_ID || USER_ROLE === 1) && isNotActive) {
                 const editFinishBtn = document.getElementById('edit-finish-btn');
                 editFinishBtn.classList.remove('hidden');
                 editFinishBtn.addEventListener('click', () => openEditFinishingTimeModal(data.finishing_time));

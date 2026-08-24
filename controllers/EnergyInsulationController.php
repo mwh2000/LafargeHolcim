@@ -35,6 +35,16 @@ class EnergyInsulationController
         }
     }
 
+    /**
+     * Appends a "view license" link to an email body, since these emails now
+     * also carry a PDF snapshot and the recipient may want the live page too.
+     */
+    private function withLicenseLink(string $body, int $licenseId): string
+    {
+        $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
+        return $body . "<br><br><a href='{$url}'>اضغط هنا لعرض الرخصة</a>";
+    }
+
     private function normalizeLicenseExpiry($value): ?string
     {
         if ($value === null || $value === '') {
@@ -195,7 +205,7 @@ class EnergyInsulationController
                     $this->notificationController->sendNotification($titleCreator, $bodyCreator, [$data['created_by']], $urlCreator, $data['created_by']);
 
                     if ($this->emailController) {
-                        $this->emailController->sendEmail($titleCreator, $bodyCreator, [$data['created_by']], null, false, $this->buildLicensePdfAttachment($licenseId));
+                        $this->emailController->sendEmail($titleCreator, $this->withLicenseLink($bodyCreator, $licenseId), [$data['created_by']], null, false, $this->buildLicensePdfAttachment($licenseId));
                     }
                 }
             }
@@ -469,7 +479,7 @@ class EnergyInsulationController
                 $this->notificationController->sendNotification($title, $body, [$officerId], $url, $updatedBy);
 
                 if ($this->emailController) {
-                    $this->emailController->sendEmail($title, $body, [$officerId], null, false, $this->buildLicensePdfAttachment($licenseId));
+                    $this->emailController->sendEmail($title, $this->withLicenseLink($body, $licenseId), [$officerId], null, false, $this->buildLicensePdfAttachment($licenseId));
                 }
             }
             return $this->respond(true, 'Isolation officer assigned successfully');
@@ -505,7 +515,7 @@ class EnergyInsulationController
                 $this->notificationController->sendNotification($title, $body, [$shiftLeaderId], $url, $updatedBy);
 
                 if ($this->emailController) {
-                    $this->emailController->sendEmail($title, $body, [$shiftLeaderId], null, false, $this->buildLicensePdfAttachment($licenseId));
+                    $this->emailController->sendEmail($title, $this->withLicenseLink($body, $licenseId), [$shiftLeaderId], null, false, $this->buildLicensePdfAttachment($licenseId));
                 }
             }
             return $this->respond(true, 'License confirmed by isolation officer successfully');
@@ -538,7 +548,7 @@ class EnergyInsulationController
                 $this->notificationController->sendNotification($title, $body, $recipients, $url, $updatedBy);
 
                 if ($this->emailController) {
-                    $this->emailController->sendEmail($title, $body, $recipients, null, false, $this->buildLicensePdfAttachment($licenseId));
+                    $this->emailController->sendEmail($title, $this->withLicenseLink($body, $licenseId), $recipients, null, false, $this->buildLicensePdfAttachment($licenseId));
                 }
             }
             return $this->respond(true, 'License completed successfully');
@@ -571,7 +581,7 @@ class EnergyInsulationController
                     $this->notificationController->sendNotification($title, $body, [$license['created_by']], $url, $userId);
 
                     if ($this->emailController) {
-                        $this->emailController->sendEmail($title, $body, [$license['created_by']], null, false, $this->buildLicensePdfAttachment($licenseId));
+                        $this->emailController->sendEmail($title, $this->withLicenseLink($body, $licenseId), [$license['created_by']], null, false, $this->buildLicensePdfAttachment($licenseId));
                     }
                 }
                 return $this->respond(true, 'Isolation confirmed by Area Manager successfully');
@@ -617,14 +627,11 @@ class EnergyInsulationController
                     $title = "قام المرخص برفع العزل";
                     $body = "قام طالب الرخصة برفع العزل للمعدة: " . ($license['equipment_name'] ?? 'N/A');
                     $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
-                    $emailBody = "قام طالب الرخصة برفع العزل للمعدة: " . ($license['equipment_name'] ?? 'N/A') .
-                        "<br><br>" .
-                        "<a href='" . $url . "'>اضغط هنا لعرض الرخصة</a>";
 
                     $this->notificationController->sendNotification($title, $body, [$license['area_manager_id']], $url, $userId);
 
                     if ($this->emailController) {
-                        $this->emailController->sendEmail($title, $body, [$license['area_manager_id']], null, false, $this->buildLicensePdfAttachment($licenseId));
+                        $this->emailController->sendEmail($title, $this->withLicenseLink($body, $licenseId), [$license['area_manager_id']], null, false, $this->buildLicensePdfAttachment($licenseId));
                     }
                 }
                 return $this->respond(true, 'تم رفع العزل بنجاح');
@@ -663,7 +670,7 @@ class EnergyInsulationController
                 $this->notificationController->sendNotification($title, $body, [$license['created_by']], $url, $rejectedBy);
 
                 if ($this->emailController) {
-                    $this->emailController->sendEmail($title, $body, [$license['created_by']], null, false, $this->buildLicensePdfAttachment($licenseId));
+                    $this->emailController->sendEmail($title, $this->withLicenseLink($body, $licenseId), [$license['created_by']], null, false, $this->buildLicensePdfAttachment($licenseId));
                 }
             }
             return $this->respond(true, 'License rejected successfully');
