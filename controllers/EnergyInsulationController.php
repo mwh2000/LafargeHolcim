@@ -176,37 +176,32 @@ class EnergyInsulationController
 
             $this->conn->commit();
 
-            // VCS-isolated licenses close on creation with no follow-up review chain,
-            // so no notification/email (and the PDF attachment generation behind it) is needed.
-            if (!$isVcs) {
-                // Send Notification and Email to Area Manager
-                if ($this->notificationController && !empty($data['area_manager_id'])) {
-                    $title = "تم انشاء رخصة العزل من قبل المرخص";
-                    $body = "تم إنشاء رخصة عزل طاقة وتم العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A');
-                    $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
-                    // implementing the URL to view the license details
-                    $emailBody = "تم إنشاء رخصة عزل طاقة وتم العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A') .
-                        "<br><br>" .
-                        "<a href='" . $url . "'>اضغط هنا لعرض الرخصة</a>";
+            // Send Notification and Email to Area Manager. Sent for VCS licenses too — the
+            // assigned manager only gets a link to view the (already closed) license, no
+            // workflow action depends on them.
+            if ($this->notificationController && !empty($data['area_manager_id'])) {
+                $title = "تم انشاء رخصة العزل من قبل المرخص";
+                $body = "تم إنشاء رخصة عزل طاقة وتم العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A');
+                $url = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
 
-                    $this->notificationController->sendNotification($title, $body, [$data['area_manager_id']], $url, $data['created_by']);
+                $this->notificationController->sendNotification($title, $body, [$data['area_manager_id']], $url, $data['created_by']);
 
-                    if ($this->emailController) {
-                        $this->emailController->sendEmail($title, $emailBody, [$data['area_manager_id']], null, false, $this->buildLicensePdfAttachment($licenseId));
-                    }
+                if ($this->emailController) {
+                    $this->emailController->sendEmail($title, $this->withLicenseLink($body, $licenseId), [$data['area_manager_id']], null, false, $this->buildLicensePdfAttachment($licenseId));
                 }
+            }
 
-                // Send Notification and Email to Creator
-                if ($this->notificationController && !empty($data['created_by'])) {
-                    $titleCreator = "تم العزل - Isolation Active";
-                    $bodyCreator = "تم تأكيد العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A');
-                    $urlCreator = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
+            // Send Notification and Email to Creator. Skipped for VCS licenses — the creator
+            // is the one who just submitted it, so no follow-up notification is needed.
+            if (!$isVcs && $this->notificationController && !empty($data['created_by'])) {
+                $titleCreator = "تم العزل - Isolation Active";
+                $bodyCreator = "تم تأكيد العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A');
+                $urlCreator = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
 
-                    $this->notificationController->sendNotification($titleCreator, $bodyCreator, [$data['created_by']], $urlCreator, $data['created_by']);
+                $this->notificationController->sendNotification($titleCreator, $bodyCreator, [$data['created_by']], $urlCreator, $data['created_by']);
 
-                    if ($this->emailController) {
-                        $this->emailController->sendEmail($titleCreator, $this->withLicenseLink($bodyCreator, $licenseId), [$data['created_by']], null, false, $this->buildLicensePdfAttachment($licenseId));
-                    }
+                if ($this->emailController) {
+                    $this->emailController->sendEmail($titleCreator, $this->withLicenseLink($bodyCreator, $licenseId), [$data['created_by']], null, false, $this->buildLicensePdfAttachment($licenseId));
                 }
             }
 
