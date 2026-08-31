@@ -263,6 +263,18 @@ $currentUserId = $userData['id'] ?? 0;
                                 <?php
                                 $userData = json_decode($_COOKIE['user_data'] ?? '{}', true);
                                 $currentUserName = $userData['name'] ?? '';
+                                $welders = require '../partials/hot_work/welders.php';
+                                foreach ($welders as &$welder) {
+                                    $welder['expired'] = false;
+                                    if (!empty($welder['inspection_date'])) {
+                                        $inspectionDate = DateTime::createFromFormat('Y-m-d', $welder['inspection_date']);
+                                        if ($inspectionDate) {
+                                            $expiryDate = (clone $inspectionDate)->modify('+18 months');
+                                            $welder['expired'] = (new DateTime()) > $expiryDate;
+                                        }
+                                    }
+                                }
+                                unset($welder);
                                 $roleNameOptions = [
                                     'fire_sentry' => [
                                         'معين سهل امين',
@@ -325,17 +337,6 @@ $currentUserId = $userData['id'] ?? 0;
                                         'عباس حميد',
                                         'محمد علي خليل'
                                     ],
-                                    'welding' => [
-                                        'علي عامر',
-                                        'رسول محمد چلوب',
-                                        'علي حمود',
-                                        'سالم عبدالكاظم',
-                                        'زمان كاظم',
-                                        'ياسر نيسان',
-                                        'علي صباح',
-                                        'كاظم علي مجيد',
-                                        'مشتاق طالب',
-                                    ],
                                     'supervisor' => [
                                         'حسام حاتم',
                                         'مصطفى تركي',
@@ -356,6 +357,7 @@ $currentUserId = $userData['id'] ?? 0;
                                 ];
                                 foreach ($roles as $role):
                                     $isIssuer = ($role['id'] === 'ptw_issuer');
+                                    $isWelding = ($role['id'] === 'welding');
                                     $nameOptions = $roleNameOptions[$role['id']] ?? null;
                                 ?>
                                     <div class="p-4 border rounded-lg bg-gray-50">
@@ -367,6 +369,11 @@ $currentUserId = $userData['id'] ?? 0;
                                                 readonly
                                                 placeholder="الاسم الكامل"
                                                 class="w-full px-3 py-2 border rounded-md mb-2 focus:ring-[#0b6f76] outline-none bg-gray-100 cursor-not-allowed">
+                                        <?php elseif ($isWelding): ?>
+                                            <select
+                                                id="approval_name_welding"
+                                                name="approval_name_welding"
+                                                class="w-full px-3 py-2 border rounded-md mb-2 focus:ring-[#0b6f76] outline-none"></select>
                                         <?php elseif ($nameOptions): ?>
                                             <select
                                                 name="approval_name_<?= $role['id'] ?>"
@@ -429,6 +436,7 @@ $currentUserId = $userData['id'] ?? 0;
             const totalSteps = 6;
             const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
             const CURRENT_USER_ID = <?= (int)$currentUserId ?>;
+            const WELDERS = <?= json_encode($welders, JSON_UNESCAPED_UNICODE) ?>;
 
             const group1 = [
                 'كسارة', 'طحونة مواد', 'الافران', 'طواحين الاسمنت', 'التعبئة', 'محطة الاساله', 'اخرى'
@@ -517,6 +525,23 @@ $currentUserId = $userData['id'] ?? 0;
                 maxItems: null,
                 plugins: ['remove_button'],
                 placeholder: 'اختر المعدة المستخدمة...',
+                onChange: () => updateButtonStates()
+            });
+
+            // Initialize TomSelect for Welding Name (blocks welders whose inspection expired 18+ months ago)
+            let weldingSelect = new TomSelect('#approval_name_welding', {
+                persist: false,
+                create: false,
+                placeholder: 'اختر الاسم...',
+                valueField: 'name',
+                labelField: 'name',
+                searchField: ['name'],
+                disabledField: 'expired',
+                options: WELDERS,
+                render: {
+                    option: (data, escape) => `<div${data.expired ? ' style="color:#dc2626;"' : ''}>${escape(data.name)}${data.expired ? ' (انتهى الفحص)' : ''}</div>`,
+                    item: (data, escape) => `<div${data.expired ? ' style="color:#dc2626;"' : ''}>${escape(data.name)}</div>`
+                },
                 onChange: () => updateButtonStates()
             });
 
@@ -661,8 +686,12 @@ $currentUserId = $userData['id'] ?? 0;
                         const parts = (app.approval_status || '').split(' - ');
                         const name = parts[0] || '';
                         const approved = (app.approval_status || '').includes('Approved');
-                        const nameInput = document.querySelector(`[name="approval_name_${key}"]`);
-                        if (nameInput && !nameInput.readOnly) nameInput.value = name;
+                        if (key === 'welding') {
+                            weldingSelect.setValue(name);
+                        } else {
+                            const nameInput = document.querySelector(`[name="approval_name_${key}"]`);
+                            if (nameInput && !nameInput.readOnly) nameInput.value = name;
+                        }
                         const statusCb = document.querySelector(`input[name="approval_status_${key}"]`);
                         if (statusCb) statusCb.checked = approved;
                     });
