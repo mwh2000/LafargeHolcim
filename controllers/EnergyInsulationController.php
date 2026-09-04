@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../core/ApiResponseTrait.php';
 require_once __DIR__ . '/LicensePdfController.php';
+require_once __DIR__ . '/../core/LicenseNumberGenerator.php';
 
 class EnergyInsulationController
 {
@@ -100,6 +101,11 @@ class EnergyInsulationController
             $isVcs = !empty($data['is_vcs_isolation']);
             $now = date('Y-m-d H:i:s');
 
+            // Generated here (not trusted from client input) so two concurrent
+            // submissions can never be assigned the same equipment_no: this claims
+            // the number atomically and holds the counter row lock until commit.
+            $equipmentNo = LicenseNumberGenerator::next($this->conn, 'energy_insulation_license', 'OHSM-PTW-00');
+
             $stmt = $this->conn->prepare("
                 INSERT INTO energy_insulation_license (
                     equipment_name, equipment_no, date, reason, license_expiry,
@@ -110,7 +116,7 @@ class EnergyInsulationController
 
             $stmt->execute([
                 $data['equipment_name'] ?? null,
-                $data['equipment_no'] ?? null,
+                $equipmentNo,
                 $data['date'] ?? null,
                 $data['reason'] ?? null,
                 $this->normalizeLicenseExpiry($data['license_expiry'] ?? null),
@@ -205,7 +211,7 @@ class EnergyInsulationController
                 }
             }
 
-            return $this->respond(true, 'Energy Insulation License created successfully', ['id' => $licenseId]);
+            return $this->respond(true, 'Energy Insulation License created successfully', ['id' => $licenseId, 'equipment_no' => $equipmentNo]);
         } catch (Exception $e) {
             $this->conn->rollBack();
             return $this->respond(false, 'Failed to create license: ' . $e->getMessage(), null, ['code' => 500], 500);

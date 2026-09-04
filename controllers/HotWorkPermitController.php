@@ -2,6 +2,7 @@
 require_once __DIR__ . '/notificationsController.php';
 require_once __DIR__ . '/emailController.php';
 require_once __DIR__ . '/LicensePdfController.php';
+require_once __DIR__ . '/../core/LicenseNumberGenerator.php';
 
 
 class HotWorkPermitController
@@ -50,6 +51,11 @@ class HotWorkPermitController
         try {
             $this->db->beginTransaction();
 
+            // Generated here (not trusted from client input) so two concurrent
+            // submissions can never be assigned the same permit_no: this claims
+            // the number atomically and holds the counter row lock until commit.
+            $permitNo = LicenseNumberGenerator::next($this->db, 'hot_work_permit', 'OHSM-PTW-00');
+
             // 1. Insert main permit
             // Support critical workflow columns if provided
             $stmt = $this->db->prepare("INSERT INTO hot_work_permit (
@@ -67,7 +73,7 @@ class HotWorkPermitController
             $safetyStatus = 'pending';
 
             $stmt->execute([
-                $data['permit_no'],
+                $permitNo,
                 date('Y-m-d H:i:s'),
                 $data['wo'],
                 $data['company_name'],
@@ -195,7 +201,7 @@ class HotWorkPermitController
                 // Ignore notification/email errors
             }
 
-            return ['success' => true, 'message' => 'Hot Work Permit created successfully!', 'id' => $permitId];
+            return ['success' => true, 'message' => 'Hot Work Permit created successfully!', 'id' => $permitId, 'permit_no' => $permitNo];
         } catch (Exception $e) {
             $this->db->rollBack();
             return ['success' => false, 'message' => 'Error creating permit: ' . $e->getMessage()];
