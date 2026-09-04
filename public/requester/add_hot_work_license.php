@@ -263,80 +263,26 @@ $currentUserId = $userData['id'] ?? 0;
                                 <?php
                                 $userData = json_decode($_COOKIE['user_data'] ?? '{}', true);
                                 $currentUserName = $userData['name'] ?? '';
-                                $welders = require '../partials/hot_work/welders.php';
-                                foreach ($welders as &$welder) {
-                                    $welder['expired'] = false;
-                                    if (!empty($welder['inspection_date'])) {
-                                        $inspectionDate = DateTime::createFromFormat('Y-m-d', $welder['inspection_date']);
-                                        if ($inspectionDate) {
-                                            $expiryDate = (clone $inspectionDate)->modify('+18 months');
-                                            $welder['expired'] = (new DateTime()) > $expiryDate;
+
+                                function hotWorkMarkExpired(array $list): array {
+                                    foreach ($list as &$item) {
+                                        $item['expired'] = false;
+                                        if (!empty($item['inspection_date'])) {
+                                            $inspectionDate = DateTime::createFromFormat('Y-m-d', $item['inspection_date']);
+                                            if ($inspectionDate) {
+                                                $expiryDate = (clone $inspectionDate)->modify('+18 months');
+                                                $item['expired'] = (new DateTime()) > $expiryDate;
+                                            }
                                         }
                                     }
+                                    unset($item);
+                                    return $list;
                                 }
-                                unset($welder);
+
+                                $welders = hotWorkMarkExpired(require '../partials/hot_work/welders.php');
+                                $fireSentries = hotWorkMarkExpired(require '../partials/hot_work/fire_sentries.php');
+
                                 $roleNameOptions = [
-                                    'fire_sentry' => [
-                                        'معين سهل امين',
-                                        'وضاح نعمه حمود',
-                                        'امير محمد يوسف',
-                                        'محمد صاحب مزعل',
-                                        'علي شريف رضا',
-                                        'مصطفى محمد مهدي',
-                                        'حسين هادي جاسم',
-                                        'زيد صباح عليوي',
-                                        'مرتضى محمد مهدي',
-                                        'علي حسين جياد',
-                                        'بدر معيوف ابراهيم',
-                                        'محمد ياسين غضيب',
-                                        'جاسم كنوبي عباس',
-                                        'حسن حازم كشموط',
-                                        'سعد خزعل مغير',
-                                        'علي كاظم جياد',
-                                        'عادل جبر لفته',
-                                        'انور خليل هادي',
-                                        'مرتجى ياس خضير',
-                                        'عبدالله طالب نعمه',
-                                        'حامد هاشم حميد',
-                                        'عادل ناصر حسين',
-                                        'رافد مهدي جاسم',
-                                        'ثائر رشيد صالح',
-                                        'حامد هاشم كريم',
-                                        'علي ياس بشير',
-                                        'علي خضير حميد',
-                                        'نصير عبدالحسين وحيد',
-                                        'حسين عبدمحمد قاطع',
-                                        'مشتاق نوري سويد',
-                                        'عوني عطية راشد',
-                                        'ليث ابراهيم محمود',
-                                        'حسين علي عبد الكاظم',
-                                        'انمار مدلول',
-                                        'حسين علي حمود',
-                                        'شافي معيوف',
-                                        'حسين عبد محمد',
-                                        'عدي هادي',
-                                        'سعد مدلل',
-                                        'ياس غالي',
-                                        'عقيل عباس',
-                                        'نزار علي',
-                                        'غانم علي',
-                                        'حيدر عطا',
-                                        'هاشم ناصر',
-                                        'وائل مكي',
-                                        'محمد عباس',
-                                        'عماد هاشم',
-                                        'محمد عليوي',
-                                        'بشار رحمن',
-                                        'رسول حمزة',
-                                        'عمر رحمن',
-                                        'محمد علي عبيد',
-                                        'سليم حسن وهاب',
-                                        'ياسر رضا',
-                                        'متعب فاضل',
-                                        'حسن حميد',
-                                        'عباس حميد',
-                                        'محمد علي خليل'
-                                    ],
                                     'supervisor' => [
                                         'حسام حاتم',
                                         'مصطفى تركي',
@@ -358,6 +304,7 @@ $currentUserId = $userData['id'] ?? 0;
                                 foreach ($roles as $role):
                                     $isIssuer = ($role['id'] === 'ptw_issuer');
                                     $isWelding = ($role['id'] === 'welding');
+                                    $isFireSentry = ($role['id'] === 'fire_sentry');
                                     $nameOptions = $roleNameOptions[$role['id']] ?? null;
                                 ?>
                                     <div class="p-4 border rounded-lg bg-gray-50">
@@ -373,6 +320,11 @@ $currentUserId = $userData['id'] ?? 0;
                                             <select
                                                 id="approval_name_welding"
                                                 name="approval_name_welding"
+                                                class="w-full px-3 py-2 border rounded-md mb-2 focus:ring-[#0b6f76] outline-none"></select>
+                                        <?php elseif ($isFireSentry): ?>
+                                            <select
+                                                id="approval_name_fire_sentry"
+                                                name="approval_name_fire_sentry"
                                                 class="w-full px-3 py-2 border rounded-md mb-2 focus:ring-[#0b6f76] outline-none"></select>
                                         <?php elseif ($nameOptions): ?>
                                             <select
@@ -437,6 +389,7 @@ $currentUserId = $userData['id'] ?? 0;
             const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
             const CURRENT_USER_ID = <?= (int)$currentUserId ?>;
             const WELDERS = <?= json_encode($welders, JSON_UNESCAPED_UNICODE) ?>;
+            const FIRE_SENTRIES = <?= json_encode($fireSentries, JSON_UNESCAPED_UNICODE) ?>;
 
             const group1 = [
                 'كسارة', 'طحونة مواد', 'الافران', 'طواحين الاسمنت', 'التعبئة', 'محطة الاساله', 'اخرى'
@@ -528,22 +481,28 @@ $currentUserId = $userData['id'] ?? 0;
                 onChange: () => updateButtonStates()
             });
 
-            // Initialize TomSelect for Welding Name (blocks welders whose inspection expired 18+ months ago)
-            let weldingSelect = new TomSelect('#approval_name_welding', {
-                persist: false,
-                create: false,
-                placeholder: 'اختر الاسم...',
-                valueField: 'name',
-                labelField: 'name',
-                searchField: ['name'],
-                disabledField: 'expired',
-                options: WELDERS,
-                render: {
-                    option: (data, escape) => `<div${data.expired ? ' style="color:#dc2626;"' : ''}>${escape(data.name)}${data.expired ? ' (انتهى الفحص)' : ''}</div>`,
-                    item: (data, escape) => `<div${data.expired ? ' style="color:#dc2626;"' : ''}>${escape(data.name)}</div>`
-                },
-                onChange: () => updateButtonStates()
-            });
+            // Initialize a TomSelect for a person field whose inspection expires after 18 months
+            // (expired people show in red and can't be selected).
+            function createExpiringPersonSelect(selector, data) {
+                return new TomSelect(selector, {
+                    persist: false,
+                    create: false,
+                    placeholder: 'اختر الاسم...',
+                    valueField: 'name',
+                    labelField: 'name',
+                    searchField: ['name'],
+                    disabledField: 'expired',
+                    options: data,
+                    render: {
+                        option: (item, escape) => `<div${item.expired ? ' style="color:#dc2626;"' : ''}>${escape(item.name)}${item.expired ? ' (انتهى الفحص)' : ''}</div>`,
+                        item: (item, escape) => `<div${item.expired ? ' style="color:#dc2626;"' : ''}>${escape(item.name)}</div>`
+                    },
+                    onChange: () => updateButtonStates()
+                });
+            }
+
+            let weldingSelect = createExpiringPersonSelect('#approval_name_welding', WELDERS);
+            let fireSentrySelect = createExpiringPersonSelect('#approval_name_fire_sentry', FIRE_SENTRIES);
 
             // Initialize TomSelect for Assignee
             let assigneeSelect = new TomSelect('#assigned_to', {
@@ -688,6 +647,8 @@ $currentUserId = $userData['id'] ?? 0;
                         const approved = (app.approval_status || '').includes('Approved');
                         if (key === 'welding') {
                             weldingSelect.setValue(name);
+                        } else if (key === 'fire_sentry') {
+                            fireSentrySelect.setValue(name);
                         } else {
                             const nameInput = document.querySelector(`[name="approval_name_${key}"]`);
                             if (nameInput && !nameInput.readOnly) nameInput.value = name;

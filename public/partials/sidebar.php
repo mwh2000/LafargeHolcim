@@ -179,6 +179,7 @@ function renderSidebar($activePage = '')
           <?php endif; ?>
         <?php endforeach; ?>
       </div>
+      <div class="h-28"></div>
     </div>
   </aside>
 
