@@ -71,7 +71,7 @@ try {
             } elseif ($action === 'amDone') {
                 $res = $controller->amDoneAction((int)$input['license_id'], $decoded->id);
             } elseif ($action === 'removeIsolation') {
-                $res = $controller->removeIsolationAction((int)$input['license_id'], $decoded->id);
+                $res = $controller->removeIsolationAction((int)$input['license_id'], $decoded->id, (int)($decoded->role_id ?? 0));
             } elseif ($action === 'reject') {
                 $res = $controller->rejectLicense((int)$input['license_id'], $input['reason'] ?? '', $decoded->id);
             } elseif ($action === 'updateStaffGroups') {

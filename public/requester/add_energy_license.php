@@ -280,7 +280,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const ALL_STEPS = [1, 2, 3, 4, 5, 6, 7, 8];
-            const VCS_STEPS = [1, 2, 4, 5, 8];
+            const VCS_STEPS = [1, 2, 3, 4, 5, 8];
             let activeSteps = ALL_STEPS.slice();
             let currentStep = 1;
             const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
@@ -838,7 +838,7 @@ $nextLicenseNo = 'OHSM-PTW-00' . $nextNoValue;
                     return;
                 }
 
-                if (!vcsSwitch.checked && data.equipments.length === 0) {
+                if (data.equipments.length === 0) {
                     Swal.fire('خطأ', 'يرجى اختيار معدة واحدة على الأقل.', 'error');
                     return;
                 }

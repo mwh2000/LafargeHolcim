@@ -126,11 +126,11 @@ class EnergyInsulationController
                 $data['created_by'] ?? null,
                 $data['requester_name'] ?? null,
                 $data['requester_section'] ?? null,
-                $isVcs ? 'completed' : 'active_isolation',
+                'active_isolation',
                 $data['exact_location'] ?? null,
-                $isVcs ? $now : null,
+                null,
                 $isVcs ? 1 : 0,
-                $isVcs ? null : $now
+                $now
             ]);
 
             $licenseId = $this->conn->lastInsertId();
@@ -182,9 +182,7 @@ class EnergyInsulationController
 
             $this->conn->commit();
 
-            // Send Notification and Email to Area Manager. Sent for VCS licenses too — the
-            // assigned manager only gets a link to view the (already closed) license, no
-            // workflow action depends on them.
+            // Send Notification and Email to Area Manager.
             if ($this->notificationController && !empty($data['area_manager_id'])) {
                 $title = "تم انشاء رخصة العزل من قبل المرخص";
                 $body = "تم إنشاء رخصة عزل طاقة وتم العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A');
@@ -197,9 +195,8 @@ class EnergyInsulationController
                 }
             }
 
-            // Send Notification and Email to Creator. Skipped for VCS licenses — the creator
-            // is the one who just submitted it, so no follow-up notification is needed.
-            if (!$isVcs && $this->notificationController && !empty($data['created_by'])) {
+            // Send Notification and Email to Creator.
+            if ($this->notificationController && !empty($data['created_by'])) {
                 $titleCreator = "تم العزل - Isolation Active";
                 $bodyCreator = "تم تأكيد العزل للمعدة: " . ($data['equipment_name'] ?? 'N/A');
                 $urlCreator = BASE_URL . "/public/requester/view_energy_license.php?id=" . $licenseId;
@@ -593,11 +590,11 @@ class EnergyInsulationController
         }
     }
 
-    public function removeIsolationAction(int $licenseId, int $userId)
+    public function removeIsolationAction(int $licenseId, int $userId, int $userRole = 0)
     {
         try {
             // Fetch license info for notification
-            $stmt = $this->conn->prepare("SELECT area_manager_id, equipment_name, status, license_expiry FROM energy_insulation_license WHERE id = ?");
+            $stmt = $this->conn->prepare("SELECT created_by, area_manager_id, equipment_name, status, license_expiry, is_vcs_isolation FROM energy_insulation_license WHERE id = ?");
             $stmt->execute([$licenseId]);
             $license = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -605,18 +602,25 @@ class EnergyInsulationController
                 return $this->respond(false, 'License not found', null, ['code' => 404], 404);
             }
 
+            if ((int)$license['created_by'] !== $userId && !in_array($userRole, [1, 7])) {
+                return $this->respond(false, 'Unauthorized to remove isolation for this license', null, ['code' => 403], 403);
+            }
+
             $effectiveStatus = $this->getEffectiveStatus($license['status'] ?? null, $license['license_expiry'] ?? null);
             if ($effectiveStatus === 'not_active') {
                 return $this->respond(false, 'لا يمكن رفع العزل لأن وقت انتهاء الرخصة انتهى', null, ['code' => 400], 400);
             }
 
-            // Check if there are any incomplete staff groups
-            $groupCheckStmt = $this->conn->prepare("SELECT COUNT(*) as incomplete_count FROM energy_insulation_staff_group WHERE license_id = ? AND IFNULL(is_done, 0) = 0");
-            $groupCheckStmt->execute([$licenseId]);
-            $incompleteCount = (int)$groupCheckStmt->fetch(PDO::FETCH_ASSOC)['incomplete_count'];
+            // Check if there are any incomplete staff groups. Not applicable to VCS licenses,
+            // which have no "work completed" per-group action to begin with.
+            if (empty($license['is_vcs_isolation'])) {
+                $groupCheckStmt = $this->conn->prepare("SELECT COUNT(*) as incomplete_count FROM energy_insulation_staff_group WHERE license_id = ? AND IFNULL(is_done, 0) = 0");
+                $groupCheckStmt->execute([$licenseId]);
+                $incompleteCount = (int)$groupCheckStmt->fetch(PDO::FETCH_ASSOC)['incomplete_count'];
 
-            if ($incompleteCount > 0) {
-                return $this->respond(false, 'لا يمكن رفع العزل حتى يتم إكمال العمل لجميع المجموعات', null, ['code' => 400], 400);
+                if ($incompleteCount > 0) {
+                    return $this->respond(false, 'لا يمكن رفع العزل حتى يتم إكمال العمل لجميع المجموعات', null, ['code' => 400], 400);
+                }
             }
 
             $stmt = $this->conn->prepare("UPDATE energy_insulation_license SET status = 'completed', isolation_removed_at = NOW(), end_at = NOW() WHERE id = ?");
@@ -908,13 +912,12 @@ class EnergyInsulationController
 
     /**
      * Lets the license creator extend an expired (not-active) license's expiry
-     * date, mirroring hot work permits' finishing-time edit. Not applicable to
-     * VCS licenses, which close immediately on creation and never go not-active.
+     * date, mirroring hot work permits' finishing-time edit.
      */
     public function updateLicenseExpiry(int $licenseId, string $licenseExpiry, int $userId)
     {
         try {
-            $stmt = $this->conn->prepare("SELECT created_by, is_vcs_isolation FROM energy_insulation_license WHERE id = ?");
+            $stmt = $this->conn->prepare("SELECT created_by FROM energy_insulation_license WHERE id = ?");
             $stmt->execute([$licenseId]);
             $license = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -924,10 +927,6 @@ class EnergyInsulationController
 
             if ((int)$license['created_by'] !== $userId) {
                 return $this->respond(false, 'Unauthorized to update this license', null, ['code' => 403], 403);
-            }
-
-            if (!empty($license['is_vcs_isolation'])) {
-                return $this->respond(false, 'لا ينطبق تعديل تاريخ الانتهاء على رخصة عزل VCS', null, ['code' => 403], 403);
             }
 
             $normalized = $this->normalizeLicenseExpiry($licenseExpiry);

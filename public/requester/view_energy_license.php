@@ -343,22 +343,31 @@ $userName = $userData['name'] ?? 'N/A';
                                             </div>
                                         </div>
 
+                                        <!-- VCS Removal Section: same action, no confirmation checkboxes -->
+                                        <div id="vcs-remove-isolation-section" class="hidden bg-green-50 p-6 rounded-lg shadow-md border border-green-200 no-print">
+                                            <button id="vcsRemoveIsolationBtn" class="w-full bg-green-600 text-white py-3 rounded-md hover:bg-green-700 transition font-bold text-lg">
+                                                رفع العزل
+                                            </button>
+                                        </div>
+
 
                                         <!-- Print Completion Confirmation (Visible in PDF when completed) -->
                                         <div id="print-completion-card" class="hidden bg-white border border-gray-200 rounded-lg p-3 mt-2">
                                             <div class="text-right" dir="rtl">
                                                 <h2 class="text-lg font-bold text-[#0b6f76] mb-1 text-right" dir="rtl">طلب رفع العزل - <span id="val-remover-name"></span></h2>
-                                                <p class="text-sm text-[#0b6f76] mb-2">تم الانتهاء من العمل على المعده وتم ازالة كافة الاقفال الشخصية الخاصه للمجموعه وتم تنصيب كافة الواقيات وتنظيف المكان</p>
+                                                <div id="print-completion-details">
+                                                    <p class="text-sm text-[#0b6f76] mb-2">تم الانتهاء من العمل على المعده وتم ازالة كافة الاقفال الشخصية الخاصه للمجموعه وتم تنصيب كافة الواقيات وتنظيف المكان</p>
 
-                                                <div class="space-y-1">
-                                                    <div class="flex items-center gap-3 justify-start" dir="rtl">
-                                                        <input type="checkbox" class="w-4 h-4 text-[#0b6f76] border-gray-300 rounded" onclick="return false;" checked>
-                                                        <span class="text-sm font-medium text-gray-700">اطلب رفع العزل بعد ان تم التأكيد ان جميع العاملين خارج المعدة</span>
-                                                    </div>
+                                                    <div class="space-y-1">
+                                                        <div class="flex items-center gap-3 justify-start" dir="rtl">
+                                                            <input type="checkbox" class="w-4 h-4 text-[#0b6f76] border-gray-300 rounded" onclick="return false;" checked>
+                                                            <span class="text-sm font-medium text-gray-700">اطلب رفع العزل بعد ان تم التأكيد ان جميع العاملين خارج المعدة</span>
+                                                        </div>
 
-                                                    <div class="flex items-center gap-3 justify-start" dir="rtl">
-                                                        <input type="checkbox" class="w-4 h-4 text-[#0b6f76] border-gray-300 rounded" onclick="return false;" checked>
-                                                        <span class="text-sm font-medium text-gray-700">اطلب ازالة قفل القسم من صندوق العزل</span>
+                                                        <div class="flex items-center gap-3 justify-start" dir="rtl">
+                                                            <input type="checkbox" class="w-4 h-4 text-[#0b6f76] border-gray-300 rounded" onclick="return false;" checked>
+                                                            <span class="text-sm font-medium text-gray-700">اطلب ازالة قفل القسم من صندوق العزل</span>
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -784,8 +793,8 @@ $userName = $userData['name'] ?? 'N/A';
                     const canManageLicense = isLicenseCreator || IS_ADMIN;
                     const isVcs = Number(data.is_vcs_isolation) === 1;
                     const effectiveStatus = data.effective_status || data.status;
-                    // Normal (non-VCS) licenses lock all edit actions once expired (not_active) or closed.
-                    const editingLocked = !isVcs && (effectiveStatus === 'not_active' || effectiveStatus === 'close');
+                    // Locks all edit actions once expired (not_active) or closed.
+                    const editingLocked = (effectiveStatus === 'not_active' || effectiveStatus === 'close');
 
                     // Show AM actions only when the license is still pending and the current user is allowed to act.
                     if (data.status === 'pending' && canManageLicense) {
@@ -808,21 +817,28 @@ $userName = $userData['name'] ?? 'N/A';
 
                     // Let the creator extend an expired license's expiry date, same as hot work permits.
                     const editExpiryBtn = document.getElementById('edit-expiry-btn');
-                    if (editExpiryBtn && !isVcs && canManageLicense && effectiveStatus === 'not_active') {
+                    if (editExpiryBtn && canManageLicense && effectiveStatus === 'not_active') {
                         editExpiryBtn.classList.remove('hidden');
                         editExpiryBtn.addEventListener('click', () => openEditExpiryModal(data.license_expiry));
                     }
 
                     // Show requester actions for allowed users while the license is active.
                     const requesterSection = document.getElementById('requester-action-section');
+                    const canRemoveIsolation = (effectiveStatus === 'open' || data.status === 'active_isolation') && canManageLicense && effectiveStatus !== 'not_active';
                     if (requesterSection) {
-                        if (!isVcs && (effectiveStatus === 'open' || data.status === 'active_isolation') && canManageLicense && effectiveStatus !== 'not_active') {
+                        if (!isVcs && canRemoveIsolation) {
                             requesterSection.classList.remove('hidden');
                             requesterSection.classList.add('no-print');
                         } else {
                             requesterSection.classList.add('hidden');
                             requesterSection.classList.remove('no-print');
                         }
+                    }
+
+                    // VCS licenses skip the confirmation checkboxes — just a plain "remove isolation" button.
+                    const vcsRemoveSection = document.getElementById('vcs-remove-isolation-section');
+                    if (vcsRemoveSection) {
+                        vcsRemoveSection.classList.toggle('hidden', !(isVcs && canRemoveIsolation));
                     }
 
                     if (data.am_approved_at) {
@@ -860,13 +876,10 @@ $userName = $userData['name'] ?? 'N/A';
             const canManageLicense = isLicenseCreator || IS_ADMIN;
             const isVcs = Number(data.is_vcs_isolation) === 1;
             const effectiveStatus = data.effective_status || (data.status === 'completed' ? 'close' : data.status === 'active_isolation' && data.license_expiry && new Date(data.license_expiry) < new Date() ? 'not_active' : data.status);
-            const editingLocked = !isVcs && (effectiveStatus === 'not_active' || effectiveStatus === 'close');
+            const editingLocked = (effectiveStatus === 'not_active' || effectiveStatus === 'close');
 
             document.getElementById('val-no').textContent = data.equipment_no;
             document.getElementById('val-license-type').textContent = isVcs ? 'عزل VCS' : 'عادية';
-
-            const equipmentsCard = document.getElementById('equipments-card');
-            if (equipmentsCard) equipmentsCard.classList.toggle('hidden', isVcs);
 
             document.getElementById('val-expiry').textContent = data.license_expiry ? String(data.license_expiry).replace('T', ' ') : '-';
 
@@ -1047,15 +1060,17 @@ $userName = $userData['name'] ?? 'N/A';
                 }
             }
 
-            // Print Completion Section (only show when fully completed) — not applicable to VCS
-            // licenses since no isolation-removal request was ever submitted for them.
+            // Print Completion Section (only show when fully completed)
             const pcCard = document.getElementById('print-completion-card');
-            if (!isVcs && data.status === 'completed' && CURRENT_USER_ROLE != '3') {
+            if (data.status === 'completed' && CURRENT_USER_ROLE != '3') {
                 if (pcCard) {
                     pcCard.classList.remove('hidden');
                     document.getElementById('val-remover-name').textContent = data.creator_name;
                     setSignatureImage('val-remover-signature', data.creator_signature);
                 }
+                // The work-completion wording and lock-removal checkboxes don't apply to VCS licenses.
+                const pcDetails = document.getElementById('print-completion-details');
+                if (pcDetails) pcDetails.classList.toggle('hidden', isVcs);
             } else {
                 if (pcCard) pcCard.classList.add('hidden');
             }
@@ -1119,6 +1134,25 @@ $userName = $userData['name'] ?? 'N/A';
 
         // Requester Removal Button Logic
         document.getElementById('removeIsolationBtn').addEventListener('click', async () => {
+            const result = await Swal.fire({
+                title: 'تأكيد رفع العزل',
+                text: 'تم رفع العزل وارجاع الطاقات الى حالة التشغيل من قبل العازل',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'نعم، تأكيد رفع العزل',
+                cancelButtonText: 'إلغاء',
+                confirmButtonColor: '#059669'
+            });
+
+            if (result.isConfirmed) {
+                submitAction('removeIsolation', {
+                    license_id: LICENSE_ID
+                });
+            }
+        });
+
+        // VCS Removal Button Logic (same action as above, no confirmation checkboxes)
+        document.getElementById('vcsRemoveIsolationBtn').addEventListener('click', async () => {
             const result = await Swal.fire({
                 title: 'تأكيد رفع العزل',
                 text: 'تم رفع العزل وارجاع الطاقات الى حالة التشغيل من قبل العازل',
