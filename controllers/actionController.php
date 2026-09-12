@@ -332,6 +332,17 @@ class ActionController
             $baseConditions[] = "a.assigned_user_id IN (" . implode(',', $placeholders) . ")";
         }
 
+        if (!empty($filters['created_by'])) {
+            $ids = (array) $filters['created_by'];
+            $placeholders = [];
+            foreach ($ids as $i => $id) {
+                $key = ":created_by_$i";
+                $placeholders[] = $key;
+                $params[$key] = (int)$id;
+            }
+            $baseConditions[] = "a.created_by IN (" . implode(',', $placeholders) . ")";
+        }
+
         if (!empty($filters['manager_id'])) {
             $ids = (array) $filters['manager_id'];
             $placeholders = [];
@@ -954,6 +965,142 @@ class ActionController
         return $this->respond(true, 'Supervisors retrieved successfully', ['users' => $rows]);
     }
 
+    /**
+     * ✅ Per-user action counts for the dashboard's user filter and leaderboard.
+     * Counts actions each user CREATED (not assigned to them). Includes every
+     * active user — even those with zero matching actions — sorted by count
+     * descending. Action-level filters (dates, category, etc.) live in the JOIN
+     * condition rather than WHERE so zero-count users are not dropped.
+     */
+    public function getUserActionCounts(array $filters = [])
+    {
+        $joinConditions = ["a.created_by = u.id"];
+        $whereConditions = ["u.is_active = 1"];
+        $params = [];
+
+        if (!empty($filters['from_date'])) {
+            $joinConditions[] = "a.created_at >= :from_date";
+            $params[':from_date'] = $filters['from_date'] . " 00:00:00";
+        }
+
+        if (!empty($filters['to_date'])) {
+            $joinConditions[] = "a.created_at <= :to_date";
+            $params[':to_date'] = $filters['to_date'] . " 23:59:59";
+        }
+
+        if (!empty($filters['type_category_id'])) {
+            $ids = (array) $filters['type_category_id'];
+            $placeholders = [];
+            foreach ($ids as $i => $id) {
+                $key = ":type_cat_$i";
+                $placeholders[] = $key;
+                $params[$key] = (int) $id;
+            }
+            $joinConditions[] = "a.type_id IN (SELECT id FROM types WHERE category_id IN (" . implode(',', $placeholders) . "))";
+        }
+
+        if (!empty($filters['incident_classfication'])) {
+            $values = (array) $filters['incident_classfication'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":incident_class_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $joinConditions[] = "a.incident_classfication IN (" . implode(',', $placeholders) . ")";
+        }
+
+        if (!empty($filters['incident'])) {
+            $values = (array) $filters['incident'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":incident_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $joinConditions[] = "a.incident IN (" . implode(',', $placeholders) . ")";
+        }
+
+        if (!empty($filters['environment'])) {
+            $values = (array) $filters['environment'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":environment_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $joinConditions[] = "a.environment IN (" . implode(',', $placeholders) . ")";
+        }
+
+        if (!empty($filters['group'])) {
+            $values = (array) $filters['group'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":group_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $joinConditions[] = "a.`group` IN (" . implode(',', $placeholders) . ")";
+        }
+
+        if (isset($filters['status']) && $filters['status'] !== '') {
+            if ($filters['status'] === 'overdue') {
+                $joinConditions[] = "a.status = 'open' AND a.expiry_date < CURDATE()";
+            } elseif ($filters['status'] === 'open') {
+                $joinConditions[] = "a.status = 'open' AND a.expiry_date >= CURDATE()";
+            } else {
+                $joinConditions[] = "a.status = :status";
+                $params[':status'] = $filters['status'];
+            }
+        }
+
+        if (!empty($filters['department'])) {
+            $values = (array) $filters['department'];
+            $placeholders = [];
+            foreach ($values as $i => $v) {
+                $key = ":dept_$i";
+                $placeholders[] = $key;
+                $params[$key] = $v;
+            }
+            $whereConditions[] = "u.department IN (" . implode(',', $placeholders) . ")";
+        }
+
+        if (!empty($filters['manager_id'])) {
+            $ids = (array) $filters['manager_id'];
+            $placeholders = [];
+            foreach ($ids as $i => $id) {
+                $key = ":mgr_$i";
+                $placeholders[] = $key;
+                $params[$key] = (int) $id;
+            }
+            $whereConditions[] = "u.manager_id IN (" . implode(',', $placeholders) . ")";
+        }
+
+        $joinOn = implode(' AND ', $joinConditions);
+        $where = ' WHERE ' . implode(' AND ', $whereConditions);
+
+        $limitSql = '';
+        if (!empty($filters['limit'])) {
+            $limitSql = ' LIMIT ' . (int) $filters['limit'];
+        }
+
+        $sql = "
+            SELECT u.id, u.name, COUNT(a.id) AS action_count
+            FROM users u
+            LEFT JOIN actions a ON $joinOn
+            $where
+            GROUP BY u.id, u.name
+            ORDER BY action_count DESC, u.name ASC
+            $limitSql
+        ";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return $this->respond(true, 'User action counts retrieved successfully', ['users' => $rows]);
+    }
+
     /** ✅ Get Statistics about Actions */
     public function getStatistics(array $filters = [])
     {
@@ -997,6 +1144,18 @@ class ActionController
                 $params[$key] = (int) $id;
             }
             $baseConditions[] = "a.assigned_user_id IN (" . implode(',', $placeholders) . ")";
+        }
+
+        // فلترة حسب منشئ الأكشن (dashboard's user filter)
+        if (!empty($filters['created_by'])) {
+            $ids = (array) $filters['created_by'];
+            $placeholders = [];
+            foreach ($ids as $i => $id) {
+                $key = ":created_by_$i";
+                $placeholders[] = $key;
+                $params[$key] = (int) $id;
+            }
+            $baseConditions[] = "a.created_by IN (" . implode(',', $placeholders) . ")";
         }
 
         // ✅ فلترة حسب المدير (manager_id) — يدعم manager_id[]=1&manager_id[]=2 أو manager_id=1

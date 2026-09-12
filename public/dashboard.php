@@ -64,6 +64,10 @@ require_once __DIR__ . '/helpers/authCheck.php';
 
                     <!-- =بقية الفلاتر -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <?php if (in_array((int)($_COOKIE['user_type'] ?? 0), [1, 3, 5, 6, 7], true)): ?>
+                            <select id="user_filter" class="w-full px-3 py-2 border rounded-md"></select>
+                        <?php endif; ?>
+
                         <select id="type_category" multiple
                             class="multi-select w-full px-3 py-2 border rounded-md"></select>
 
@@ -144,6 +148,25 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 <!-- ================= STATS ================= -->
                 <div id="statsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"></div>
 
+                <!-- ================= TOP USERS ================= -->
+                <?php if (in_array((int)($_COOKIE['user_type'] ?? 0), [1, 3, 5, 6, 7], true)): ?>
+                    <div id="topUsersContainer" class="bg-white rounded-lg shadow p-6 mb-6 hidden">
+                        <h2 class="text-lg font-semibold text-gray-700 mb-4">Top 10 Users by Actions</h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm text-left text-gray-600">
+                                <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
+                                    <tr>
+                                        <th class="px-4 py-3 w-12">#</th>
+                                        <th class="px-4 py-3">User</th>
+                                        <th class="px-4 py-3 text-right">Total Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="topUsersTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
             </main>
         </div>
     </div>
@@ -158,7 +181,8 @@ require_once __DIR__ . '/helpers/authCheck.php';
         let actionsStatusChart = null;
 
         /* ================= INSTANCES TOMSELECT ================= */
-        let typeCategorySelect, incidentClassSelect, incident, environmentSelect, groupSelect, departmentSelect, supervisorSelect;
+        let typeCategorySelect, incidentClassSelect, incident, environmentSelect, groupSelect, departmentSelect, supervisorSelect, userSelect;
+        let userActionCounts = [];
 
         /* ================= HELPERS ================= */
         function getSelectedValues(selectEl) {
@@ -206,6 +230,73 @@ require_once __DIR__ . '/helpers/authCheck.php';
             } catch (e) {
                 console.error("Failed to load supervisors", e);
             }
+        }
+
+        /* ================= USER FILTER (all users, sorted by total actions) ================= */
+        async function loadUserActionCounts() {
+            const el = document.getElementById("user_filter");
+            if (!el) return;
+            try {
+                const res = await fetch("../api/actions.php?action=getUserActionCounts", {
+                    headers: {
+                        "Authorization": `Bearer ${TOKEN}`
+                    }
+                });
+                const data = await res.json();
+                if (!data.success) return;
+
+                userActionCounts = data.data.users || [];
+
+                el.innerHTML = '<option value=""></option>';
+                userActionCounts.forEach(u => {
+                    const opt = document.createElement("option");
+                    opt.value = u.id;
+                    opt.textContent = `${u.name} (${u.action_count})`;
+                    el.appendChild(opt);
+                });
+
+                if (userSelect) userSelect.destroy();
+                userSelect = new TomSelect(el, {
+                    maxItems: 1,
+                    placeholder: "Filter by user...",
+                    onChange: () => loadStatistics()
+                });
+
+                renderTopUsersTable();
+            } catch (e) {
+                console.error("Failed to load user action counts", e);
+            }
+        }
+
+        function renderTopUsersTable() {
+            const tbody = document.getElementById("topUsersTableBody");
+            const container = document.getElementById("topUsersContainer");
+            if (!tbody || !container) return;
+
+            const top10 = userActionCounts.slice(0, 10);
+            container.classList.remove("hidden");
+
+            if (top10.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-gray-400">No data</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = top10.map((u, i) => `
+                <tr class="border-b hover:bg-gray-50 cursor-pointer transition" onclick="selectUserFilter(${u.id})">
+                    <td class="px-4 py-3 font-medium text-gray-500">${i + 1}</td>
+                    <td class="px-4 py-3 font-medium text-gray-800">${u.name}</td>
+                    <td class="px-4 py-3 text-right font-semibold text-[#0b6f76]">${u.action_count}</td>
+                </tr>
+            `).join('');
+        }
+
+        function selectUserFilter(userId) {
+            if (!userSelect) return;
+            userSelect.setValue(String(userId));
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
         }
 
         /* ================= LOAD TYPE CATEGORIES ================= */
@@ -327,6 +418,10 @@ require_once __DIR__ . '/helpers/authCheck.php';
             const sup = document.getElementById("supervisor_filter");
             if (sup) {
                 getSelectedValues(sup).forEach(v => params.append("manager_id[]", v));
+            }
+
+            if (userSelect && userSelect.getValue()) {
+                params.append("created_by", userSelect.getValue());
             }
 
             return params.toString();
@@ -471,10 +566,12 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 department.forEach(val => params.append("department[]", val));
                 supervisorIds.forEach(val => params.append("manager_id[]", val));
 
-                // Admin → يشوف الكل (لا فلترة)
                 if (!IS_ADMIN) {
                     // User عادي → يشوف أكشناته فقط
                     params.append("assigned_user_id", USER_ID);
+                } else if (userSelect && userSelect.getValue()) {
+                    // Admin اختار مستخدم معين من فلتر المستخدمين → يشوف الأكشنات الي أنشأها هذا المستخدم
+                    params.append("created_by", userSelect.getValue());
                 }
 
 
@@ -530,6 +627,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
         document.addEventListener("DOMContentLoaded", () => {
             loadTypeCategories(); // خيارات ديناميكية
             loadSupervisorOptions();
+            loadUserActionCounts();
             initStaticSelects(); // تهيئة الحقول الثابتة
             loadStatistics();
 

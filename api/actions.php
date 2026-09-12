@@ -48,6 +48,16 @@ try {
                 sendJson($res);
             }
 
+            if ($action === 'getUserActionCounts') {
+                $roleId = isset($decoded->role_id) ? (int) $decoded->role_id : 0;
+                if (!in_array($roleId, [1, 3, 5, 6, 7], true)) {
+                    http_response_code(403);
+                    sendJson(['success' => false, 'message' => 'Access denied']);
+                }
+                $res = $controller->getUserActionCounts($filters);
+                sendJson($res);
+            }
+
             if ($action === 'exportExcel') {
                 $data = $controller->getAll($filters, true); // 👈 دالة ترجع array
 
