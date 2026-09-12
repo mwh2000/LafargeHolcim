@@ -151,10 +151,10 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 <!-- ================= TOP USERS ================= -->
                 <?php if (in_array((int)($_COOKIE['user_type'] ?? 0), [1, 3, 5, 6, 7], true)): ?>
                     <div id="topUsersContainer" class="bg-white rounded-lg shadow p-6 mb-6 hidden">
-                        <h2 class="text-lg font-semibold text-gray-700 mb-4">Top 10 Users by Actions</h2>
-                        <div class="overflow-x-auto">
+                        <h2 class="text-lg font-semibold text-gray-700 mb-4">Users by Actions</h2>
+                        <div class="overflow-x-auto max-h-[28rem] overflow-y-auto">
                             <table class="min-w-full text-sm text-left text-gray-600">
-                                <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
+                                <thead class="bg-gray-100 text-gray-700 uppercase text-xs sticky top-0">
                                     <tr>
                                         <th class="px-4 py-3 w-12">#</th>
                                         <th class="px-4 py-3">User</th>
@@ -273,15 +273,14 @@ require_once __DIR__ . '/helpers/authCheck.php';
             const container = document.getElementById("topUsersContainer");
             if (!tbody || !container) return;
 
-            const top10 = userActionCounts.slice(0, 10);
             container.classList.remove("hidden");
 
-            if (top10.length === 0) {
+            if (userActionCounts.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-gray-400">No data</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = top10.map((u, i) => `
+            tbody.innerHTML = userActionCounts.map((u, i) => `
                 <tr class="border-b hover:bg-gray-50 cursor-pointer transition" onclick="selectUserFilter(${u.id})">
                     <td class="px-4 py-3 font-medium text-gray-500">${i + 1}</td>
                     <td class="px-4 py-3 font-medium text-gray-800">${u.name}</td>
