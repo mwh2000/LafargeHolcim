@@ -1,6 +1,33 @@
 <?php
 $departments = [
-    "Qualty", "Method", "process", "quary", "Dispatch", "Service", "قسم التجهيز", "Warehouses", "Mechanecal", "L&D", "Project", "Project & Improvement", "Plant service", "Hfo&Dispatch", "Quarry & Crusher", "Shift Management", "CM Management", "Clinker", "Utility", "Electrical", "Service- fire fighting", "Packing and CM's", "Packing", "Plant Management", "Maintenance Mangar", "Enviroment", "Production", "Operation", "Health", "Crusher", "Energy", "Warehouse&ME"
+    "Dispatch",
+    "Process",
+    "Mechanical",
+    "Methods",
+    "HR",
+    "Electric",
+    "Packing and CM's",
+    "Canten",
+    "Quality",
+    "Production",
+    "Quarry",
+    "Dispatch",
+    "Service- fire fighting",
+    "Warehouses",
+    "L&D",
+    "Project",
+    "Plant service",
+    "Quarry & Crusher",
+    "Shift Management",
+    "Utility",
+    "Packing",
+    "Environment",
+    "Operation",
+    "Health",
+    "Safety",
+    "Energy",
+    "Clinker",
+    "Warehouse&ME"
 ];
 $departments = array_unique($departments);
 ?>

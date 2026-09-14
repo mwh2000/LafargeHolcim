@@ -12,4 +12,11 @@ return [
     ['name' => 'علي صباح محمد', 'inspection_date' => '2025-05-18'],
     ['name' => 'كاظم علي مجيد', 'inspection_date' => '2025-05-14'],
     ['name' => 'مشتاق نوري سويد المحمد', 'inspection_date' => '2025-10-15'],
+    ['name' => 'علي عامر حميد', 'inspection_date' => '2026-04-20'],
+    ['name' => 'صادق يوسف هاشم', 'inspection_date' => '2025-11-24'],
+    ['name' => 'زيد علاء', 'inspection_date' => '2025-06-12'],
+    ['name' => 'غالب مزهر', 'inspection_date' => '2025-10-15'],
+    ['name' => 'قاسم فلاح', 'inspection_date' => '2025-06-29'],
+    ['name' => 'ياسر مكي', 'inspection_date' => '2025-06-29'],
+    ['name' => 'موسى ياسر', 'inspection_date' => '2026-06-14'],
 ];

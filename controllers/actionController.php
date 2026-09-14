@@ -420,7 +420,7 @@ class ActionController
                 $placeholders[] = $key;
                 $params[$key] = $v;
             }
-            $baseConditions[] = "u.department IN (" . implode(',', $placeholders) . ")";
+            $baseConditions[] = "u2.department IN (" . implode(',', $placeholders) . ")";
         }
 
         if (isset($filters['status']) && $filters['status'] !== '') {
@@ -445,9 +445,20 @@ class ActionController
          * 2️⃣ Dynamic Sorting
          * ========================= */
         $allowedSortColumns = [
-            'id', 'status', 'description', 'action', 'group', 'start_date', 'expiry_date', 
-            'visit_duration', 'priority', 'created_at',
-            'type_name', 'assigned_user_name', 'assigned_user_group', 'created_by_name'
+            'id',
+            'status',
+            'description',
+            'action',
+            'group',
+            'start_date',
+            'expiry_date',
+            'visit_duration',
+            'priority',
+            'created_at',
+            'type_name',
+            'assigned_user_name',
+            'assigned_user_group',
+            'created_by_name'
         ];
 
         $sortBy = 'a.created_at';
@@ -570,12 +581,12 @@ class ActionController
         if (!empty($filters['department'])) {
             $values = (array)$filters['department'];
             $placeholders = str_repeat('?,', count($values) - 1) . '?';
-            $query .= " AND u.department IN ($placeholders)";
+            $query .= " AND u2.department IN ($placeholders)";
             $params = array_merge($params, $values);
         }
 
         // 1️⃣ جلب الإجمالي للمساعدة في الـ Pagination
-        $countQuery = "SELECT COUNT(*) FROM actions a LEFT JOIN users u ON a.assigned_user_id = u.id WHERE a.created_by = ?";
+        $countQuery = "SELECT COUNT(*) FROM actions a LEFT JOIN users u ON a.assigned_user_id = u.id LEFT JOIN users u2 ON a.created_by = u2.id WHERE a.created_by = ?";
         // نحتاج بناء نفس شروط البحث في الـ count query
         $countParams = [$userId];
         $countWhere = "";
@@ -596,7 +607,7 @@ class ActionController
         if (!empty($filters['department'])) {
             $values = (array)$filters['department'];
             $placeholders = str_repeat('?,', count($values) - 1) . '?';
-            $countWhere .= " AND u.department IN ($placeholders)";
+            $countWhere .= " AND u2.department IN ($placeholders)";
             $countParams = array_merge($countParams, $values);
         }
 
@@ -610,8 +621,15 @@ class ActionController
         $offset = ($page - 1) * $limit;
 
         $allowedSortColumns = [
-            'id', 'status', 'description', 'action', 'expiry_date', 'created_at',
-            'type_name', 'assigned_user_name', 'created_by_name'
+            'id',
+            'status',
+            'description',
+            'action',
+            'expiry_date',
+            'created_at',
+            'type_name',
+            'assigned_user_name',
+            'created_by_name'
         ];
 
         $sortBy = 'a.created_at';
@@ -732,7 +750,7 @@ class ActionController
                 $placeholders[] = $key;
                 $params[$key] = $v;
             }
-            $baseConditions[] = "u.department IN (" . implode(',', $placeholders) . ")";
+            $baseConditions[] = "u2.department IN (" . implode(',', $placeholders) . ")";
         }
 
         if (isset($filters['status']) && $filters['status'] !== '') {
@@ -762,9 +780,19 @@ class ActionController
          * 2️⃣ Dynamic Sorting
          * ========================= */
         $allowedSortColumns = [
-            'id', 'status', 'description', 'action', 'group', 'start_date', 'expiry_date', 
-            'visit_duration', 'priority', 'created_at',
-            'type_name', 'assigned_user_name', 'created_by_name'
+            'id',
+            'status',
+            'description',
+            'action',
+            'group',
+            'start_date',
+            'expiry_date',
+            'visit_duration',
+            'priority',
+            'created_at',
+            'type_name',
+            'assigned_user_name',
+            'created_by_name'
         ];
 
         $sortBy = 'a.created_at';
@@ -902,8 +930,15 @@ class ActionController
         $offset = ($page - 1) * $limit;
 
         $allowedSortColumns = [
-            'id', 'status', 'description', 'action', 'expiry_date', 'created_at',
-            'type_name', 'assigned_user_name', 'created_by_name'
+            'id',
+            'status',
+            'description',
+            'action',
+            'expiry_date',
+            'created_at',
+            'type_name',
+            'assigned_user_name',
+            'created_by_name'
         ];
 
         $sortBy = 'a.created_at';
@@ -1062,7 +1097,7 @@ class ActionController
                 $placeholders[] = $key;
                 $params[$key] = $v;
             }
-            $whereConditions[] = "u.department IN (" . implode(',', $placeholders) . ")";
+            $whereConditions[] = "u2.department IN (" . implode(',', $placeholders) . ")";
         }
 
         if (!empty($filters['manager_id'])) {
@@ -1235,7 +1270,7 @@ class ActionController
             $baseConditions[] = "a.`group` IN (" . implode(',', $placeholders) . ")";
         }
 
-        // Department
+        // Department: filter on the department of the user who created the action
         if (!empty($filters['department'])) {
             $values = (array) $filters['department'];
             $placeholders = [];
@@ -1244,7 +1279,7 @@ class ActionController
                 $placeholders[] = $key;
                 $params[$key] = $v;
             }
-            $baseConditions[] = "u.department IN (" . implode(',', $placeholders) . ")";
+            $baseConditions[] = "u2.department IN (" . implode(',', $placeholders) . ")";
         }
 
         $baseWhere = $baseConditions
@@ -1258,6 +1293,7 @@ class ActionController
         SELECT COUNT(*)
         FROM actions a
         LEFT JOIN users u ON a.assigned_user_id = u.id
+        LEFT JOIN users u2 ON a.created_by = u2.id
         LEFT JOIN types t ON a.type_id = t.id
         LEFT JOIN type_categories tc ON t.category_id = tc.id
         WHERE 1=1
@@ -1274,6 +1310,7 @@ class ActionController
         SELECT COUNT(*)
         FROM actions a
         LEFT JOIN users u ON a.assigned_user_id = u.id
+        LEFT JOIN users u2 ON a.created_by = u2.id
         LEFT JOIN types t ON a.type_id = t.id
         LEFT JOIN type_categories tc ON t.category_id = tc.id
         WHERE a.status = 'open'
@@ -1291,6 +1328,7 @@ class ActionController
         SELECT COUNT(*)
         FROM actions a
         LEFT JOIN users u ON a.assigned_user_id = u.id
+        LEFT JOIN users u2 ON a.created_by = u2.id
         LEFT JOIN types t ON a.type_id = t.id
         LEFT JOIN type_categories tc ON t.category_id = tc.id
         WHERE a.status = 'closed'
@@ -1307,6 +1345,7 @@ class ActionController
         SELECT COUNT(*)
         FROM actions a
         LEFT JOIN users u ON a.assigned_user_id = u.id
+        LEFT JOIN users u2 ON a.created_by = u2.id
         LEFT JOIN types t ON a.type_id = t.id
         LEFT JOIN type_categories tc ON t.category_id = tc.id
         WHERE a.status = 'open'
@@ -1327,6 +1366,7 @@ class ActionController
         FROM types t
         LEFT JOIN actions a ON a.type_id = t.id
         LEFT JOIN users u ON a.assigned_user_id = u.id
+        LEFT JOIN users u2 ON a.created_by = u2.id
         LEFT JOIN type_categories tc ON t.category_id = tc.id
         WHERE 1=1
         $baseWhere
