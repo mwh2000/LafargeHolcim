@@ -183,9 +183,12 @@ $currentUserId = $userData['id'] ?? 0;
                                                     <?php if ($permit['id'] === 'energy_isolation'): ?>
                                                         <input type="hidden" name="permit_image_<?= $permit['id'] ?>" id="permit_image_path_<?= $permit['id'] ?>">
                                                         <input type="file" accept="image/*" id="permit_image_input_<?= $permit['id'] ?>" class="hidden">
-                                                        <div class="flex items-center gap-2">
-                                                            <button type="button" id="permit_image_btn_<?= $permit['id'] ?>" class="text-xs text-[#0b6f76] underline whitespace-nowrap">إرفاق صورة</button>
-                                                            <img id="permit_image_preview_<?= $permit['id'] ?>" src="" alt="صورة <?= $permit['label_ar'] ?>" class="hidden h-12 w-12 object-cover rounded border cursor-pointer">
+                                                        <div class="flex flex-wrap items-center gap-1.5 max-w-[110px] sm:max-w-none">
+                                                            <img id="permit_image_preview_<?= $permit['id'] ?>" src="" alt="صورة <?= $permit['label_ar'] ?>" class="hidden h-10 w-10 object-cover rounded border cursor-pointer shrink-0">
+                                                            <div class="flex flex-col items-start gap-1">
+                                                                <button type="button" id="permit_image_btn_<?= $permit['id'] ?>" class="text-xs text-[#0b6f76] underline whitespace-nowrap">إرفاق صورة</button>
+                                                                <button type="button" id="permit_image_remove_<?= $permit['id'] ?>" class="hidden text-xs text-red-600 underline whitespace-nowrap">إزالة</button>
+                                                            </div>
                                                         </div>
                                                     <?php endif; ?>
                                                 </td>
@@ -221,8 +224,13 @@ $currentUserId = $userData['id'] ?? 0;
                                                 <?php if ($index === 5): ?>
                                                     <input type="hidden" name="control_measure_image_<?= $index ?>" id="control_measure_image_path_<?= $index ?>">
                                                     <input type="file" accept="image/*" id="control_measure_image_input_<?= $index ?>" class="hidden">
-                                                    <button type="button" id="control_measure_image_btn_<?= $index ?>" class="text-xs text-[#0b6f76] underline whitespace-nowrap">إرفاق صورة</button>
-                                                    <img id="control_measure_image_preview_<?= $index ?>" src="" alt="صورة تقييم المخاطر" class="hidden h-12 w-12 object-cover rounded border cursor-pointer">
+                                                    <div class="flex flex-wrap items-center gap-1.5">
+                                                        <img id="control_measure_image_preview_<?= $index ?>" src="" alt="صورة تقييم المخاطر" class="hidden h-10 w-10 object-cover rounded border cursor-pointer shrink-0">
+                                                        <div class="flex flex-col items-start gap-1">
+                                                            <button type="button" id="control_measure_image_btn_<?= $index ?>" class="text-xs text-[#0b6f76] underline whitespace-nowrap">إرفاق صورة</button>
+                                                            <button type="button" id="control_measure_image_remove_<?= $index ?>" class="hidden text-xs text-red-600 underline whitespace-nowrap">إزالة</button>
+                                                        </div>
+                                                    </div>
                                                 <?php endif; ?>
                                             </div>
                                         </div>
@@ -405,6 +413,18 @@ $currentUserId = $userData['id'] ?? 0;
             const indicators = document.querySelectorAll('.step-indicator');
             const contents = document.querySelectorAll('.step-content');
 
+            // Toggles a btnPrefix/key image-upload control between "attach" and "replace" state,
+            // based on whether its hidden path input currently holds a value.
+            function refreshImageUploadUI(btnPrefix, key) {
+                const btn = document.getElementById(`${btnPrefix}${key}`);
+                const pathInput = document.getElementById(`${btnPrefix.replace('_btn_', '_path_')}${key}`);
+                const removeBtn = document.getElementById(`${btnPrefix.replace('_btn_', '_remove_')}${key}`);
+                if (!btn || !pathInput) return;
+                const hasImage = !!pathInput.value;
+                btn.textContent = hasImage ? 'استبدال' : 'إرفاق صورة';
+                if (removeBtn) removeBtn.classList.toggle('hidden', !hasImage);
+            }
+
             // Generic wiring for inline image-upload buttons (additional permits, control measures, ...)
             function wireImageUploadButtons(btnPrefix, onUploaded) {
                 document.querySelectorAll(`[id^="${btnPrefix}"]`).forEach(btn => {
@@ -412,6 +432,9 @@ $currentUserId = $userData['id'] ?? 0;
                     const fileInput = document.getElementById(`${btnPrefix.replace('_btn_', '_input_')}${key}`);
                     const pathInput = document.getElementById(`${btnPrefix.replace('_btn_', '_path_')}${key}`);
                     const preview = document.getElementById(`${btnPrefix.replace('_btn_', '_preview_')}${key}`);
+                    const removeBtn = document.getElementById(`${btnPrefix.replace('_btn_', '_remove_')}${key}`);
+
+                    refreshImageUploadUI(btnPrefix, key);
 
                     btn.addEventListener('click', () => fileInput.click());
 
@@ -419,7 +442,6 @@ $currentUserId = $userData['id'] ?? 0;
                         const file = fileInput.files[0];
                         if (!file) return;
 
-                        const originalText = btn.textContent;
                         btn.disabled = true;
                         btn.textContent = 'جاري الرفع...';
                         try {
@@ -445,8 +467,8 @@ $currentUserId = $userData['id'] ?? 0;
                             Swal.fire('خطأ', 'فشل رفع الصورة', 'error');
                         } finally {
                             btn.disabled = false;
-                            btn.textContent = originalText;
                             fileInput.value = '';
+                            refreshImageUploadUI(btnPrefix, key);
                         }
                     });
 
@@ -459,6 +481,16 @@ $currentUserId = $userData['id'] ?? 0;
                             width: 'auto'
                         });
                     });
+
+                    if (removeBtn) {
+                        removeBtn.addEventListener('click', () => {
+                            pathInput.value = '';
+                            preview.src = '';
+                            preview.classList.add('hidden');
+                            fileInput.value = '';
+                            refreshImageUploadUI(btnPrefix, key);
+                        });
+                    }
                 });
             }
 
@@ -582,6 +614,7 @@ $currentUserId = $userData['id'] ?? 0;
                                         preview.src = `../../public/${ap.image}`;
                                         preview.classList.remove('hidden');
                                     }
+                                    refreshImageUploadUI('permit_image_btn_', catalogId);
                                 }
                             }
                         });
@@ -611,6 +644,7 @@ $currentUserId = $userData['id'] ?? 0;
                                 preview.src = `../../public/${cm.image}`;
                                 preview.classList.remove('hidden');
                             }
+                            refreshImageUploadUI('control_measure_image_btn_', targetIndex);
                         }
                     });
                 }
