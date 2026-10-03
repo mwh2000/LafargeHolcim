@@ -71,6 +71,10 @@ function renderSidebar($activePage = '')
           'label' => 'Hot Work',
           'href' => BASE_URL . '/public/requester/add_hot_work_license.php',
         ],
+        'confined_space' => [
+          'label' => 'Confined Space',
+          'href' => BASE_URL . '/public/confined_space_permits.php',
+        ],
         // 'all_permits' => [
         //   'label' => 'All Permits',
         //   'href' => BASE_URL . '/public/permits.php',
