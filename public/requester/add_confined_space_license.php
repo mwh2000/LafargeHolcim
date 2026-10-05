@@ -192,6 +192,9 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                             <h2 class="section-title text-lg font-bold text-slate-800 mb-5">التهوية</h2>
                             <label class="block text-sm font-medium max-w-xl">رقم نموذج وحدة التهوية<select name="ventilation_unit_no" class="form-field mt-1">
                                     <option value="ميكانيكية">ميكانيكية</option>
+                                    <option value="SCABA">SCABA</option>
+                                    <option value=" خارجي مزود  هواء"> خارجي مزود هواء</option>
+                                    <option value="اخرى">اخرى</option>
                                 </select></label>
                             <label class="flex items-center gap-2 mt-4"><input type="checkbox" name="ventilation_within_limits" value="1" class="h-4 w-4 accent-teal-700"><span>هل طريقة التهوية تحافظ على الحدود المقبولة؟</span></label>
                             <fieldset class="mt-6">
@@ -206,7 +209,29 @@ $editPermitId = (int)($_GET['id'] ?? 0);
 
                         <section class="step-content bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="6">
                             <h2 class="section-title text-lg font-bold text-slate-800 mb-5">خطة الطوارئ</h2>
-                            <label class="block text-sm font-medium max-w-xl">المسؤول عن تنفيذ خطة الطوارئ<input name="emergency_responsible" class="form-field mt-1"></label>
+                            <label class="block text-sm font-medium max-w-xl">المسؤول عن تنفيذ خطة الطوارئ
+                                <select name="emergency_responsible" class="form-field mt-1">
+                                    <option value="">اختر المسؤول</option>
+                                    <?php foreach (
+                                        [
+                                            'Isam Ghanim Ali Abdullah Al-Asadi',
+                                            'Abbas Hasan Hussain Hasan Al-Najiem',
+                                            'Abbas Aliwi Obaied Basha Al-Oaidi',
+                                            'Hasan Mahmoud Khudair Abbas Al-Nemawi',
+                                            'Asaad Jabbar Hadi Humairi',
+                                            'Wissam Jaber Najim Abd  Baki',
+                                            'Akil Abbas Mohammed Abbas Al-Asadi',
+                                            'Ahmed Mlouh Wajar Mansi Al- Hussain',
+                                            'Hachum Soultan Sadkhan Abdullah Al-Rashid',
+                                            'Hashim Obaied Kurdi Faisal ',
+                                            'Ihsan Oraibi Yaqoub Hamad Al-Asadi',
+                                            'Mahmoud Kamll Alwan Abd Al-Asadi'
+                                        ] as $emergencyResponsible
+                                    ): ?>
+                                        <option value="<?= htmlspecialchars($emergencyResponsible, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($emergencyResponsible, ENT_QUOTES, 'UTF-8') ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
                             <fieldset class="mt-5">
                                 <legend class="font-semibold mb-3">ما هي المعدات المطلوبة في حالة الطوارئ؟</legend>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">

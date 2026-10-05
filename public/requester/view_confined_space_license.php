@@ -44,6 +44,19 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
             .permit-section {
                 break-inside: avoid
             }
+
+            .print-header {
+                display: block !important;
+                border-bottom: 2px solid #0b6f76;
+                margin-bottom: .5rem;
+                padding-bottom: .25rem;
+                text-align: center;
+            }
+
+            .print-header img {
+                height: 40px;
+                margin: 0 auto 5px;
+            }
         }
     </style>
 </head>
@@ -53,10 +66,20 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
     <div class="dashboard-container min-h-screen bg-[#0b6f76] bg-opacity-[5%]"><?php renderSidebar('confined_space'); ?>
         <div class="flex-1 flex flex-col sm:ml-64">
             <main class="flex-1 p-4 md:p-8">
-                <div class="max-w-5xl mx-auto">
-                    <div class="no-print flex justify-between items-center gap-3 mb-5"><a href="../confined_space_permits.php" class="text-teal-800 underline">رجوع إلى قائمة الرخص</a><button onclick="window.print()" class="rounded border border-teal-800 bg-white px-4 py-2 text-teal-800">طباعة / PDF</button></div>
-                    <div id="permitActions" class="no-print mb-4 flex flex-wrap gap-2"></div>
-                    <div id="permitContent" class="space-y-4">
+                <div class="w-full mx-auto">
+                    <div class="no-print flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-6">
+                        <h1 class="text-xl md:text-2xl font-semibold text-gray-700 text-right">تفاصيل رخصة دخول الأماكن المغلقة</h1>
+                        <div class="flex items-center gap-2">
+                            <a href="../confined_space_permits.php" class="rounded border border-[#0b6f76] bg-white px-4 py-2 text-[#0b6f76]">رجوع إلى قائمة الرخص</a>
+                            <button id="printPermitButton" onclick="window.print()" class="hidden rounded border border-[#0b6f76] bg-white px-4 py-2 text-[#0b6f76]">طباعة / PDF</button>
+                        </div>
+                    </div>
+                    <div class="print-header hidden print:block">
+                        <img src="../../public/images/logo.png" alt="Logo" class="mx-auto h-10 mb-2">
+                        <h1 class="text-xl font-bold text-[#0b6f76] pb-2">رخصة دخول الأماكن المغلقة</h1>
+                    </div>
+                    <div id="permitActions" class="no-print flex flex-wrap gap-2 mb-4"></div>
+                    <div id="permitContent" class="space-y-6">
                         <p class="bg-white p-8 text-center text-slate-600">جاري تحميل الرخصة...</p>
                     </div>
                 </div>
@@ -77,8 +100,8 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
             '"': '&quot;',
             "'": '&#039;'
         } [c]));
-        const section = (title, body) => `<section class="permit-section bg-white border border-slate-200 rounded-md p-5"><h2 class="border-r-4 border-teal-700 pr-3 text-lg font-bold mb-4">${title}</h2>${body}</section>`;
-        const info = (label, value) => `<div><dt class="text-xs text-slate-500">${label}</dt><dd class="mt-1 font-medium">${safe(value)}</dd></div>`;
+        const section = (title, body) => `<section class="permit-section bg-white p-6 rounded-lg shadow-md"><h2 class="text-lg font-bold text-[#0b6f76] mb-4 border-b pb-2 text-right" dir="rtl">${title}</h2>${body}</section>`;
+        const info = (label, value) => `<div><span class="text-gray-500">${label}:</span> <span class="font-medium text-gray-800">${safe(value)}</span></div>`;
         const yesNo = value => value === 'نعم' ? 'نعم' : value === 'لا' ? 'لا' : '—';
 
         fetch(API_URL, {
@@ -92,6 +115,7 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
                 const p = result.data;
                 const isCreator = Number(p.created_by) === VIEWER_ID;
                 const isOpen = p.status !== 'closed';
+                document.getElementById('printPermitButton').classList.toggle('hidden', isOpen);
                 const actions = document.getElementById('permitActions');
                 if (isCreator && isOpen) {
                     actions.innerHTML = `<a class="rounded bg-teal-800 px-4 py-2 text-white" href="add_confined_space_license.php?id=${PERMIT_ID}">تعديل الرخصة</a><button id="closePermit" class="rounded border border-red-700 px-4 py-2 text-red-700">إغلاق الرخصة</button>`;
@@ -169,18 +193,24 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
                     });
                 }
                 const statusLabel = isOpen ? 'مفتوحة' : 'مغلقة';
-                let html = `<header class="flex flex-wrap items-center justify-between gap-3 bg-[#10253b] text-white rounded-md p-5"><div><p class="text-sm">رخصة دخول الأماكن المغلقة</p><h1 class="text-2xl font-bold mt-1">${safe(p.permit_no)}</h1></div><span class="rounded border border-white px-3 py-1">${statusLabel}</span></header>`;
-                html += section('المعلومات الأساسية', `<dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">${info('رقم أمر العمل (WO)',p.wo)}${info('اسم طالب الرخصة',p.company_name)}${info('القسم',p.location)}${info('الموقع الدقيق',p.supervisor)}${info('نوع الصيانة',p.maintenance_type)}${info('تاريخ ووقت إصدار الرخصة',p.task_start_datetime)}${info('وقت انتهاء الرخصة',p.finishing_time)}${info('المعدة المستخدمة',Array.isArray(p.equipment_used) ? p.equipment_used.join('، ') : p.equipment_used)}${info('تاريخ الإنشاء',p.issuing_date_time)}${info('المسند إليه',p.assigned_to_name)}</dl>`);
+                let html = `<div class="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-gray-200 pb-3"><h2 class="text-lg font-bold text-[#0b6f76]">${safe(p.permit_no)}</h2><span class="px-2 py-1 rounded-full text-xs font-bold ${isOpen ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}">${statusLabel}</span></div>`;
+                html += section('المعلومات الأساسية', `<div class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">${info('رقم أمر العمل (WO)',p.wo)}${info('اسم طالب الرخصة',p.company_name)}${info('القسم',p.location)}${info('الموقع الدقيق',p.supervisor)}${info('المعدة المستخدمة',Array.isArray(p.equipment_used) ? p.equipment_used.join('، ') : p.equipment_used)}${info('نوع الصيانة',p.maintenance_type)}${info('تاريخ الإصدار',p.issuing_date_time)}${info('تاريخ ووقت بدء العمل',p.task_start_datetime)}${info('وقت انتهاء الرخصة',p.finishing_time)}${info('تم الإنشاء بواسطة',p.creator_name)}</div>`);
                 const addPermits = p.additional_permits.length ? p.additional_permits.map(row => `<tr><td>${safe(row.permit_name)}</td><td>${safe(row.permit_number)}</td></tr>`).join('') : '<tr><td colspan="2">لا توجد تصاريح إضافية</td></tr>';
-                html += section('التصاريح الإضافية المطلوبة', `<div class="overflow-x-auto"><table class="w-full text-right"><thead><tr><th class="p-2">التصريح</th><th class="p-2">رقم التصريح</th></tr></thead><tbody>${addPermits}</tbody></table></div><p class="mt-4"><b>وصف العمل:</b><br>${safe(p.work_description)}</p>`);
-                html += section('إجراءات السيطرة', `<div class="space-y-4">${p.control_measures.map((item,index) => `<div class="border-b pb-3"><div class="flex justify-between gap-4"><span>${index + 1}. ${safe(item.measure_text)}</span><b>${safe(item.status)}</b></div><div class="mt-3 flex flex-wrap gap-3">${(item.images || []).map(image => `<a href="../../public/${safe(image.image_path)}" target="_blank" rel="noopener"><img src="../../public/${safe(image.image_path)}" alt="صورة تقييم المخاطر" class="h-24 w-24 rounded border object-cover"></a>`).join('')}</div></div>`).join('')}</div>`);
-                html += section('أسماء الأشخاص الذين سيدخلون إلى المكان المغلق', `<div class="overflow-x-auto"><table class="w-full text-right"><thead><tr><th class="p-2">الاسم</th><th class="p-2">لائق صحياً</th><th class="p-2">مصرح له بالدخول</th></tr></thead><tbody>${p.entrants.map(item => `<tr><td class="p-2 border-t">${safe(item.person_name)}</td><td class="p-2 border-t">${Number(item.medically_fit) ? '✓' : '—'}</td><td class="p-2 border-t">${Number(item.authorized_to_enter) ? '✓' : '—'}</td></tr>`).join('')}</tbody></table></div>`);
-                html += section('التهوية والاتصالات', `<dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">${info('رقم نموذج وحدة التهوية',p.ventilation_unit_no)}${info('طريقة التهوية تحافظ على الحدود المقبولة',Number(p.ventilation_within_limits) ? 'نعم' : 'لا')}${info('وسائل الاتصالات',p.communications.map(row => row.communication_method).join('، '))}</dl>`);
-                html += section('خطة الطوارئ', `<dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">${info('المسؤول عن تنفيذ خطة الطوارئ',p.emergency_responsible)}${info('المعدات المطلوبة',p.rescue_equipment.map(row => row.equipment_name).join('، '))}${info('معدات الإنقاذ متوفرة قرب موقع العمل',yesNo(p.rescue_equipment_available))}</dl>`);
+                html += section('التصاريح الإضافية المطلوبة', `<div class="overflow-x-auto" dir="rtl"><table class="w-full border-collapse text-sm text-right"><thead><tr class="bg-gray-50"><th class="p-2 border">اسم التصريح</th><th class="p-2 border">رقم التصريح</th></tr></thead><tbody>${addPermits}</tbody></table></div><div class="mt-4 pt-4 border-t text-sm text-right" dir="rtl"><span class="text-gray-500 block mb-1">وصف العمل:</span><div class="p-3 bg-gray-50 rounded border text-gray-800 whitespace-pre-wrap">${safe(p.work_description)}</div></div>`);
+                html += section('إجراءات السيطرة', `<div class="space-y-2 text-sm text-right" dir="rtl">${p.control_measures.map((item,index) => `<div class="flex flex-col sm:flex-row justify-between p-3 border rounded-md bg-gray-50 gap-2"><span class="text-gray-700 flex-1">${index + 1}. ${safe(item.measure_text)}</span><span class="font-bold text-[#0b6f76]">${safe(item.status)}</span><div class="flex flex-wrap gap-2">${(item.images || []).map(image => `<a href="../../public/${safe(image.image_path)}" target="_blank" rel="noopener"><img src="../../public/${safe(image.image_path)}" alt="صورة تقييم المخاطر" class="h-12 w-12 object-cover rounded border"></a>`).join('')}</div></div>`).join('')}</div>`);
+                html += section('أسماء الأشخاص الذين سيدخلون إلى المكان المغلق', `<div class="overflow-x-auto" dir="rtl"><table class="w-full border-collapse text-sm text-right"><thead><tr class="bg-gray-50"><th class="p-2 border">الاسم</th><th class="p-2 border">لائق صحياً</th><th class="p-2 border">مصرح له بالدخول</th></tr></thead><tbody>${p.entrants.map(item => `<tr><td class="p-2 border">${safe(item.person_name)}</td><td class="p-2 border">${Number(item.medically_fit) ? '✓' : '—'}</td><td class="p-2 border">${Number(item.authorized_to_enter) ? '✓' : '—'}</td></tr>`).join('')}</tbody></table></div>`);
+                html += section('التهوية والاتصالات', `<dl class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">${info('رقم نموذج وحدة التهوية',p.ventilation_unit_no)}${info('طريقة التهوية تحافظ على الحدود المقبولة',Number(p.ventilation_within_limits) ? 'نعم' : 'لا')}${info('وسائل الاتصالات',p.communications.map(row => row.communication_method).join('، '))}</dl>`);
+                html += section('خطة الطوارئ', `<dl class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">${info('المسؤول عن تنفيذ خطة الطوارئ',p.emergency_responsible)}${info('المعدات المطلوبة',p.rescue_equipment.map(row => row.equipment_name).join('، '))}${info('معدات الإنقاذ متوفرة قرب موقع العمل',yesNo(p.rescue_equipment_available))}</dl>`);
                 const gasRows = p.gas_measurements.map(row => `<tr>${['measurement_time','oxygen_percent','lel_uel_percent','co_ppm','h2s_ppm'].map(key => `<td class="border p-2">${safe(row[key])}</td>`).join('')}<td class="border p-2"><div>${safe(row.added_by_name)}</div>${row.added_by_signature ? `<img src="../../public/${safe(row.added_by_signature)}" alt="توقيع ${safe(row.added_by_name)}" class="mx-auto mt-1 h-10 max-w-24 object-contain">` : '<span class="text-xs text-slate-500">لا يوجد توقيع مسجل</span>'}</td></tr>`).join('');
-                html += section('قياس الغازات', `<div class="overflow-x-auto"><table class="min-w-[900px] w-full text-center text-sm"><thead class="bg-[#c9dcef]"><tr><th class="border p-2">الوقت</th><th class="border p-2">الأوكسجين O₂<br>19.5% إلى 23.5%</th><th class="border p-2">LEL/UEL<br>أقل من 10%</th><th class="border p-2">CO<br>أقل من 5000 PPM</th><th class="border p-2">H₂S<br>أقل من 10 PPM</th><th class="border p-2">أضيفت بواسطة / التوقيع</th></tr></thead><tbody>${gasRows}</tbody></table></div><dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">${info('رقم وموديل الجهاز',p.gas_device_model)}${info('الشخص المؤهل للقياس',p.gas_qualified_person)}${info('معايرة الجهاز',yesNo(p.gas_device_calibrated))}${info('مراقبة مستمرة',yesNo(p.continuous_monitoring))}</dl><div class="mt-4 rounded bg-amber-50 p-4 leading-7"><p>أ) على مدير الوحدة أن يأذن رسمياً بالعمل في الأماكن المحصورة عالية الخطورة، مثل: الصوامع، صهاريج التخزين، المجاري الجوفية والحفريات أعمق من 2 م.</p><p>ب) يجب ألا تصدر تصاريح الدخول لأكثر من مناوبة واحدة. إذا تعذر إكمال مدة المهمة / الأنشطة خلال المناوبة، فيجب إصدار تصريح دخول جديد في بداية التحول التالي.</p></div>`);
-                html += section('الشخص المخول بإصدار هذا التصريح', `<dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">${info('الاسم',p.issuer_name)}${info('التعهد',Number(p.issuer_declaration) ? 'أقر بأنه قد تمت المراجعة لكل المتطلبات الرئيسية الآمنة لدخول المكان المغلق' : '—')}</dl>`);
+                html += section('قياس الغازات', `<div id="gasEntryControls" class="no-print mb-4 flex flex-col gap-3"></div><div class="overflow-x-auto" dir="rtl"><table class="min-w-[900px] w-full border-collapse text-center text-sm"><thead class="bg-gray-50"><tr><th class="border p-2">الوقت</th><th class="border p-2">الأوكسجين O₂<br>19.5% إلى 23.5%</th><th class="border p-2">LEL/UEL<br>أقل من 10%</th><th class="border p-2">CO<br>أقل من 5000 PPM</th><th class="border p-2">H₂S<br>أقل من 10 PPM</th><th class="border p-2">أضيفت بواسطة / التوقيع</th></tr></thead><tbody>${gasRows}</tbody></table></div><dl class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right mt-4" dir="rtl">${info('رقم وموديل الجهاز',p.gas_device_model)}${info('الشخص المؤهل للقياس',p.gas_qualified_person)}${info('معايرة الجهاز',yesNo(p.gas_device_calibrated))}${info('مراقبة مستمرة',yesNo(p.continuous_monitoring))}</dl><div class="mt-4 p-3 bg-gray-50 rounded border text-sm leading-7 text-right" dir="rtl"><p>أ) على مدير الوحدة أن يأذن رسمياً بالعمل في الأماكن المحصورة عالية الخطورة، مثل: الصوامع، صهاريج التخزين، المجاري الجوفية والحفريات أعمق من 2 م.</p><p>ب) يجب ألا تصدر تصاريح الدخول لأكثر من مناوبة واحدة. إذا تعذر إكمال مدة المهمة / الأنشطة خلال المناوبة، فيجب إصدار تصريح دخول جديد في بداية التحول التالي.</p></div>`);
+                const issuerSignature = p.creator_signature ? `<img src="../../public/${safe(p.creator_signature)}" alt="توقيع ${safe(p.issuer_name)}" class="mt-2 h-12 max-w-40 object-contain">` : '';
+                html += section('الشخص المخول بإصدار هذا التصريح', `<dl class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl"><div><span class="text-gray-500">الاسم:</span><div class="font-medium text-gray-800">${safe(p.issuer_name)}</div>${issuerSignature}</div>${info('التعهد',Number(p.issuer_declaration) ? 'أقر بأنه قد تمت المراجعة لكل المتطلبات الرئيسية الآمنة لدخول المكان المغلق' : '—')}</dl>`);
+                html += section('إسناد الرخصة', `<dl class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">${info('المسند إليه',p.assigned_to_name)}</dl>`);
                 content.innerHTML = html;
+                if (VIEWER_ROLE === 7 && isOpen) {
+                    const gasEntryControls = document.getElementById('gasEntryControls');
+                    gasEntryControls.append(document.getElementById('showGasEntry'), document.getElementById('addGasForm'));
+                }
             })
             .catch(error => {
                 content.innerHTML = `<p class="bg-white p-8 text-center text-red-700">${safe(error.message)}</p>`;
