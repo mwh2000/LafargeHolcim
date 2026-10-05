@@ -859,8 +859,8 @@ class EnergyInsulationController
     public function updateStaffGroups(int $licenseId, array $staffGroups, int $userId)
     {
         try {
-            // Verify permission: Allow created_by or area_manager_id to edit
-            $stmt = $this->conn->prepare("SELECT created_by, area_manager_id, is_vcs_isolation FROM energy_insulation_license WHERE id = ?");
+            // Only the license creator may edit its work crew.
+            $stmt = $this->conn->prepare("SELECT created_by FROM energy_insulation_license WHERE id = ?");
             $stmt->execute([$licenseId]);
             $license = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -870,10 +870,6 @@ class EnergyInsulationController
 
             if ($license['created_by'] != $userId) {
                 return $this->respond(false, 'Unauthorized to edit this license staff groups', null, ['code' => 403], 403);
-            }
-
-            if (!empty($license['is_vcs_isolation'])) {
-                return $this->respond(false, 'لا يمكن تعديل طاقم العمل لرخصة عزل VCS', null, ['code' => 403], 403);
             }
 
             $this->conn->beginTransaction();

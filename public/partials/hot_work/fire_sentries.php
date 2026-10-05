@@ -31,4 +31,6 @@ return [
     ['name' => 'عباس حميد يوسف', 'inspection_date' => '2025-11-23'],
     ['name' => 'محمد علي خليل', 'inspection_date' => '2025-11-23'],
     ['name' => 'علي عامر حميد', 'inspection_date' => null],
+    ['name' => 'محمد صادق', 'inspection_date' => '2025-11-23'],
+    ['name' => 'سعد خزعل', 'inspection_date' => null],
 ];

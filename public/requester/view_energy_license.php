@@ -1080,9 +1080,8 @@ $userName = $userData['name'] ?? 'N/A';
                 document.getElementById('pdfDownloadBtn').classList.remove('hidden');
             }
 
-            // Edit Staff Button Logic - only the license creator can edit staff, and not for VCS
-            // licenses or once the license is expired/closed.
-            if (canManageLicense && !isVcs && !editingLocked) {
+            // The license creator can update the work crew regardless of license type or status.
+            if (isLicenseCreator) {
                 document.getElementById('editStaffBtn').classList.remove('hidden');
             }
         }

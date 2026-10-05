@@ -15,17 +15,17 @@ CREATE TABLE IF NOT EXISTS confined_space_permit (
     ventilation_within_limits TINYINT(1) NOT NULL DEFAULT 0,
     emergency_responsible VARCHAR(255) DEFAULT NULL,
     rescue_equipment_available VARCHAR(10) DEFAULT NULL,
-    traffic_control_required VARCHAR(10) DEFAULT NULL,
     gas_device_model VARCHAR(255) DEFAULT NULL,
     gas_qualified_person VARCHAR(255) DEFAULT NULL,
     gas_device_calibrated VARCHAR(10) DEFAULT NULL,
     continuous_monitoring VARCHAR(10) DEFAULT NULL,
     issuer_id BIGINT UNSIGNED NOT NULL,
     issuer_name VARCHAR(255) NOT NULL,
-    issuer_qualified TINYINT(1) NOT NULL DEFAULT 1,
-    issuer_medically_fit TINYINT(1) NOT NULL DEFAULT 1,
     issuer_declaration TINYINT(1) NOT NULL DEFAULT 1,
     created_by BIGINT UNSIGNED NOT NULL,
+    assigned_to BIGINT UNSIGNED DEFAULT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'open',
+    closed_at DATETIME DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_confined_space_created_by (created_by),
     INDEX idx_confined_space_issuing_date (issuing_date_time)
@@ -49,6 +49,14 @@ CREATE TABLE IF NOT EXISTS confined_space_control_measures (
     CONSTRAINT fk_confined_space_control_permit
         FOREIGN KEY (confined_space_permit_id)
         REFERENCES confined_space_permit (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS confined_space_control_images (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    control_measure_id BIGINT UNSIGNED NOT NULL,
+    image_path VARCHAR(500) NOT NULL,
+    CONSTRAINT fk_confined_space_control_image_measure
+        FOREIGN KEY (control_measure_id) REFERENCES confined_space_control_measures (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS confined_space_entrants (
@@ -88,6 +96,9 @@ CREATE TABLE IF NOT EXISTS confined_space_gas_measurements (
     lel_uel_percent VARCHAR(100) DEFAULT NULL,
     co_ppm VARCHAR(100) DEFAULT NULL,
     h2s_ppm VARCHAR(100) DEFAULT NULL,
+    added_by BIGINT UNSIGNED DEFAULT NULL,
+    added_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    added_signature_path VARCHAR(500) DEFAULT NULL,
     CONSTRAINT fk_confined_space_gas_permit
         FOREIGN KEY (confined_space_permit_id)
         REFERENCES confined_space_permit (id) ON DELETE CASCADE

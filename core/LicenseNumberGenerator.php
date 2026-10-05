@@ -14,7 +14,7 @@
  */
 class LicenseNumberGenerator
 {
-    public static function next(PDO $db, string $counterKey, string $prefix): string
+    public static function next(PDO $db, string $counterKey, string $prefix, int $minimumWidth = 0): string
     {
         $db->prepare("INSERT IGNORE INTO license_number_counters (counter_key, next_number) VALUES (?, 1)")
             ->execute([$counterKey]);
@@ -23,6 +23,6 @@ class LicenseNumberGenerator
             ->execute([$counterKey]);
 
         $number = (int)$db->lastInsertId();
-        return $prefix . $number;
+        return $prefix . str_pad((string)$number, max(0, $minimumWidth), '0', STR_PAD_LEFT);
     }
 }

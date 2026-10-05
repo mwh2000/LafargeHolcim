@@ -6,7 +6,7 @@ require_once __DIR__ . '/partials/navbar.php';
 require_once __DIR__ . '/helpers/authCheck.php';
 ?>
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -36,12 +36,13 @@ require_once __DIR__ . '/helpers/authCheck.php';
                                     <th class="px-4 py-3">طالب الرخصة</th>
                                     <th class="px-4 py-3">القسم</th>
                                     <th class="px-4 py-3">المخول بالإصدار</th>
+                                    <th class="px-4 py-3">الحالة</th>
                                     <th class="px-4 py-3">الإجراء</th>
                                 </tr>
                             </thead>
                             <tbody id="permitRows">
                                 <tr>
-                                    <td colspan="7" class="p-6 text-center text-slate-500">جاري تحميل الرخص...</td>
+                                    <td colspan="8" class="p-6 text-center text-slate-500">جاري تحميل الرخص...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -71,12 +72,12 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 tbody.replaceChildren();
                 if (!result.success) throw new Error(result.message || 'تعذر تحميل الرخص');
                 if (!result.data.length) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-500">لا توجد رخص مسجلة</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-slate-500">لا توجد رخص مسجلة</td></tr>';
                     return;
                 }
                 result.data.forEach(permit => {
                     const row = document.createElement('tr');
-                    row.append(cell(permit.permit_no), cell(permit.issuing_date_time), cell(permit.wo), cell(permit.company_name), cell(permit.location), cell(permit.issuer_name));
+                    row.append(cell(permit.permit_no), cell(permit.issuing_date_time), cell(permit.wo), cell(permit.company_name), cell(permit.location), cell(permit.issuer_name), cell(permit.status === 'closed' ? 'مغلقة' : 'مفتوحة'));
                     const action = document.createElement('td');
                     action.className = 'px-4 py-3 border-t';
                     const link = document.createElement('a');
@@ -89,7 +90,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 });
             })
             .catch(error => {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-700">${String(error.message).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-red-700">${String(error.message).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}</td></tr>`;
             });
     </script>
 </body>

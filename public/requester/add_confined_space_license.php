@@ -1,15 +1,22 @@
 <?php
 require_once __DIR__ . '/../../core/Database.php';
-require_once __DIR__ . '/../../config/config.php';
+$config = require __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../partials/sidebar.php';
 require_once __DIR__ . '/../partials/navbar.php';
 require_once __DIR__ . '/../helpers/authCheck.php';
 
 $userData = json_decode($_COOKIE['user_data'] ?? '{}', true);
 $currentUserName = $userData['name'] ?? '';
+$database = new Database($config['db']);
+$pdo = $database->getConnection();
+$counterStmt = $pdo->prepare('SELECT next_number FROM license_number_counters WHERE counter_key = ?');
+$counterStmt->execute(['confined_space_permit']);
+$nextPermitSerial = (int)($counterStmt->fetchColumn() ?: 1);
+$nextPermitNo = 'OHSM-PTW-C.S-' . str_pad((string)$nextPermitSerial, 3, '0', STR_PAD_LEFT);
+$editPermitId = (int)($_GET['id'] ?? 0);
 ?>
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -58,6 +65,12 @@ $currentUserName = $userData['name'] ?? '';
             font-weight: 700;
             border-bottom: 2px solid #0b6f76;
         }
+
+        .gas-value-invalid {
+            border-color: #dc2626 !important;
+            background-color: #fef2f2 !important;
+            color: #b91c1c !important;
+        }
     </style>
 </head>
 
@@ -85,13 +98,14 @@ $currentUserName = $userData['name'] ?? '';
                         <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="6">خطة الطوارئ</button>
                         <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="7">قياس الغازات</button>
                         <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="8">مخول إصدار التصريح</button>
+                        <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="9">إسناد الرخصة</button>
                     </div>
 
-                    <form id="confinedSpaceForm" class="space-y-5" novalidate>
+                    <form id="confinedSpaceForm" class="space-y-5" data-permit-id="<?= $editPermitId ?>" novalidate>
                         <section class="step-content active bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="1">
                             <h2 class="section-title text-lg font-bold text-slate-800 mb-5">القسم الأول: المعلومات الأساسية</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <label class="text-sm font-medium">رقم الرخصة<input class="form-field mt-1 bg-slate-100" value="يصدر تلقائياً عند الحفظ" readonly></label>
+                                <label class="text-sm font-medium">رقم الرخصة<input name="permit_no_display" class="form-field mt-1 bg-slate-100" value="<?= htmlspecialchars($nextPermitNo, ENT_QUOTES, 'UTF-8') ?>" readonly></label>
                                 <label class="text-sm font-medium">رقم أمر العمل (WO)<input name="wo" required class="form-field mt-1"></label>
                                 <label class="text-sm font-medium">اسم طالب الرخصة<input name="company_name" required class="form-field mt-1"></label>
                                 <label class="text-sm font-medium">القسم
@@ -109,9 +123,12 @@ $currentUserName = $userData['name'] ?? '';
                                 <label class="text-sm font-medium">الموقع الدقيق<input name="supervisor" required class="form-field mt-1"></label>
                                 <label class="text-sm font-medium">المعدة المستخدمة
                                     <select name="equipment_used[]" multiple class="form-field mt-1 min-h-28">
+                                        <option value="اعمال لحام">اعمال لحام</option>
                                         <option value="كوسره">كوسره</option>
-                                        <option value="ماكنة لحام">ماكنة لحام</option>
-                                        <option value="اوكسي استيلين">اوكسي استيلين</option>
+                                        <option value="ماكنة هدم">ماكنة هدم </option>
+                                        <option value="ماكنة بناء">ماكنة بناء </option>
+                                        <option value="سقالة">سقالة </option>
+                                        <option value="معدات يدوية">معدات يدوية </option>
                                     </select>
                                 </label>
                                 <label class="text-sm font-medium">نوع الصيانة
@@ -151,20 +168,16 @@ $currentUserName = $userData['name'] ?? '';
 
                         <section class="step-content bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="3">
                             <h2 class="section-title text-lg font-bold text-slate-800 mb-5">القسم الثالث: إجراءات السيطرة</h2>
-                            <div class="space-y-3">
-                                <?php foreach (
-                                    [
-                                        'هل تم إعداد تقييم للمخاطر قبل الشروع بالدخول؟',
-                                        'هل تم استبعاد المخاطر أو هي تحت السيطرة بشكل مناسب؟',
-                                        'هل من الممكن أداء العمل بدون الدخول إلى المنطقة المغلقة؟'
-                                    ] as $index => $question
-                                ): ?>
-                                    <fieldset class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                                        <legend class="text-sm"><?= htmlspecialchars($question, ENT_QUOTES, 'UTF-8') ?></legend>
-                                        <div class="flex gap-4 shrink-0"><label class="flex items-center gap-1"><input type="radio" name="control_<?= $index ?>" value="نعم" required> نعم</label><label class="flex items-center gap-1"><input type="radio" name="control_<?= $index ?>" value="لا"> لا</label></div>
-                                    </fieldset>
-                                <?php endforeach; ?>
-                            </div>
+                            <fieldset class="space-y-4">
+                                <legend class="text-sm font-medium">هل تم إعداد تقييم للمخاطر قبل الشروع بالدخول؟</legend>
+                                <div class="flex gap-4"><label class="flex items-center gap-1"><input type="radio" name="control_0" value="نعم" required> نعم</label><label class="flex items-center gap-1"><input type="radio" name="control_0" value="لا"> لا</label></div>
+                                <label class="inline-flex cursor-pointer items-center rounded border border-teal-800 px-3 py-2 text-sm text-teal-800">
+                                    اختيار صور تقييم المخاطر
+                                    <input id="controlImagesInput" type="file" accept="image/jpeg,image/png,image/webp" multiple class="sr-only">
+                                </label>
+                                <p class="text-xs text-slate-500">يمكنك اختيار عدة صور من نافذة الاختيار نفسها.</p>
+                                <div id="controlImagesPreview" class="flex flex-wrap gap-3"></div>
+                            </fieldset>
                         </section>
 
                         <section class="step-content bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="4">
@@ -177,7 +190,9 @@ $currentUserName = $userData['name'] ?? '';
 
                         <section class="step-content bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="5">
                             <h2 class="section-title text-lg font-bold text-slate-800 mb-5">التهوية</h2>
-                            <label class="block text-sm font-medium max-w-xl">رقم نموذج وحدة التهوية<input name="ventilation_unit_no" class="form-field mt-1"></label>
+                            <label class="block text-sm font-medium max-w-xl">رقم نموذج وحدة التهوية<select name="ventilation_unit_no" class="form-field mt-1">
+                                    <option value="ميكانيكية">ميكانيكية</option>
+                                </select></label>
                             <label class="flex items-center gap-2 mt-4"><input type="checkbox" name="ventilation_within_limits" value="1" class="h-4 w-4 accent-teal-700"><span>هل طريقة التهوية تحافظ على الحدود المقبولة؟</span></label>
                             <fieldset class="mt-6">
                                 <legend class="font-semibold mb-3">الاتصالات (تحديد وسيلة الاتصالات)</legend>
@@ -202,11 +217,6 @@ $currentUserName = $userData['name'] ?? '';
                             </fieldset>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
                                 <label class="text-sm font-medium">هل معدات الإنقاذ متوفرة قرب موقع العمل؟<select name="rescue_equipment_available" class="form-field mt-1">
-                                        <option value="">اختر</option>
-                                        <option>نعم</option>
-                                        <option>لا</option>
-                                    </select></label>
-                                <label class="text-sm font-medium">هل تتطلب سيطرة على حركة السير حول المنطقة؟<select name="traffic_control_required" class="form-field mt-1">
                                         <option value="">اختر</option>
                                         <option>نعم</option>
                                         <option>لا</option>
@@ -242,7 +252,7 @@ $currentUserName = $userData['name'] ?? '';
                                 <label class="text-sm font-medium">اسم الشخص المؤهل للقياس<input name="gas_qualified_person" class="form-field mt-1"></label>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                                <?php foreach (['gas_device_calibrated' => 'معايرة الجهاز', 'continuous_monitoring' => 'مراقبة مستمرة'] as $field => $label): ?>
+                                <?php foreach (['gas_device_calibrated' => 'هل تم اجراء معايرة للجهاز', 'continuous_monitoring' => 'مراقبة مستمرة'] as $field => $label): ?>
                                     <fieldset>
                                         <legend class="text-sm font-medium mb-2"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></legend>
                                         <div class="flex gap-5"><label class="flex items-center gap-1"><input type="radio" name="<?= $field ?>" value="نعم"> نعم</label><label class="flex items-center gap-1"><input type="radio" name="<?= $field ?>" value="لا"> لا</label></div>
@@ -251,7 +261,7 @@ $currentUserName = $userData['name'] ?? '';
                             </div>
                             <aside class="mt-5 rounded border-r-4 border-amber-500 bg-amber-50 p-4 text-sm leading-7 text-slate-800">
                                 <p>أ) على مدير الوحدة أن يأذن رسمياً بالعمل في الأماكن المحصورة عالية الخطورة، مثل: الصوامع، صهاريج التخزين، المجاري الجوفية والحفريات أعمق من 2 م.</p>
-                                <p>ب) يجب ألا تصدر تصاريح الدخول لأكثر من مناوبة واحدة. إذا تعذر إكمال مدة المهمة / الأنشطة خلال المناوبة، فيجب إصدار تصريح دخول جديد في بداية التحول التالي.</p>
+                                <p>ب)يتم تجديد تصريح العمل في الاعمال التي تتجاوز وجبة واحده.</p>
                             </aside>
                         </section>
 
@@ -259,9 +269,18 @@ $currentUserName = $userData['name'] ?? '';
                             <h2 class="section-title text-lg font-bold text-slate-800 mb-5">الشخص المخول بإصدار هذا التصريح</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <label class="text-sm font-medium">اسم الشخص<input name="issuer_name" value="<?= htmlspecialchars($currentUserName, ENT_QUOTES, 'UTF-8') ?>" readonly class="form-field mt-1 bg-slate-100"></label>
-                                <div class="flex flex-col justify-center gap-3"><label class="flex items-center gap-2"><input type="checkbox" checked disabled class="h-4 w-4 accent-teal-700"><span>مؤهل ومتدرب</span></label><label class="flex items-center gap-2"><input type="checkbox" checked disabled class="h-4 w-4 accent-teal-700"><span>لائق صحياً</span></label></div>
                             </div>
                             <label class="flex items-start gap-2 mt-5 rounded bg-slate-50 p-4"><input type="checkbox" name="issuer_declaration" value="1" required class="mt-1 h-4 w-4 accent-teal-700"><span>أقر بأنه قد تمت المراجعة لكل المتطلبات الرئيسية الآمنة لدخول المكان المغلق.</span></label>
+                        </section>
+
+                        <section class="step-content bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="9">
+                            <h2 class="section-title text-lg font-bold text-slate-800 mb-5">إسناد الرخصة</h2>
+                            <label class="block text-sm font-medium max-w-xl">إسناد إلى مستخدم
+                                <select name="assigned_to" id="assignedTo" class="form-field mt-1">
+                                    <option value="">بدون إسناد</option>
+                                </select>
+                            </label>
+                            <p class="mt-3 text-sm text-slate-600">عند الإصدار أو تغيير الإسناد، سيصل إشعار وبريد إلكتروني للمستخدم المحدد.</p>
                         </section>
 
                         <div class="mt-8 flex justify-between gap-3 border-t pt-4">
@@ -280,6 +299,12 @@ $currentUserName = $userData['name'] ?? '';
         const API_URL = '../../api/requester/confined_space_permit.php';
         const entrantsList = document.getElementById('entrantsList');
         const gasRows = document.getElementById('gasRows');
+        const controlImagesPreview = document.getElementById('controlImagesPreview');
+        const controlImagesInput = document.getElementById('controlImagesInput');
+        const selectedControlImages = [];
+        const permitForm = document.getElementById('confinedSpaceForm');
+        const permitId = Number(permitForm.dataset.permitId || 0);
+        let originalPermit = null;
         const equipmentSelect = new TomSelect('[name="equipment_used[]"]', {
             persist: false,
             create: false,
@@ -296,17 +321,101 @@ $currentUserName = $userData['name'] ?? '';
             row.querySelector('.remove-row').addEventListener('click', () => row.remove());
         }
 
-        function addGasRow(values = []) {
+        function addGasRow(values = [], measurementId = null) {
             const row = document.createElement('tr');
+            const now = new Date();
+            const localTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
             row.innerHTML = [
-                ['measurement_time', 'الوقت'],
-                ['oxygen_percent', 'O₂ %'],
-                ['lel_uel_percent', 'LEL/UEL %'],
-                ['co_ppm', 'CO PPM'],
-                ['h2s_ppm', 'H₂S PPM']
-            ].map(([name, placeholder], index) => `<td class="p-1 border"><input name="${name}[]" value="${escapeHtml(values[index] || '')}" class="form-field text-center min-w-24" placeholder="${placeholder}"></td>`).join('') + '<td class="p-1 border"><button type="button" class="remove-row px-2 text-red-700" aria-label="حذف القراءة">حذف</button></td>';
+                ['measurement_time', 'الوقت', 'datetime-local'],
+                ['oxygen_percent', 'O₂ %', 'number'],
+                ['lel_uel_percent', 'LEL/UEL %', 'number'],
+                ['co_ppm', 'CO PPM', 'number'],
+                ['h2s_ppm', 'H₂S PPM', 'number']
+            ].map(([name, placeholder, type], index) => {
+                const value = name === 'measurement_time' ? (values[index] || localTime) : (values[index] || '');
+                const numericAttributes = type === 'number' ? 'step="any" inputmode="decimal"' : '';
+                return `<td class="p-1 border"><input type="${type}" name="${name}[]" value="${escapeHtml(value)}" ${numericAttributes} class="form-field gas-input text-center min-w-24" data-gas="${name}" placeholder="${placeholder}"></td>`;
+            }).join('') + '<td class="p-1 border"><button type="button" class="remove-row px-2 text-red-700" aria-label="حذف القراءة">حذف</button></td>';
+            if (measurementId) row.dataset.measurementId = measurementId;
             gasRows.appendChild(row);
-            row.querySelector('.remove-row').addEventListener('click', () => row.remove());
+            row.querySelector('.remove-row').addEventListener('click', () => {
+                row.remove();
+                validateGasRows();
+                updateTabStates();
+            });
+            row.querySelectorAll('.gas-input').forEach(input => input.addEventListener('input', validateGasRows));
+            validateGasRows();
+        }
+
+        function renderControlImagePreviews() {
+            controlImagesPreview.replaceChildren();
+            selectedControlImages.forEach((selectedImage, index) => {
+                const item = document.createElement('div');
+                item.className = 'relative';
+                const image = document.createElement('img');
+                image.src = selectedImage.previewUrl || `../../public/${selectedImage.path}`;
+                image.alt = selectedImage.file?.name || selectedImage.path || 'صورة تقييم المخاطر';
+                image.className = 'h-20 w-20 rounded border object-cover';
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.textContent = '×';
+                remove.setAttribute('aria-label', 'حذف الصورة');
+                remove.className = 'absolute -top-2 -left-2 h-6 w-6 rounded-full bg-red-700 text-white';
+                remove.addEventListener('click', () => {
+                    if (selectedImage.previewUrl) URL.revokeObjectURL(selectedImage.previewUrl);
+                    selectedControlImages.splice(index, 1);
+                    renderControlImagePreviews();
+                    updateTabStates();
+                });
+                item.append(image, remove);
+                controlImagesPreview.appendChild(item);
+            });
+        }
+
+        controlImagesInput.addEventListener('change', () => {
+            const files = [...controlImagesInput.files];
+            const oversized = files.find(file => file.size > 8 * 1024 * 1024);
+            if (oversized) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'حجم الصورة كبير',
+                    text: 'الحد الأعلى لحجم الصورة الواحدة 8 ميغابايت'
+                });
+                controlImagesInput.value = '';
+                return;
+            }
+            files.forEach(file => selectedControlImages.push({
+                file,
+                previewUrl: URL.createObjectURL(file)
+            }));
+            controlImagesInput.value = '';
+            renderControlImagePreviews();
+            updateTabStates();
+        });
+
+        function gasValueIsValid(input) {
+            if (input.dataset.gas === 'measurement_time') return !!input.value;
+            if (input.value.trim() === '') return false;
+            const value = Number(input.value);
+            if (!Number.isFinite(value)) return false;
+            if (input.dataset.gas === 'oxygen_percent') return value >= 19.5 && value <= 23.5;
+            if (input.dataset.gas === 'lel_uel_percent') return value >= 0 && value < 10;
+            if (input.dataset.gas === 'co_ppm') return value >= 0 && value < 5000;
+            if (input.dataset.gas === 'h2s_ppm') return value >= 0 && value < 10;
+            return false;
+        }
+
+        function validateGasRows() {
+            let allValid = gasRows.querySelectorAll('tr').length > 0;
+            gasRows.querySelectorAll('tr').forEach(row => {
+                row.querySelectorAll('.gas-input').forEach(input => {
+                    const valid = gasValueIsValid(input);
+                    input.classList.toggle('gas-value-invalid', !valid && input.value.trim() !== '');
+                    input.setAttribute('aria-invalid', valid ? 'false' : 'true');
+                    if (!valid) allValid = false;
+                });
+            });
+            return allValid;
         }
 
         function escapeHtml(value) {
@@ -324,7 +433,7 @@ $currentUserName = $userData['name'] ?? '';
         addEntrant();
         addGasRow();
 
-        const totalSteps = 8;
+        const totalSteps = 9;
         let currentStep = 1;
         let highestStepReached = 1;
         const indicators = [...document.querySelectorAll('.step-indicator')];
@@ -344,14 +453,14 @@ $currentUserName = $userData['name'] ?? '';
                 return section.querySelectorAll('[name="additional_permits_selected[]"]:checked').length > 0 &&
                     !!section.querySelector('[name="work_description"]').value.trim();
             }
-            if (step === 3) return [0, 1, 2].every(index => section.querySelector(`[name="control_${index}"]:checked`));
+            if (step === 3) return !!section.querySelector('[name="control_0"]:checked') &&
+                selectedControlImages.length > 0;
             if (step === 4) {
                 const names = [...entrantsList.querySelectorAll('[name="entrant_name[]"]')];
                 return names.length > 0 && names.every(input => input.value.trim());
             }
-            if (step === 6) return !!section.querySelector('[name="rescue_equipment_available"]').value &&
-                !!section.querySelector('[name="traffic_control_required"]').value;
-            if (step === 7) return !!section.querySelector('[name="gas_device_model"]').value.trim() &&
+            if (step === 6) return !!section.querySelector('[name="rescue_equipment_available"]').value;
+            if (step === 7) return validateGasRows() && !!section.querySelector('[name="gas_device_model"]').value.trim() &&
                 !!section.querySelector('[name="gas_qualified_person"]').value.trim() &&
                 !!section.querySelector('[name="gas_device_calibrated"]:checked') &&
                 !!section.querySelector('[name="continuous_monitoring"]:checked');
@@ -387,8 +496,8 @@ $currentUserName = $userData['name'] ?? '';
             });
         }
 
-        document.getElementById('confinedSpaceForm').addEventListener('input', updateTabStates);
-        document.getElementById('confinedSpaceForm').addEventListener('change', updateTabStates);
+        permitForm.addEventListener('input', updateTabStates);
+        permitForm.addEventListener('change', updateTabStates);
         indicators.forEach(indicator => indicator.addEventListener('click', () => {
             const targetStep = Number(indicator.dataset.step);
             if (targetStep <= highestStepReached) showStep(targetStep);
@@ -402,8 +511,71 @@ $currentUserName = $userData['name'] ?? '';
                 text: 'تحقق من الحقول المطلوبة قبل الانتقال إلى الخطوة التالية'
             });
         });
+        updateTabStates();
 
-        document.getElementById('confinedSpaceForm').addEventListener('submit', async event => {
+        async function loadAssignees(selectedId = '') {
+            const select = document.getElementById('assignedTo');
+            const response = await fetch(`${API_URL}?action=getAssignees`, {
+                headers: {
+                    'Authorization': `Bearer ${TOKEN}`
+                }
+            });
+            const result = await response.json();
+            if (!result.success) throw new Error(result.message || 'تعذر تحميل قائمة المستخدمين');
+            result.data.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.name;
+                select.appendChild(option);
+            });
+            select.value = selectedId ? String(selectedId) : '';
+        }
+
+        function setChecked(name, value) {
+            const input = [...permitForm.querySelectorAll(`[name="${name}"]`)].find(item => item.value === String(value));
+            if (input) input.checked = true;
+        }
+
+        function populatePermit(permit) {
+            originalPermit = permit;
+            ['wo', 'company_name', 'supervisor', 'maintenance_type', 'task_start_datetime', 'finishing_time', 'work_description', 'ventilation_unit_no', 'emergency_responsible', 'rescue_equipment_available', 'gas_device_model', 'gas_qualified_person'].forEach(name => {
+                const field = permitForm.elements.namedItem(name);
+                if (field) field.value = (permit[name] || '').replace?.(' ', 'T') && ['task_start_datetime', 'finishing_time'].includes(name) ? permit[name].replace(' ', 'T') : (permit[name] || '');
+            });
+            permitForm.elements.namedItem('location').value = permit.location || '';
+            document.getElementById('assignedTo').value = permit.assigned_to ? String(permit.assigned_to) : '';
+            permitForm.elements.namedItem('ventilation_within_limits').checked = Number(permit.ventilation_within_limits) === 1;
+            permitForm.elements.namedItem('issuer_declaration').checked = Number(permit.issuer_declaration) === 1;
+            const equipment = Array.isArray(permit.equipment_used) ? permit.equipment_used : [];
+            equipmentSelect.setValue(equipment, true);
+            ['gas_device_calibrated', 'continuous_monitoring'].forEach(name => setChecked(name, permit[name]));
+            (permit.additional_permits || []).forEach(item => {
+                const row = [...permitForm.querySelectorAll('[name="permit_name_' + item.permit_name + '"]')];
+                const hidden = [...permitForm.querySelectorAll('input[type="hidden"][name^="permit_name_"]')].find(input => input.value === item.permit_name);
+                if (hidden) {
+                    const key = hidden.name.replace('permit_name_', '');
+                    permitForm.querySelector(`[name="additional_permits_selected[]"][value="${key}"]`).checked = true;
+                    permitForm.elements.namedItem(`permit_no_${key}`).value = item.permit_number || '';
+                }
+            });
+            const control = (permit.control_measures || [])[0];
+            if (control) setChecked('control_0', control.status);
+            selectedControlImages.splice(0, selectedControlImages.length, ...((control?.images || []).map(image => ({
+                path: image.image_path
+            }))));
+            renderControlImagePreviews();
+            entrantsList.replaceChildren();
+            (permit.entrants || []).forEach(item => addEntrant(item.person_name, Number(item.medically_fit) === 1, Number(item.authorized_to_enter) === 1));
+            (permit.communications || []).forEach(item => setChecked('communications[]', item.communication_method));
+            (permit.rescue_equipment || []).forEach(item => setChecked('rescue_equipment[]', item.equipment_name));
+            gasRows.replaceChildren();
+            (permit.gas_measurements || []).forEach(item => addGasRow([String(item.measurement_time || '').replace(' ', 'T').slice(0, 16), item.oxygen_percent, item.lel_uel_percent, item.co_ppm, item.h2s_ppm], item.id));
+            document.querySelector('input[name="permit_no_display"]').value = permit.permit_no;
+            document.querySelector('h1').textContent = `تعديل رخصة دخول الأماكن المغلقة ${permit.permit_no}`;
+            document.getElementById('submitPermit').textContent = 'حفظ التعديلات';
+        }
+
+        permitForm.addEventListener('submit', async event => {
             event.preventDefault();
             const invalidStep = Array.from({
                 length: totalSteps
@@ -434,7 +606,6 @@ $currentUserName = $userData['name'] ?? '';
                 ventilation_within_limits: fd.has('ventilation_within_limits'),
                 emergency_responsible: fd.get('emergency_responsible'),
                 rescue_equipment_available: fd.get('rescue_equipment_available'),
-                traffic_control_required: fd.get('traffic_control_required'),
                 gas_device_model: fd.get('gas_device_model'),
                 gas_qualified_person: fd.get('gas_qualified_person'),
                 gas_device_calibrated: fd.get('gas_device_calibrated'),
@@ -448,13 +619,14 @@ $currentUserName = $userData['name'] ?? '';
                 rescue_equipment: fd.getAll('rescue_equipment[]'),
                 gas_measurements: []
             };
+            data.assigned_to = fd.get('assigned_to') || null;
             fd.getAll('additional_permits_selected[]').forEach(id => data.additional_permits.push({
                 permit_name: fd.get(`permit_name_${id}`),
                 permit_number: fd.get(`permit_no_${id}`)
             }));
-            for (let index = 0; index < 3; index++) data.control_measures.push({
-                text: <?= json_encode(['هل تم إعداد تقييم للمخاطر قبل الشروع بالدخول؟', 'هل تم استبعاد المخاطر أو هي تحت السيطرة بشكل مناسب؟', 'هل من الممكن أداء العمل بدون الدخول إلى المنطقة المغلقة؟'], JSON_UNESCAPED_UNICODE) ?>[index],
-                answer: fd.get(`control_${index}`)
+            data.control_measures.push({
+                text: 'هل تم إعداد تقييم للمخاطر قبل الشروع بالدخول؟',
+                answer: fd.get('control_0')
             });
             entrantsList.querySelectorAll(':scope > div').forEach(row => data.entrants.push({
                 name: row.querySelector('[name="entrant_name[]"]').value,
@@ -475,29 +647,48 @@ $currentUserName = $userData['name'] ?? '';
                 oxygen_percent: measurementColumns[1][index],
                 lel_uel_percent: measurementColumns[2][index],
                 co_ppm: measurementColumns[3][index],
-                h2s_ppm: measurementColumns[4][index]
+                h2s_ppm: measurementColumns[4][index],
+                id: gasRows.querySelectorAll('tr')[index]?.dataset.measurementId || null
             });
 
             const button = submitButton;
             button.disabled = true;
             try {
-                const response = await fetch(API_URL, {
+                const imageFormData = new FormData();
+                selectedControlImages.filter(image => image.file).forEach(image => imageFormData.append('images[]', image.file));
+                data.control_images = selectedControlImages.filter(image => image.path).map(image => image.path);
+                if (selectedControlImages.some(image => image.file)) {
+                    const imageResponse = await fetch(`${API_URL}?action=uploadControlImages`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${TOKEN}`
+                        },
+                        body: imageFormData
+                    });
+                    const imageResult = await imageResponse.json();
+                    if (!imageResponse.ok || !imageResult.success) throw new Error(imageResult.message || 'تعذر رفع صور تقييم المخاطر');
+                    data.control_images.push(...imageResult.data.paths);
+                }
+                const response = await fetch(permitId ? `${API_URL}?action=update` : API_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${TOKEN}`
                     },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(permitId ? {
+                        ...data,
+                        permit_id: permitId
+                    } : data)
                 });
                 const result = await response.json();
                 if (!response.ok || !result.success) throw new Error(result.message || 'تعذر إصدار الرخصة');
                 await Swal.fire({
                     icon: 'success',
-                    title: 'تم إصدار الرخصة',
+                    title: permitId ? 'تم تحديث الرخصة' : 'تم إصدار الرخصة',
                     text: result.permit_no,
                     confirmButtonColor: '#0b6f76'
                 });
-                window.location.href = `view_confined_space_license.php?id=${result.id}`;
+                window.location.href = `view_confined_space_license.php?id=${result.id || permitId}`;
             } catch (error) {
                 Swal.fire({
                     icon: 'error',
@@ -508,6 +699,25 @@ $currentUserName = $userData['name'] ?? '';
                 button.disabled = false;
             }
         });
+
+        loadAssignees().then(async () => {
+            if (permitId) {
+                const response = await fetch(`${API_URL}?action=show&id=${permitId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${TOKEN}`
+                    }
+                });
+                const result = await response.json();
+                if (!result.success) throw new Error(result.message || 'تعذر تحميل الرخصة للتعديل');
+                if (Number(result.data.created_by) !== Number(<?= (int)($userData['id'] ?? 0) ?>)) throw new Error('تعديل الرخصة متاح لمنشئها فقط');
+                populatePermit(result.data);
+            }
+            updateTabStates();
+        }).catch(error => Swal.fire({
+            icon: 'error',
+            title: 'تعذر تحميل النموذج',
+            text: error.message
+        }));
     </script>
 </body>
 

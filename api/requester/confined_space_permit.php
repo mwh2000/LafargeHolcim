@@ -17,7 +17,19 @@ $controller = new ConfinedSpacePermitController($conn);
 
 try {
     $action = $_GET['action'] ?? '';
-    if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'show' && isset($_GET['id'])) {
+    if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'getAssignees') {
+        $result = $controller->getAssignees();
+    } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'getGasSigner') {
+        if ((int)$decoded->role_id !== 7) {
+            http_response_code(403);
+            $result = ['success' => false, 'message' => 'هذه العملية متاحة لمستخدم role 7 فقط'];
+        } else {
+            $result = $controller->getGasSigner((int)$decoded->id);
+        }
+    } elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'uploadControlImages') {
+        $result = $controller->uploadControlImages($_FILES['images'] ?? []);
+        if (!$result['success']) http_response_code(400);
+    } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'show' && isset($_GET['id'])) {
         $result = $controller->getPermit((int)$_GET['id'], (int)$decoded->id, (int)$decoded->role_id);
         if (!$result['success'] && ($result['message'] ?? '') === 'غير مخول لعرض هذه الرخصة') {
             http_response_code(403);
@@ -30,11 +42,24 @@ try {
             http_response_code(400);
             $result = ['success' => false, 'message' => 'بيانات الطلب غير صالحة'];
         } else {
-            $input['created_by'] = (int)$decoded->id;
-            $userStmt = $conn->prepare('SELECT name FROM users WHERE id = ?');
-            $userStmt->execute([(int)$decoded->id]);
-            $input['issuer_name'] = (string)$userStmt->fetchColumn();
-            $result = $controller->createPermit($input);
+            if ($action === 'update') {
+                $result = $controller->updatePermit((int)($input['permit_id'] ?? 0), (int)$decoded->id, $input);
+            } elseif ($action === 'addGasMeasurement') {
+                if ((int)$decoded->role_id !== 7) {
+                    http_response_code(403);
+                    $result = ['success' => false, 'message' => 'إضافة قراءات جديدة متاحة لمستخدمين الدور 7 فقط'];
+                } else {
+                    $result = $controller->addGasMeasurement((int)($input['permit_id'] ?? 0), (int)$decoded->id, $input['measurement'] ?? []);
+                }
+            } elseif ($action === 'close') {
+                $result = $controller->closePermit((int)($input['permit_id'] ?? 0), (int)$decoded->id);
+            } else {
+                $input['created_by'] = (int)$decoded->id;
+                $userStmt = $conn->prepare('SELECT name FROM users WHERE id = ?');
+                $userStmt->execute([(int)$decoded->id]);
+                $input['issuer_name'] = (string)$userStmt->fetchColumn();
+                $result = $controller->createPermit($input);
+            }
         }
     } else {
         http_response_code(405);
