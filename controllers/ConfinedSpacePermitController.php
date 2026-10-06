@@ -199,11 +199,12 @@ class ConfinedSpacePermitController
 
     public function updatePermit(int $permitId, int $userId, array $data): array
     {
-        $owner = $this->db->prepare("SELECT permit_no, assigned_to, status FROM confined_space_permit WHERE id = ? AND created_by = ?");
+        $owner = $this->db->prepare("SELECT permit_no, assigned_to, status, finishing_time FROM confined_space_permit WHERE id = ? AND created_by = ?");
         $owner->execute([$permitId, $userId]);
         $permit = $owner->fetch(PDO::FETCH_ASSOC);
         if (!$permit) return ['success' => false, 'message' => 'فقط منشئ الرخصة يستطيع تعديلها'];
         if ($permit['status'] === 'closed') return ['success' => false, 'message' => 'لا يمكن تعديل رخصة مغلقة'];
+        if (strtotime((string)$permit['finishing_time']) < time()) return ['success' => false, 'message' => 'الرخصة غير فعالة؛ يسمح بتعديل وقت الانتهاء فقط'];
         foreach (['wo', 'company_name', 'location', 'supervisor', 'maintenance_type', 'task_start_datetime', 'finishing_time', 'work_description'] as $field) {
             if (trim((string)($data[$field] ?? '')) === '') return ['success' => false, 'message' => 'أكمل الحقول الأساسية المطلوبة'];
         }
@@ -311,6 +312,30 @@ class ConfinedSpacePermitController
         return ['success' => true, 'message' => 'تم إغلاق الرخصة بنجاح'];
     }
 
+    public function updateInactiveFinishingTime(int $permitId, int $userId, string $finishingTime): array
+    {
+        try {
+            $timestamp = strtotime($finishingTime);
+            if ($timestamp === false || $timestamp <= time()) {
+                return ['success' => false, 'message' => 'حدد تاريخاً ووقتاً مستقبلياً لانتهاء الرخصة'];
+            }
+
+            $stmt = $this->db->prepare("UPDATE confined_space_permit
+                SET finishing_time = ?, finishing_time_updated_at = NOW(), finishing_time_updated_by = ?
+                WHERE id = ? AND created_by = ? AND status = 'open' AND finishing_time < NOW()");
+            $stmt->execute([date('Y-m-d H:i:s', $timestamp), $userId, $permitId, $userId]);
+
+            if ($stmt->rowCount() === 0) {
+                return ['success' => false, 'message' => 'تعديل وقت الانتهاء متاح لمنشئ الرخصة فقط وبعد أن تصبح غير فعالة'];
+            }
+
+            return ['success' => true, 'message' => 'تم تحديث وقت انتهاء الرخصة', 'finishing_time' => date('Y-m-d H:i:s', $timestamp)];
+        } catch (Throwable $e) {
+            error_log('Confined-space finishing time update failed: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'تعذر تحديث وقت انتهاء الرخصة'];
+        }
+    }
+
     private function validateGasMeasurements(array $measurements): ?string
     {
         if (!$measurements) return 'أضف قراءة غازات واحدة على الأقل';
@@ -380,7 +405,7 @@ class ConfinedSpacePermitController
 
     public function getPermit(int $id, int $userId, int $roleId): array
     {
-        $stmt = $this->db->prepare("SELECT p.*, u.name AS creator_name, u.signature AS creator_signature, a.name AS assigned_to_name FROM confined_space_permit p LEFT JOIN users u ON u.id = p.created_by LEFT JOIN users a ON a.id = p.assigned_to WHERE p.id = ?");
+        $stmt = $this->db->prepare("SELECT p.*, u.name AS creator_name, u.signature AS creator_signature, a.name AS assigned_to_name, fu.name AS finishing_time_updated_by_name FROM confined_space_permit p LEFT JOIN users u ON u.id = p.created_by LEFT JOIN users a ON a.id = p.assigned_to LEFT JOIN users fu ON fu.id = p.finishing_time_updated_by WHERE p.id = ?");
         $stmt->execute([$id]);
         $permit = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$permit) return ['success' => false, 'message' => 'الرخصة غير موجودة'];

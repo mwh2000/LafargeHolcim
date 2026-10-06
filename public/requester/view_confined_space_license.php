@@ -57,6 +57,12 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
                 height: 40px;
                 margin: 0 auto 5px;
             }
+
+            @media print {
+                #finishingTimeEditModal {
+                    display: none !important;
+                }
+            }
         }
     </style>
 </head>
@@ -81,6 +87,18 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
                     <div id="permitActions" class="no-print flex flex-wrap gap-2 mb-4"></div>
                     <div id="permitContent" class="space-y-6">
                         <p class="bg-white p-8 text-center text-slate-600">جاري تحميل الرخصة...</p>
+                    </div>
+                    <div id="finishingTimeEditModal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-black/50 p-4 no-print">
+                        <form id="finishingTimeEditForm" class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+                            <h2 class="mb-4 text-lg font-bold text-gray-800">تعديل وقت انتهاء الرخصة</h2>
+                            <label class="block text-sm font-medium text-gray-700">تاريخ ووقت الانتهاء الجديد
+                                <input id="newFinishingTime" type="datetime-local" required class="mt-2 w-full rounded border border-gray-300 p-2">
+                            </label>
+                            <div class="mt-5 flex justify-end gap-2">
+                                <button type="button" id="cancelFinishingTimeEdit" class="rounded border border-gray-300 px-4 py-2 text-gray-700">إلغاء</button>
+                                <button type="submit" class="rounded bg-teal-800 px-4 py-2 text-white">حفظ</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </main>
@@ -115,10 +133,11 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
                 const p = result.data;
                 const isCreator = Number(p.created_by) === VIEWER_ID;
                 const isOpen = p.status !== 'closed';
+                const isNotActive = isOpen && p.finishing_time && new Date(p.finishing_time.replace(' ', 'T')) < new Date();
                 document.getElementById('printPermitButton').classList.toggle('hidden', isOpen);
                 const actions = document.getElementById('permitActions');
                 if (isCreator && isOpen) {
-                    actions.innerHTML = `<a class="rounded bg-teal-800 px-4 py-2 text-white" href="add_confined_space_license.php?id=${PERMIT_ID}">تعديل الرخصة</a><button id="closePermit" class="rounded border border-red-700 px-4 py-2 text-red-700">إغلاق الرخصة</button>`;
+                    actions.innerHTML = `${!isNotActive ? `<a class="rounded bg-teal-800 px-4 py-2 text-white" href="add_confined_space_license.php?id=${PERMIT_ID}">تعديل الرخصة</a>` : ''}<button id="closePermit" class="rounded border border-red-700 px-4 py-2 text-red-700">إغلاق الرخصة</button>`;
                     document.getElementById('closePermit').addEventListener('click', async () => {
                         const confirm = await Swal.fire({
                             icon: 'warning',
@@ -192,9 +211,14 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
                         window.location.reload();
                     });
                 }
-                const statusLabel = isOpen ? 'مفتوحة' : 'مغلقة';
-                let html = `<div class="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-gray-200 pb-3"><h2 class="text-lg font-bold text-[#0b6f76]">${safe(p.permit_no)}</h2><span class="px-2 py-1 rounded-full text-xs font-bold ${isOpen ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}">${statusLabel}</span></div>`;
-                html += section('المعلومات الأساسية', `<div class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">${info('رقم أمر العمل (WO)',p.wo)}${info('اسم طالب الرخصة',p.company_name)}${info('القسم',p.location)}${info('الموقع الدقيق',p.supervisor)}${info('المعدة المستخدمة',Array.isArray(p.equipment_used) ? p.equipment_used.join('، ') : p.equipment_used)}${info('نوع الصيانة',p.maintenance_type)}${info('تاريخ الإصدار',p.issuing_date_time)}${info('تاريخ ووقت بدء العمل',p.task_start_datetime)}${info('وقت انتهاء الرخصة',p.finishing_time)}${info('تم الإنشاء بواسطة',p.creator_name)}</div>`);
+                const statusLabel = !isOpen ? 'مغلقة' : (isNotActive ? 'غير فعالة' : 'مفتوحة');
+                const statusClass = !isOpen ? 'bg-green-100 text-green-700' : (isNotActive ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700');
+                let html = `<div class="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-gray-200 pb-3"><h2 class="text-lg font-bold text-[#0b6f76]">${safe(p.permit_no)}</h2><span class="px-2 py-1 rounded-full text-xs font-bold ${statusClass}">${statusLabel}</span></div>`;
+                const finishingTimeEdit = isCreator && isNotActive ? `<button type="button" id="editFinishingTimeButton" class="no-print mr-2 inline-flex items-center text-teal-800" title="تعديل تاريخ الانتهاء" aria-label="تعديل تاريخ الانتهاء"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>` : '';
+                const finishingTimeMeta = p.finishing_time_updated_at ? `<small class="mt-1 block text-xs text-gray-500">عُدّل بواسطة ${safe(p.finishing_time_updated_by_name)} بتاريخ ${safe(p.finishing_time_updated_at)}</small>` : '';
+                const finishingTimeClass = isNotActive ? 'font-bold text-red-700' : 'font-medium text-gray-800';
+                const finishingTimeValue = `<div><span class="text-gray-500">وقت انتهاء الرخصة:</span><span class="${finishingTimeClass}"> ${safe(p.finishing_time)}</span>${finishingTimeEdit}${finishingTimeMeta}</div>`;
+                html += section('المعلومات الأساسية', `<div class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">${info('رقم أمر العمل (WO)',p.wo)}${info('اسم طالب الرخصة',p.company_name)}${info('القسم',p.location)}${info('الموقع الدقيق',p.supervisor)}${info('المعدة المستخدمة',Array.isArray(p.equipment_used) ? p.equipment_used.join('، ') : p.equipment_used)}${info('نوع الصيانة',p.maintenance_type)}${info('تاريخ الإصدار',p.issuing_date_time)}${info('تاريخ ووقت بدء العمل',p.task_start_datetime)}${finishingTimeValue}${info('تم الإنشاء بواسطة',p.creator_name)}</div>`);
                 const addPermits = p.additional_permits.length ? p.additional_permits.map(row => `<tr><td>${safe(row.permit_name)}</td><td>${safe(row.permit_number)}</td></tr>`).join('') : '<tr><td colspan="2">لا توجد تصاريح إضافية</td></tr>';
                 html += section('التصاريح الإضافية المطلوبة', `<div class="overflow-x-auto" dir="rtl"><table class="w-full border-collapse text-sm text-right"><thead><tr class="bg-gray-50"><th class="p-2 border">اسم التصريح</th><th class="p-2 border">رقم التصريح</th></tr></thead><tbody>${addPermits}</tbody></table></div><div class="mt-4 pt-4 border-t text-sm text-right" dir="rtl"><span class="text-gray-500 block mb-1">وصف العمل:</span><div class="p-3 bg-gray-50 rounded border text-gray-800 whitespace-pre-wrap">${safe(p.work_description)}</div></div>`);
                 html += section('إجراءات السيطرة', `<div class="space-y-2 text-sm text-right" dir="rtl">${p.control_measures.map((item,index) => `<div class="flex flex-col sm:flex-row justify-between p-3 border rounded-md bg-gray-50 gap-2"><span class="text-gray-700 flex-1">${index + 1}. ${safe(item.measure_text)}</span><span class="font-bold text-[#0b6f76]">${safe(item.status)}</span><div class="flex flex-wrap gap-2">${(item.images || []).map(image => `<a href="../../public/${safe(image.image_path)}" target="_blank" rel="noopener"><img src="../../public/${safe(image.image_path)}" alt="صورة تقييم المخاطر" class="h-12 w-12 object-cover rounded border"></a>`).join('')}</div></div>`).join('')}</div>`);
@@ -207,6 +231,15 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
                 html += section('الشخص المخول بإصدار هذا التصريح', `<dl class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl"><div><span class="text-gray-500">الاسم:</span><div class="font-medium text-gray-800">${safe(p.issuer_name)}</div>${issuerSignature}</div>${info('التعهد',Number(p.issuer_declaration) ? 'أقر بأنه قد تمت المراجعة لكل المتطلبات الرئيسية الآمنة لدخول المكان المغلق' : '—')}</dl>`);
                 html += section('إسناد الرخصة', `<dl class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">${info('المسند إليه',p.assigned_to_name)}</dl>`);
                 content.innerHTML = html;
+                const editFinishingTimeButton = document.getElementById('editFinishingTimeButton');
+                if (editFinishingTimeButton) {
+                    editFinishingTimeButton.addEventListener('click', () => {
+                        document.getElementById('newFinishingTime').value = String(p.finishing_time || '').replace(' ', 'T').slice(0, 16);
+                        const modal = document.getElementById('finishingTimeEditModal');
+                        modal.classList.remove('hidden');
+                        modal.classList.add('flex');
+                    });
+                }
                 if (VIEWER_ROLE === 7 && isOpen) {
                     const gasEntryControls = document.getElementById('gasEntryControls');
                     gasEntryControls.append(document.getElementById('showGasEntry'), document.getElementById('addGasForm'));
@@ -215,6 +248,50 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
             .catch(error => {
                 content.innerHTML = `<p class="bg-white p-8 text-center text-red-700">${safe(error.message)}</p>`;
             });
+
+        document.getElementById('cancelFinishingTimeEdit').addEventListener('click', () => {
+            const modal = document.getElementById('finishingTimeEditModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        });
+
+        document.getElementById('finishingTimeEditForm').addEventListener('submit', async event => {
+            event.preventDefault();
+            const finishingTime = document.getElementById('newFinishingTime').value;
+            if (!finishingTime || new Date(finishingTime) <= new Date()) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'وقت غير صالح',
+                    text: 'اختر وقت انتهاء في المستقبل'
+                });
+                return;
+            }
+            const submitButton = event.currentTarget.querySelector('[type="submit"]');
+            submitButton.disabled = true;
+            try {
+                const response = await fetch('../../api/requester/confined_space_permit.php?action=updateFinishingTime', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${TOKEN}`
+                    },
+                    body: JSON.stringify({
+                        permit_id: PERMIT_ID,
+                        finishing_time: finishingTime
+                    })
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || 'تعذر تحديث وقت الانتهاء');
+                window.location.reload();
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'تعذر التحديث',
+                    text: error.message
+                });
+                submitButton.disabled = false;
+            }
+        });
     </script>
 </body>
 

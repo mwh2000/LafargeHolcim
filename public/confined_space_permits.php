@@ -77,7 +77,9 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 }
                 result.data.forEach(permit => {
                     const row = document.createElement('tr');
-                    row.append(cell(permit.permit_no), cell(permit.issuing_date_time), cell(permit.wo), cell(permit.company_name), cell(permit.location), cell(permit.issuer_name), cell(permit.status === 'closed' ? 'مغلقة' : 'مفتوحة'));
+                    const isInactive = permit.status !== 'closed' && permit.finishing_time && new Date(permit.finishing_time.replace(' ', 'T')) < new Date();
+                    const permitStatus = permit.status === 'closed' ? 'مغلقة' : (isInactive ? 'غير فعالة' : 'مفتوحة');
+                    row.append(cell(permit.permit_no), cell(permit.issuing_date_time), cell(permit.wo), cell(permit.company_name), cell(permit.location), cell(permit.issuer_name), cell(permitStatus));
                     const action = document.createElement('td');
                     action.className = 'px-4 py-3 border-t';
                     const link = document.createElement('a');

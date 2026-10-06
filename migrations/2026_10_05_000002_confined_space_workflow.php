@@ -5,6 +5,8 @@ return function (PDO $pdo) {
         'assigned_to' => 'BIGINT UNSIGNED DEFAULT NULL',
         'status' => "VARCHAR(20) NOT NULL DEFAULT 'open'",
         'closed_at' => 'DATETIME DEFAULT NULL',
+        'finishing_time_updated_at' => 'DATETIME DEFAULT NULL',
+        'finishing_time_updated_by' => 'BIGINT UNSIGNED DEFAULT NULL',
     ];
     foreach ($columns as $column => $definition) {
         $check = $pdo->prepare('SHOW COLUMNS FROM confined_space_permit LIKE ?');

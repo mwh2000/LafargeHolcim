@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS confined_space_permit (
     assigned_to BIGINT UNSIGNED DEFAULT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'open',
     closed_at DATETIME DEFAULT NULL,
+    finishing_time_updated_at DATETIME DEFAULT NULL,
+    finishing_time_updated_by BIGINT UNSIGNED DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_confined_space_created_by (created_by),
     INDEX idx_confined_space_issuing_date (issuing_date_time)

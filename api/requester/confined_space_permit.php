@@ -53,6 +53,12 @@ try {
                 }
             } elseif ($action === 'close') {
                 $result = $controller->closePermit((int)($input['permit_id'] ?? 0), (int)$decoded->id);
+            } elseif ($action === 'updateFinishingTime') {
+                $result = $controller->updateInactiveFinishingTime(
+                    (int)($input['permit_id'] ?? 0),
+                    (int)$decoded->id,
+                    (string)($input['finishing_time'] ?? '')
+                );
             } else {
                 $input['created_by'] = (int)$decoded->id;
                 $userStmt = $conn->prepare('SELECT name FROM users WHERE id = ?');
