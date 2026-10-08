@@ -4,6 +4,7 @@ require_once '../../config/config.php';
 require_once __DIR__ . '../../partials/sidebar.php';
 require_once __DIR__ . '../../partials/navbar.php';
 require_once '../helpers/authCheck.php';
+require_once '../../controllers/PermitListController.php';
 
 // Fetch options from partials
 $additionalPermits = require '../partials/hot_work/additional_permits.php';
@@ -180,17 +181,15 @@ $currentUserId = $userData['id'] ?? 0;
                                                     <input type="text" name="permit_no_<?= $permit['id'] ?>" placeholder="رقم التصريح" class="w-full px-2 py-1 border rounded focus:ring-1 focus:ring-[#0b6f76] outline-none">
                                                 </td>
                                                 <td class="p-2 border">
-                                                    <?php if ($permit['id'] === 'energy_isolation'): ?>
-                                                        <input type="hidden" name="permit_image_<?= $permit['id'] ?>" id="permit_image_path_<?= $permit['id'] ?>">
-                                                        <input type="file" accept="image/*" id="permit_image_input_<?= $permit['id'] ?>" class="hidden">
-                                                        <div class="flex flex-wrap items-center gap-1.5 max-w-[110px] sm:max-w-none">
-                                                            <img id="permit_image_preview_<?= $permit['id'] ?>" src="" alt="صورة <?= $permit['label_ar'] ?>" class="hidden h-10 w-10 object-cover rounded border cursor-pointer shrink-0">
-                                                            <div class="flex flex-col items-start gap-1">
-                                                                <button type="button" id="permit_image_btn_<?= $permit['id'] ?>" class="text-xs text-[#0b6f76] underline whitespace-nowrap">إرفاق صورة</button>
-                                                                <button type="button" id="permit_image_remove_<?= $permit['id'] ?>" class="hidden text-xs text-red-600 underline whitespace-nowrap">إزالة</button>
-                                                            </div>
+                                                    <input type="hidden" name="permit_image_<?= $permit['id'] ?>" id="permit_image_path_<?= $permit['id'] ?>">
+                                                    <input type="file" accept="image/*" id="permit_image_input_<?= $permit['id'] ?>" class="hidden">
+                                                    <div class="flex flex-wrap items-center gap-1.5 max-w-[110px] sm:max-w-none">
+                                                        <img id="permit_image_preview_<?= $permit['id'] ?>" src="" alt="صورة <?= $permit['label_ar'] ?>" class="hidden h-10 w-10 object-cover rounded border cursor-pointer shrink-0">
+                                                        <div class="flex flex-col items-start gap-1">
+                                                            <button type="button" id="permit_image_btn_<?= $permit['id'] ?>" class="text-xs text-[#0b6f76] underline whitespace-nowrap">إرفاق صورة</button>
+                                                            <button type="button" id="permit_image_remove_<?= $permit['id'] ?>" class="hidden text-xs text-red-600 underline whitespace-nowrap">إزالة</button>
                                                         </div>
-                                                    <?php endif; ?>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
@@ -272,23 +271,8 @@ $currentUserId = $userData['id'] ?? 0;
                                 $userData = json_decode($_COOKIE['user_data'] ?? '{}', true);
                                 $currentUserName = $userData['name'] ?? '';
 
-                                function hotWorkMarkExpired(array $list): array {
-                                    foreach ($list as &$item) {
-                                        $item['expired'] = false;
-                                        if (!empty($item['inspection_date'])) {
-                                            $inspectionDate = DateTime::createFromFormat('Y-m-d', $item['inspection_date']);
-                                            if ($inspectionDate) {
-                                                $expiryDate = (clone $inspectionDate)->modify('+18 months');
-                                                $item['expired'] = (new DateTime()) > $expiryDate;
-                                            }
-                                        }
-                                    }
-                                    unset($item);
-                                    return $list;
-                                }
-
-                                $welders = hotWorkMarkExpired(require '../partials/hot_work/welders.php');
-                                $fireSentries = hotWorkMarkExpired(require '../partials/hot_work/fire_sentries.php');
+                                $welders = (new PermitListController($pdo, 'welders'))->getOptions();
+                                $fireSentries = (new PermitListController($pdo, 'fire_sentries'))->getOptions();
 
                                 $roleNameOptions = [
                                     'supervisor' => [
@@ -494,7 +478,7 @@ $currentUserId = $userData['id'] ?? 0;
                 });
             }
 
-            // Additional permit image upload (currently only for energy_isolation)
+            // Additional permit image upload
             wireImageUploadButtons('permit_image_btn_', (catalogId) => {
                 const cb = document.querySelector(`input[name="additional_permits_selected[]"][value="${catalogId}"]`);
                 if (cb) cb.checked = true;
@@ -680,8 +664,10 @@ $currentUserId = $userData['id'] ?? 0;
                         const name = parts[0] || '';
                         const approved = (app.approval_status || '').includes('Approved');
                         if (key === 'welding') {
+                            if (name && !weldingSelect.options[name]) weldingSelect.addOption({name, expired: false});
                             weldingSelect.setValue(name);
                         } else if (key === 'fire_sentry') {
+                            if (name && !fireSentrySelect.options[name]) fireSentrySelect.addOption({name, expired: false});
                             fireSentrySelect.setValue(name);
                         } else {
                             const nameInput = document.querySelector(`[name="approval_name_${key}"]`);

@@ -4,6 +4,7 @@ $config = require __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../partials/sidebar.php';
 require_once __DIR__ . '/../partials/navbar.php';
 require_once __DIR__ . '/../helpers/authCheck.php';
+require_once __DIR__ . '/../../controllers/PermitListController.php';
 
 $userData = json_decode($_COOKIE['user_data'] ?? '{}', true);
 $currentUserName = $userData['name'] ?? '';
@@ -123,16 +124,9 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                                 <label class="text-sm font-medium">الموقع الدقيق<input name="supervisor" required class="form-field mt-1"></label>
                                 <label class="text-sm font-medium">المعدة المستخدمة
                                     <select name="equipment_used[]" multiple class="form-field mt-1 min-h-28">
-                                        <option value="اعمال لحام">اعمال لحام</option>
-                                        <option value="كوسره">كوسره</option>
-                                        <option value="ماكنة هدم">ماكنة هدم </option>
-                                        <option value="ماكنة بناء">ماكنة بناء </option>
-                                        <option value="سقالة">سقالة </option>
-                                        <option value="معدات يدوية">معدات يدوية </option>
-                                        <option value="دريل">دريل </option>
-                                        <option value="فابريتر">فابريتر </option>
-                                        <option value="Bob cat">Bob cat</option>
-                                        <option value="اخرى">أخرى </option>
+                                        <?php foreach ((new PermitListController($pdo, 'confined_space_equipment'))->getOptions() as $equipmentOption): ?>
+                                            <option value="<?= htmlspecialchars($equipmentOption['name']) ?>"><?= htmlspecialchars($equipmentOption['name']) ?></option>
+                                        <?php endforeach; ?>
                                     </select>
                                 </label>
                                 <label class="text-sm font-medium">نوع الصيانة
@@ -239,7 +233,7 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                             <fieldset class="mt-5">
                                 <legend class="font-semibold mb-3">ما هي المعدات المطلوبة في حالة الطوارئ؟</legend>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <?php foreach (['رافعة ميكانيكية', 'استخدام ما يناسب من خطة العمل على المرتفعات', 'جهاز هواء SCBA ذاتي التوريد مع نقالة', 'حامل ثلاثي', 'رافعة كهربائية', 'نقالة', 'أخرى'] as $equipment): ?>
+                                    <?php foreach (['رافعة ميكانيكية', 'استخدام ما يناسب من خطة العمل على المرتفعات', 'جهاز هواء SCBA ذاتي التوريد مع نقالة', 'حامل ثلاثي', 'رافعة كهربائية', 'نقالة', 'الاسعاف 07806444441', 'الاطفاء 07806444440', 'أخرى'] as $equipment): ?>
                                         <label class="flex items-center gap-2"><input type="checkbox" name="rescue_equipment[]" value="<?= htmlspecialchars($equipment, ENT_QUOTES, 'UTF-8') ?>" class="h-4 w-4 accent-teal-700"><span><?= htmlspecialchars($equipment, ENT_QUOTES, 'UTF-8') ?></span></label>
                                     <?php endforeach; ?>
                                 </div>
@@ -577,6 +571,7 @@ $editPermitId = (int)($_GET['id'] ?? 0);
             permitForm.elements.namedItem('ventilation_within_limits').checked = Number(permit.ventilation_within_limits) === 1;
             permitForm.elements.namedItem('issuer_declaration').checked = Number(permit.issuer_declaration) === 1;
             const equipment = Array.isArray(permit.equipment_used) ? permit.equipment_used : [];
+            equipment.forEach(name => equipmentSelect.addOption({value: name, text: name}));
             equipmentSelect.setValue(equipment, true);
             ['gas_device_calibrated', 'continuous_monitoring'].forEach(name => setChecked(name, permit[name]));
             (permit.additional_permits || []).forEach(item => {

@@ -54,6 +54,25 @@ function renderSidebar($activePage = '')
       'href' => BASE_URL . '/public/admin/energy_types.php',
       'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />'
     ],
+    'permit_lists' => [
+      'label' => 'Permit Lists',
+      'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />',
+      'type' => 'group',
+      'sub_links' => [
+        'permit_list_confined_space_equipment' => [
+          'label' => 'Confined Space Equipment',
+          'href' => BASE_URL . '/public/admin/permit_lists.php?list=confined_space_equipment',
+        ],
+        'permit_list_welders' => [
+          'label' => 'Welders',
+          'href' => BASE_URL . '/public/admin/permit_lists.php?list=welders',
+        ],
+        'permit_list_fire_sentries' => [
+          'label' => 'Fire Sentries',
+          'href' => BASE_URL . '/public/admin/permit_lists.php?list=fire_sentries',
+        ],
+      ]
+    ],
     'permit' => [
       'label' => 'Permit',
       'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h.01M9 16h.01M9 8h.01M13 12h3M13 16h3M13 8h3m-7 11h10a2 2 0 002-2V7a2 2 0 00-2-2H9a2 2 0 00-2 2v10a2 2 0 002 2z" />',
@@ -90,7 +109,7 @@ function renderSidebar($activePage = '')
 
   // Define role permissions (Link IDs available for each role)
   $role_permissions = [
-    1 => ['dashboard', 'users', 'actions_assigned_to_me', 'actions_created_by_me', 'actions_created_by_team', 'create_action', 'equipment_sections', 'equipments', 'energy_types', 'permit'], // Admin
+    1 => ['dashboard', 'users', 'actions_assigned_to_me', 'actions_created_by_me', 'actions_created_by_team', 'create_action', 'equipment_sections', 'equipments', 'energy_types', 'permit_lists', 'permit'], // Admin
     2 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action'], // Requester
     3 => ['dashboard', 'create_action', 'actions_assigned_to_me', 'actions_created_by_me', 'actions_created_by_team', 'permit'], // Area Manager
     4 => ['dashboard', 'actions_assigned_to_me', 'actions_created_by_me', 'create_action', 'permit'], // Safety
