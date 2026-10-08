@@ -131,6 +131,7 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                                         <option value="معدات يدوية">معدات يدوية </option>
                                         <option value="دريل">دريل </option>
                                         <option value="فابريتر">فابريتر </option>
+                                        <option value="Bob cat">Bob cat</option>
                                         <option value="اخرى">أخرى </option>
                                     </select>
                                 </label>
