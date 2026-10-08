@@ -111,8 +111,8 @@ class ConfinedSpacePermitController
             foreach ($controlImages as $imagePath) {
                 $imageStmt->execute([$controlMeasureId, $imagePath]);
             }
-            $this->insertRows('confined_space_entrants', 'person_name, medically_fit, authorized_to_enter', $permitId, $data['entrants'] ?? [], function ($item) {
-                return [trim((string)($item['name'] ?? '')), !empty($item['medically_fit']) ? 1 : 0, !empty($item['authorized_to_enter']) ? 1 : 0];
+            $this->insertRows('confined_space_entrants', 'person_name, medically_fit, authorized_to_enter, added_by', $permitId, $data['entrants'] ?? [], function ($item) use ($data) {
+                return [trim((string)($item['name'] ?? '')), !empty($item['medically_fit']) ? 1 : 0, !empty($item['authorized_to_enter']) ? 1 : 0, (int)$data['created_by']];
             });
             $this->insertRows('confined_space_communications', 'communication_method', $permitId, $data['communications'] ?? [], function ($item) {
                 return [trim((string)$item)];
@@ -168,10 +168,10 @@ class ConfinedSpacePermitController
 
     public function getGasSigner(int $userId): array
     {
-        $stmt = $this->db->prepare('SELECT id, name, signature FROM users WHERE id = ? AND role_id = 7');
+        $stmt = $this->db->prepare('SELECT id, name, signature FROM users WHERE id = ? AND role_id IN (3, 5, 7)');
         $stmt->execute([$userId]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$user) return ['success' => false, 'message' => 'هذه العملية متاحة لمستخدم role 7 فقط'];
+        if (!$user) return ['success' => false, 'message' => 'هذه العملية متاحة للأدوار 3 و5 و7 فقط'];
         return ['success' => true, 'data' => $user];
     }
 
@@ -243,6 +243,11 @@ class ConfinedSpacePermitController
                 $userId
             ]);
 
+            $previousEntrants = $this->db->prepare('SELECT id, added_by, added_at FROM confined_space_entrants WHERE confined_space_permit_id = ?');
+            $previousEntrants->execute([$permitId]);
+            $entrantOrigins = [];
+            foreach ($previousEntrants->fetchAll(PDO::FETCH_ASSOC) as $row) $entrantOrigins[(int)$row['id']] = $row;
+
             foreach (['additional_confined_space_permits', 'confined_space_control_measures', 'confined_space_entrants', 'confined_space_communications', 'confined_space_rescue_equipment'] as $table) {
                 $delete = $this->db->prepare("DELETE FROM {$table} WHERE confined_space_permit_id = ?");
                 $delete->execute([$permitId]);
@@ -256,7 +261,10 @@ class ConfinedSpacePermitController
             foreach (array_unique($data['control_images'] ?? []) as $imagePath) {
                 if (is_string($imagePath) && preg_match('#^uploads/confined_space_control/[a-f0-9]{32}\.(jpg|png|webp)$#', $imagePath)) $imageStmt->execute([$controlId, $imagePath]);
             }
-            $this->insertRows('confined_space_entrants', 'person_name, medically_fit, authorized_to_enter', $permitId, $data['entrants'] ?? [], static fn($item) => [trim((string)($item['name'] ?? '')), !empty($item['medically_fit']) ? 1 : 0, !empty($item['authorized_to_enter']) ? 1 : 0]);
+            $this->insertRows('confined_space_entrants', 'person_name, medically_fit, authorized_to_enter, added_by, added_at', $permitId, $data['entrants'] ?? [], static function ($item) use ($entrantOrigins, $userId) {
+                $origin = $entrantOrigins[(int)($item['id'] ?? 0)] ?? null;
+                return [trim((string)($item['name'] ?? '')), !empty($item['medically_fit']) ? 1 : 0, !empty($item['authorized_to_enter']) ? 1 : 0, $origin['added_by'] ?? $userId, $origin['added_at'] ?? date('Y-m-d H:i:s')];
+            });
             $this->insertRows('confined_space_communications', 'communication_method', $permitId, $data['communications'] ?? [], static fn($item) => [trim((string)$item)]);
             $this->insertRows('confined_space_rescue_equipment', 'equipment_name', $permitId, $data['rescue_equipment'] ?? [], static fn($item) => [trim((string)$item)]);
 
@@ -296,7 +304,7 @@ class ConfinedSpacePermitController
         if (!$permitStmt->fetchColumn()) return ['success' => false, 'message' => 'الرخصة غير موجودة أو مغلقة'];
         $error = $this->validateGasMeasurements([$measurement]);
         if ($error !== null) return ['success' => false, 'message' => $error];
-        $userStmt = $this->db->prepare('SELECT signature FROM users WHERE id = ? AND role_id = 7');
+        $userStmt = $this->db->prepare('SELECT signature FROM users WHERE id = ? AND role_id IN (3, 5, 7)');
         $userStmt->execute([$userId]);
         $signaturePath = $userStmt->fetchColumn();
         $stmt = $this->db->prepare('INSERT INTO confined_space_gas_measurements (confined_space_permit_id, measurement_time, oxygen_percent, lel_uel_percent, co_ppm, h2s_ppm, added_by, added_signature_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
@@ -312,28 +320,53 @@ class ConfinedSpacePermitController
         return ['success' => true, 'message' => 'تم إغلاق الرخصة بنجاح'];
     }
 
-    public function updateInactiveFinishingTime(int $permitId, int $userId, string $finishingTime): array
+    public function updateInactiveFinishingTime(int $permitId, int $userId, int $roleId, string $finishingTime): array
     {
+        if (!in_array($roleId, [3, 5, 7], true)) {
+            return ['success' => false, 'message' => 'تعديل وقت الانتهاء متاح للأدوار 3 و5 و7 فقط'];
+        }
         try {
             $timestamp = strtotime($finishingTime);
             if ($timestamp === false || $timestamp <= time()) {
                 return ['success' => false, 'message' => 'حدد تاريخاً ووقتاً مستقبلياً لانتهاء الرخصة'];
             }
-
-            $stmt = $this->db->prepare("UPDATE confined_space_permit
-                SET finishing_time = ?, finishing_time_updated_at = NOW(), finishing_time_updated_by = ?
-                WHERE id = ? AND created_by = ? AND status = 'open' AND finishing_time < NOW()");
-            $stmt->execute([date('Y-m-d H:i:s', $timestamp), $userId, $permitId, $userId]);
-
-            if ($stmt->rowCount() === 0) {
-                return ['success' => false, 'message' => 'تعديل وقت الانتهاء متاح لمنشئ الرخصة فقط وبعد أن تصبح غير فعالة'];
+            $this->db->beginTransaction();
+            $select = $this->db->prepare("SELECT finishing_time FROM confined_space_permit WHERE id = ? AND status = 'open' AND finishing_time < NOW() FOR UPDATE");
+            $select->execute([$permitId]);
+            $currentFinishingTime = $select->fetchColumn();
+            if (!$currentFinishingTime) {
+                $this->db->rollBack();
+                return ['success' => false, 'message' => 'تعديل وقت الانتهاء متاح للرخص غير الفعالة (المنتهية) فقط'];
             }
-
+            $newFinishingTime = date('Y-m-d H:i:s', $timestamp);
+            $history = $this->db->prepare('INSERT INTO confined_space_finishing_time_history (confined_space_permit_id, previous_finishing_time, new_finishing_time, changed_by) VALUES (?, ?, ?, ?)');
+            $history->execute([$permitId, $currentFinishingTime, $newFinishingTime, $userId]);
+            $update = $this->db->prepare('UPDATE confined_space_permit SET finishing_time = ?, finishing_time_updated_at = NOW(), finishing_time_updated_by = ? WHERE id = ? AND status = \'open\'');
+            $update->execute([$newFinishingTime, $userId, $permitId]);
+            $this->db->commit();
             return ['success' => true, 'message' => 'تم تحديث وقت انتهاء الرخصة', 'finishing_time' => date('Y-m-d H:i:s', $timestamp)];
         } catch (Throwable $e) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
             error_log('Confined-space finishing time update failed: ' . $e->getMessage());
             return ['success' => false, 'message' => 'تعذر تحديث وقت انتهاء الرخصة'];
         }
+    }
+
+    public function addEntrant(int $permitId, int $userId, int $roleId, array $data): array
+    {
+        if (!in_array($roleId, [3, 5, 7], true)) {
+            return ['success' => false, 'message' => 'إضافة الأشخاص متاحة للأدوار 3 و5 و7 فقط'];
+        }
+        $personName = trim((string)($data['person_name'] ?? ''));
+        if ($personName === '') return ['success' => false, 'message' => 'اكتب اسم الشخص المطلوب إضافته'];
+
+        $permit = $this->db->prepare("SELECT id FROM confined_space_permit WHERE id = ? AND status = 'open'");
+        $permit->execute([$permitId]);
+        if (!$permit->fetchColumn()) return ['success' => false, 'message' => 'الرخصة غير موجودة أو مغلقة'];
+
+        $stmt = $this->db->prepare('INSERT INTO confined_space_entrants (confined_space_permit_id, person_name, medically_fit, authorized_to_enter, added_by) VALUES (?, ?, ?, ?, ?)');
+        $stmt->execute([$permitId, $personName, !empty($data['medically_fit']) ? 1 : 0, !empty($data['authorized_to_enter']) ? 1 : 0, $userId]);
+        return ['success' => true, 'message' => 'تمت إضافة الشخص', 'id' => (int)$this->db->lastInsertId()];
     }
 
     private function validateGasMeasurements(array $measurements): ?string
@@ -418,7 +451,6 @@ class ConfinedSpacePermitController
         $collections = [
             'additional_permits' => ['additional_confined_space_permits', 'permit_name, permit_number'],
             'control_measures' => ['confined_space_control_measures', 'id, measure_text, status'],
-            'entrants' => ['confined_space_entrants', 'person_name, medically_fit, authorized_to_enter'],
             'communications' => ['confined_space_communications', 'communication_method'],
             'rescue_equipment' => ['confined_space_rescue_equipment', 'equipment_name'],
         ];
@@ -427,6 +459,9 @@ class ConfinedSpacePermitController
             $childStmt->execute([$id]);
             $permit[$key] = $childStmt->fetchAll(PDO::FETCH_ASSOC);
         }
+        $entrantStmt = $this->db->prepare("SELECT e.id, e.person_name, e.medically_fit, e.authorized_to_enter, e.added_by, e.added_at, adder.name AS added_by_name, adder.signature AS added_by_signature, (SELECT matched.signature FROM users matched WHERE TRIM(matched.name) COLLATE utf8mb4_unicode_ci = TRIM(e.person_name) COLLATE utf8mb4_unicode_ci AND matched.signature IS NOT NULL AND matched.signature <> '' ORDER BY matched.id LIMIT 1) AS person_signature FROM confined_space_entrants e LEFT JOIN users adder ON adder.id = e.added_by WHERE e.confined_space_permit_id = ? ORDER BY e.id");
+        $entrantStmt->execute([$id]);
+        $permit['entrants'] = $entrantStmt->fetchAll(PDO::FETCH_ASSOC);
         $gasStmt = $this->db->prepare('SELECT gm.id, gm.measurement_time, gm.oxygen_percent, gm.lel_uel_percent, gm.co_ppm, gm.h2s_ppm, gm.added_by, gm.added_at, u.name AS added_by_name, u.signature AS added_by_signature FROM confined_space_gas_measurements gm LEFT JOIN users u ON u.id = gm.added_by WHERE gm.confined_space_permit_id = ? ORDER BY gm.id');
         $gasStmt->execute([$id]);
         $permit['gas_measurements'] = $gasStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -436,6 +471,14 @@ class ConfinedSpacePermitController
             $measure['images'] = $imageQuery->fetchAll(PDO::FETCH_ASSOC);
         }
         unset($measure);
+        $signatureByName = $this->db->prepare("SELECT signature FROM users WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) AND signature IS NOT NULL AND signature <> '' ORDER BY id LIMIT 1");
+        foreach (['gas_qualified_person', 'emergency_responsible'] as $nameField) {
+            $signatureByName->execute([(string)($permit[$nameField] ?? '')]);
+            $permit[$nameField . '_signature'] = $signatureByName->fetchColumn() ?: null;
+        }
+        $historyStmt = $this->db->prepare('SELECT h.previous_finishing_time, h.new_finishing_time, h.changed_at, h.changed_by, u.name AS changed_by_name FROM confined_space_finishing_time_history h LEFT JOIN users u ON u.id = h.changed_by WHERE h.confined_space_permit_id = ? ORDER BY h.id DESC');
+        $historyStmt->execute([$id]);
+        $permit['finishing_time_history'] = $historyStmt->fetchAll(PDO::FETCH_ASSOC);
         return ['success' => true, 'data' => $permit];
     }
 

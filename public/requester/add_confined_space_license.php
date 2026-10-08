@@ -129,6 +129,9 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                                         <option value="ماكنة بناء">ماكنة بناء </option>
                                         <option value="سقالة">سقالة </option>
                                         <option value="معدات يدوية">معدات يدوية </option>
+                                        <option value="دريل">دريل </option>
+                                        <option value="فابريتر">فابريتر </option>
+                                        <option value="اخرى">أخرى </option>
                                     </select>
                                 </label>
                                 <label class="text-sm font-medium">نوع الصيانة
@@ -338,8 +341,9 @@ $editPermitId = (int)($_GET['id'] ?? 0);
             placeholder: 'اختر المعدة المستخدمة...'
         });
 
-        function addEntrant(name = '', fit = true, authorized = true) {
+        function addEntrant(name = '', fit = true, authorized = true, id = '') {
             const row = document.createElement('div');
+            row.dataset.entrantId = id;
             row.className = 'grid grid-cols-1 lg:grid-cols-[minmax(180px,1fr)_auto_auto_auto] items-center gap-3 rounded border border-slate-200 p-3';
             row.innerHTML = `<input name="entrant_name[]" value="${escapeHtml(name)}" required class="form-field" placeholder="اسم الشخص"><label class="flex items-center gap-2 text-sm"><input type="checkbox" name="entrant_fit[]" value="1" ${fit ? 'checked' : ''} class="h-4 w-4 accent-teal-700">لائق صحياً</label><label class="flex items-center gap-2 text-sm"><input type="checkbox" name="entrant_authorized[]" value="1" ${authorized ? 'checked' : ''} class="h-4 w-4 accent-teal-700">مصرح له بالدخول</label><button type="button" class="remove-row text-sm text-red-700">حذف</button>`;
             entrantsList.appendChild(row);
@@ -590,7 +594,7 @@ $editPermitId = (int)($_GET['id'] ?? 0);
             }))));
             renderControlImagePreviews();
             entrantsList.replaceChildren();
-            (permit.entrants || []).forEach(item => addEntrant(item.person_name, Number(item.medically_fit) === 1, Number(item.authorized_to_enter) === 1));
+            (permit.entrants || []).forEach(item => addEntrant(item.person_name, Number(item.medically_fit) === 1, Number(item.authorized_to_enter) === 1, item.id));
             (permit.communications || []).forEach(item => setChecked('communications[]', item.communication_method));
             (permit.rescue_equipment || []).forEach(item => setChecked('rescue_equipment[]', item.equipment_name));
             gasRows.replaceChildren();
@@ -654,6 +658,7 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                 answer: fd.get('control_0')
             });
             entrantsList.querySelectorAll(':scope > div').forEach(row => data.entrants.push({
+                id: row.dataset.entrantId || null,
                 name: row.querySelector('[name="entrant_name[]"]').value,
                 medically_fit: row.querySelector('[name="entrant_fit[]"]').checked,
                 authorized_to_enter: row.querySelector('[name="entrant_authorized[]"]').checked

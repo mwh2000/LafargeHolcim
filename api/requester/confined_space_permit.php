@@ -20,9 +20,9 @@ try {
     if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'getAssignees') {
         $result = $controller->getAssignees();
     } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'getGasSigner') {
-        if ((int)$decoded->role_id !== 7) {
+        if (!in_array((int)$decoded->role_id, [3, 5, 7], true)) {
             http_response_code(403);
-            $result = ['success' => false, 'message' => 'هذه العملية متاحة لمستخدم role 7 فقط'];
+            $result = ['success' => false, 'message' => 'هذه العملية متاحة للأدوار 3 و5 و7 فقط'];
         } else {
             $result = $controller->getGasSigner((int)$decoded->id);
         }
@@ -45,9 +45,9 @@ try {
             if ($action === 'update') {
                 $result = $controller->updatePermit((int)($input['permit_id'] ?? 0), (int)$decoded->id, $input);
             } elseif ($action === 'addGasMeasurement') {
-                if ((int)$decoded->role_id !== 7) {
+                if (!in_array((int)$decoded->role_id, [3, 5, 7], true)) {
                     http_response_code(403);
-                    $result = ['success' => false, 'message' => 'إضافة قراءات جديدة متاحة لمستخدمين الدور 7 فقط'];
+                    $result = ['success' => false, 'message' => 'إضافة قراءات جديدة متاحة للأدوار 3 و5 و7 فقط'];
                 } else {
                     $result = $controller->addGasMeasurement((int)($input['permit_id'] ?? 0), (int)$decoded->id, $input['measurement'] ?? []);
                 }
@@ -57,7 +57,15 @@ try {
                 $result = $controller->updateInactiveFinishingTime(
                     (int)($input['permit_id'] ?? 0),
                     (int)$decoded->id,
+                    (int)$decoded->role_id,
                     (string)($input['finishing_time'] ?? '')
+                );
+            } elseif ($action === 'addEntrant') {
+                $result = $controller->addEntrant(
+                    (int)($input['permit_id'] ?? 0),
+                    (int)$decoded->id,
+                    (int)$decoded->role_id,
+                    $input
                 );
             } else {
                 $input['created_by'] = (int)$decoded->id;
