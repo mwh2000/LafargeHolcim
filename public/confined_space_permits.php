@@ -23,8 +23,49 @@ require_once __DIR__ . '/helpers/authCheck.php';
             <main class="flex-1 p-4 md:p-8 md:pl-12">
                 <div class="max-w-6xl mx-auto">
                     <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
-                        <h1 class="text-2xl font-bold text-gray-800">رخص دخول الأماكن المغلقة</h1>
+                        <div class="flex items-center gap-3">
+                            <h1 class="text-2xl font-bold text-gray-800">رخص دخول الأماكن المغلقة</h1>
+                            <span id="statusFilterBadge" class="hidden px-3 py-1 rounded-full text-xs font-bold"></span>
+                        </div>
                         <a href="requester/add_confined_space_license.php" class="rounded bg-teal-800 px-4 py-2 text-white">+ إصدار رخصة</a>
+                    </div>
+                    <div class="flex flex-wrap gap-2 items-center bg-white p-3 rounded-md shadow-sm mb-4" dir="rtl">
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-gray-600">رقم الرخصة:</label>
+                            <input type="text" id="filterPermitNo" placeholder="بحث..." class="border px-2 py-1 rounded-md text-sm">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-gray-600">القسم:</label>
+                            <select id="filterLocation" class="border px-2 py-1 rounded-md text-sm">
+                                <option value="">الكل</option>
+                                <option>كسارة</option>
+                                <option>طحونة مواد</option>
+                                <option>الأفران</option>
+                                <option>طواحين الاسمنت</option>
+                                <option>التعبئة</option>
+                                <option>محطة الاسالة</option>
+                                <option>أخرى</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-gray-600">من:</label>
+                            <input type="date" id="filterFromDate" class="border px-2 py-1 rounded-md text-sm">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-gray-600">إلى:</label>
+                            <input type="date" id="filterToDate" class="border px-2 py-1 rounded-md text-sm">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-gray-600">الحالة:</label>
+                            <select id="statusFilter" class="border px-2 py-1 rounded-md text-sm">
+                                <option value="">الكل</option>
+                                <option value="open">مفتوحة</option>
+                                <option value="not_active">غير فعالة</option>
+                                <option value="close">مغلقة</option>
+                            </select>
+                        </div>
+                        <button id="applyFiltersBtn" class="bg-[#0b6f76] text-white px-4 py-1.5 rounded-md text-sm hover:bg-[#085a60] transition">تطبيق</button>
+                        <button id="resetFilters" class="hidden text-gray-500 hover:text-gray-700 px-4 py-1.5 text-sm font-medium">مسح</button>
                     </div>
                     <div class="overflow-x-auto bg-white border border-slate-200 rounded-md">
                         <table class="w-full min-w-[800px] text-sm text-right">
@@ -53,7 +94,53 @@ require_once __DIR__ . '/helpers/authCheck.php';
     </div>
     <script>
         const TOKEN = <?= json_encode($_COOKIE['token'] ?? '') ?>;
-        const API_URL = '../api/requester/confined_space_permit.php?action=getAll';
+        const FILTERS = ['permit_no', 'location', 'from_date', 'to_date', 'status'];
+        const FILTER_INPUTS = {
+            permit_no: 'filterPermitNo',
+            location: 'filterLocation',
+            from_date: 'filterFromDate',
+            to_date: 'filterToDate',
+            status: 'statusFilter'
+        };
+        const STATUS_BADGES = {
+            open: ['مفتوحة', 'bg-blue-100', 'text-blue-700'],
+            not_active: ['غير فعالة', 'bg-red-100', 'text-red-700'],
+            close: ['مغلقة', 'bg-green-100', 'text-green-700']
+        };
+        const urlParams = new URLSearchParams(window.location.search);
+        const apiParams = new URLSearchParams({
+            action: 'getAll'
+        });
+        FILTERS.forEach(key => {
+            const value = urlParams.get(key);
+            if (!value) return;
+            apiParams.set(key, value);
+            document.getElementById(FILTER_INPUTS[key]).value = value;
+        });
+        if (FILTERS.some(key => urlParams.get(key))) document.getElementById('resetFilters').classList.remove('hidden');
+        const badgeConfig = STATUS_BADGES[urlParams.get('status')];
+        if (badgeConfig) {
+            const badge = document.getElementById('statusFilterBadge');
+            const [text, ...classes] = badgeConfig;
+            badge.textContent = text;
+            badge.classList.remove('hidden');
+            badge.classList.add(...classes);
+        }
+        document.getElementById('applyFiltersBtn').addEventListener('click', () => {
+            const params = new URLSearchParams();
+            FILTERS.forEach(key => {
+                const value = document.getElementById(FILTER_INPUTS[key]).value.trim();
+                if (value) params.set(key, value);
+            });
+            window.location.search = params.toString();
+        });
+        document.getElementById('filterPermitNo').addEventListener('keydown', event => {
+            if (event.key === 'Enter') document.getElementById('applyFiltersBtn').click();
+        });
+        document.getElementById('resetFilters').addEventListener('click', () => {
+            window.location.href = 'confined_space_permits.php';
+        });
+        const API_URL = `../api/requester/confined_space_permit.php?${apiParams.toString()}`;
         const tbody = document.getElementById('permitRows');
 
         function cell(value) {

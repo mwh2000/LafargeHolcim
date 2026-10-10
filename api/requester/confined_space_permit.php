@@ -35,7 +35,9 @@ try {
             http_response_code(403);
         }
     } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'getAll') {
-        $result = $controller->getAll((int)$decoded->id, (int)$decoded->role_id);
+        $result = $controller->getAll((int)$decoded->id, (int)$decoded->role_id, $_GET);
+    } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'getStatistics') {
+        $result = $controller->getStatistics((int)$decoded->id, (int)$decoded->role_id, $_GET);
     } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
         if (!is_array($input)) {

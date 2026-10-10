@@ -41,6 +41,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <select id="permit_type" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-[#0b6f76] focus:border-[#0b6f76]">
                                 <option value="energy_isolation">Energy Isolation</option>
                                 <option value="hot_work">Hot Work</option>
+                                <option value="confined_space">Confined Space</option>
                             </select>
                         </div>
 
@@ -103,11 +104,22 @@ require_once __DIR__ . '/helpers/authCheck.php';
         const TOKEN = "<?= $_COOKIE['token'] ?? '' ?>";
         const ENERGY_API_URL = "../api/requester/energy_insulation.php";
         const HOT_WORK_API_URL = "../api/requester/hot_work_permit.php";
+        const CONFINED_SPACE_API_URL = "../api/requester/confined_space_permit.php";
+        const PERMITS_PAGES = {
+            energy_isolation: 'permits.php',
+            hot_work: 'hot_work_permits.php',
+            confined_space: 'confined_space_permits.php'
+        };
+        const STATS_APIS = {
+            energy_isolation: ENERGY_API_URL,
+            hot_work: HOT_WORK_API_URL,
+            confined_space: CONFINED_SPACE_API_URL
+        };
         let permitStatusChart = null;
 
         function getPermitsUrl(status = '') {
             const permitType = document.getElementById("permit_type").value;
-            let base = permitType === 'hot_work' ? 'hot_work_permits.php' : 'permits.php';
+            let base = PERMITS_PAGES[permitType];
             const params = new URLSearchParams();
             const fromDate = document.getElementById("from_date").value;
             const toDate = document.getElementById("to_date").value;
@@ -187,7 +199,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                 if (toDate) params.append("to_date", toDate);
                 if (permitType === 'energy_isolation' && vcsOnly) params.append("is_vcs_isolation", vcsOnly);
 
-                const apiUrl = permitType === 'hot_work' ? HOT_WORK_API_URL : ENERGY_API_URL;
+                const apiUrl = STATS_APIS[permitType];
 
                 const res = await fetch(`${apiUrl}?${params.toString()}`, {
                     headers: {
@@ -230,12 +242,14 @@ require_once __DIR__ . '/helpers/authCheck.php';
                             <p class="mt-2 text-2xl font-semibold text-green-600">${d.completed}</p>
                         </div>
                     `;
-                } else if (permitType === 'hot_work') {
+                } else {
+                    const permitLabel = permitType === 'hot_work' ? 'Hot Work' : 'Confined Space';
+                    const closeHint = permitType === 'hot_work' ? 'Marked done before expiry' : 'Closed by the permit creator';
                     chartContainer.classList.add("hidden");
                     statsContainer.innerHTML = `
                         <div onclick="location.href='${getPermitsUrl()}'"
                              class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-gray-400 hover:shadow-lg transition">
-                            <p class="text-sm text-gray-500">Total Permits (Hot Work)</p>
+                            <p class="text-sm text-gray-500">Total Permits (${permitLabel})</p>
                             <p class="mt-2 text-2xl font-semibold text-gray-700">${d.total}</p>
                         </div>
                         <div onclick="location.href='${getPermitsUrl('open')}'"
@@ -254,7 +268,7 @@ require_once __DIR__ . '/helpers/authCheck.php';
                              class="cursor-pointer bg-white shadow-md rounded-lg p-5 border-l-4 border-green-400 hover:shadow-lg transition">
                             <p class="text-sm text-gray-500">Close</p>
                             <p class="mt-2 text-2xl font-semibold text-green-600">${d.close ?? 0}</p>
-                            <p class="text-xs text-gray-400 mt-1">Marked done before expiry</p>
+                            <p class="text-xs text-gray-400 mt-1">${closeHint}</p>
                         </div>
                     `;
                 }

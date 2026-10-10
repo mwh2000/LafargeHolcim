@@ -482,17 +482,57 @@ class ConfinedSpacePermitController
         return ['success' => true, 'data' => $permit];
     }
 
-    public function getAll(int $userId, int $roleId): array
+    private const STATUS_CONDITIONS = [
+        'open' => "p.status <> 'closed' AND p.finishing_time >= NOW()",
+        'not_active' => "p.status <> 'closed' AND p.finishing_time < NOW()",
+        'close' => "p.status = 'closed'",
+    ];
+
+    // Shared WHERE clause for the permits list and the dashboard statistics.
+    private function buildFilters(int $userId, int $roleId, array $filters, bool $withStatus): array
     {
-        $sql = "SELECT p.id, p.permit_no, p.issuing_date_time, p.wo, p.company_name, p.location, p.finishing_time, p.issuer_name, p.status, p.assigned_to FROM confined_space_permit p";
+        $where = ['1=1'];
         $params = [];
         if (!in_array($roleId, [1, 3, 4, 5, 6, 7], true)) {
-            $sql .= ' WHERE p.created_by = ?';
+            $where[] = 'p.created_by = ?';
             $params[] = $userId;
         }
-        $sql .= ' ORDER BY p.id DESC';
-        $stmt = $this->db->prepare($sql);
+        if (!empty($filters['from_date'])) {
+            $where[] = 'DATE(p.issuing_date_time) >= ?';
+            $params[] = $filters['from_date'];
+        }
+        if (!empty($filters['to_date'])) {
+            $where[] = 'DATE(p.issuing_date_time) <= ?';
+            $params[] = $filters['to_date'];
+        }
+        if (!empty($filters['permit_no'])) {
+            $where[] = 'p.permit_no LIKE ?';
+            $params[] = '%' . $filters['permit_no'] . '%';
+        }
+        if (!empty($filters['location'])) {
+            $where[] = 'p.location = ?';
+            $params[] = $filters['location'];
+        }
+        if ($withStatus && isset(self::STATUS_CONDITIONS[$filters['status'] ?? ''])) {
+            $where[] = self::STATUS_CONDITIONS[$filters['status']];
+        }
+        return [implode(' AND ', $where), $params];
+    }
+
+    public function getAll(int $userId, int $roleId, array $filters = []): array
+    {
+        [$where, $params] = $this->buildFilters($userId, $roleId, $filters, true);
+        $stmt = $this->db->prepare("SELECT p.id, p.permit_no, p.issuing_date_time, p.wo, p.company_name, p.location, p.finishing_time, p.issuer_name, p.status, p.assigned_to FROM confined_space_permit p WHERE {$where} ORDER BY p.id DESC");
         $stmt->execute($params);
         return ['success' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
+    }
+
+    public function getStatistics(int $userId, int $roleId, array $filters = []): array
+    {
+        [$where, $params] = $this->buildFilters($userId, $roleId, $filters, false);
+        $counts = implode(', ', array_map(static fn($key, $condition) => "COALESCE(SUM(CASE WHEN {$condition} THEN 1 ELSE 0 END), 0) AS {$key}", array_keys(self::STATUS_CONDITIONS), self::STATUS_CONDITIONS));
+        $stmt = $this->db->prepare("SELECT COUNT(*) AS total, {$counts} FROM confined_space_permit p WHERE {$where}");
+        $stmt->execute($params);
+        return ['success' => true, 'data' => array_map('intval', $stmt->fetch(PDO::FETCH_ASSOC))];
     }
 }
