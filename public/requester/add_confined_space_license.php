@@ -139,6 +139,7 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                                 <label class="text-sm font-medium">تاريخ ووقت إصدار الرخصة<input name="task_start_datetime" type="datetime-local" required class="form-field mt-1"></label>
                                 <label class="text-sm font-medium">وقت انتهاء الرخصة<input name="finishing_time" type="datetime-local" required class="form-field mt-1"></label>
                             </div>
+                            <label class="block text-sm font-medium mt-4">التفاصيل<textarea name="details" rows="3" class="form-field mt-1"></textarea></label>
                         </section>
 
                         <section class="step-content bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="2">
@@ -281,6 +282,11 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                                         <div class="flex gap-5"><label class="flex items-center gap-1"><input type="radio" name="<?= $field ?>" value="نعم"> نعم</label><label class="flex items-center gap-1"><input type="radio" name="<?= $field ?>" value="لا"> لا</label></div>
                                     </fieldset>
                                 <?php endforeach; ?>
+                                <fieldset>
+                                    <legend class="text-sm font-medium mb-2">هل مراقب الفتحة مطلوب؟</legend>
+                                    <div class="flex gap-5"><label class="flex items-center gap-1"><input type="radio" name="hatch_watcher_required" value="نعم"> نعم</label><label class="flex items-center gap-1"><input type="radio" name="hatch_watcher_required" value="لا"> لا</label></div>
+                                </fieldset>
+                                <label id="hatchWatcherNameField" class="hidden text-sm font-medium">اسم مراقب الفتحة<input name="hatch_watcher_name" class="form-field mt-1"></label>
                             </div>
                             <aside class="mt-5 rounded border-r-4 border-amber-500 bg-amber-50 p-4 text-sm leading-7 text-slate-800">
                                 <p>أ) على مدير الوحدة أن يأذن رسمياً بالعمل في الأماكن المحصورة عالية الخطورة، مثل: الصوامع، صهاريج التخزين، المجاري الجوفية والحفريات أعمق من 2 م.</p>
@@ -487,7 +493,9 @@ $editPermitId = (int)($_GET['id'] ?? 0);
             if (step === 7) return validateGasRows() && !!section.querySelector('[name="gas_device_model"]').value.trim() &&
                 !!section.querySelector('[name="gas_qualified_person"]').value.trim() &&
                 !!section.querySelector('[name="gas_device_calibrated"]:checked') &&
-                !!section.querySelector('[name="continuous_monitoring"]:checked');
+                !!section.querySelector('[name="continuous_monitoring"]:checked') &&
+                !!section.querySelector('[name="hatch_watcher_required"]:checked') &&
+                (section.querySelector('[name="hatch_watcher_required"]:checked').value !== 'نعم' || !!section.querySelector('[name="hatch_watcher_name"]').value.trim());
             if (step === 8) return section.querySelector('[name="issuer_declaration"]').checked;
             return true;
         }
@@ -560,9 +568,15 @@ $editPermitId = (int)($_GET['id'] ?? 0);
             if (input) input.checked = true;
         }
 
+        function toggleHatchWatcherName() {
+            const required = permitForm.querySelector('[name="hatch_watcher_required"]:checked')?.value === 'نعم';
+            document.getElementById('hatchWatcherNameField').classList.toggle('hidden', !required);
+        }
+        permitForm.querySelectorAll('[name="hatch_watcher_required"]').forEach(input => input.addEventListener('change', toggleHatchWatcherName));
+
         function populatePermit(permit) {
             originalPermit = permit;
-            ['wo', 'company_name', 'supervisor', 'maintenance_type', 'task_start_datetime', 'finishing_time', 'work_description', 'ventilation_unit_no', 'emergency_responsible', 'rescue_equipment_available', 'gas_device_model', 'gas_qualified_person'].forEach(name => {
+            ['wo', 'company_name', 'supervisor', 'maintenance_type', 'task_start_datetime', 'finishing_time', 'details', 'work_description', 'ventilation_unit_no', 'emergency_responsible', 'rescue_equipment_available', 'gas_device_model', 'gas_qualified_person', 'hatch_watcher_name'].forEach(name => {
                 const field = permitForm.elements.namedItem(name);
                 if (field) field.value = (permit[name] || '').replace?.(' ', 'T') && ['task_start_datetime', 'finishing_time'].includes(name) ? permit[name].replace(' ', 'T') : (permit[name] || '');
             });
@@ -573,7 +587,8 @@ $editPermitId = (int)($_GET['id'] ?? 0);
             const equipment = Array.isArray(permit.equipment_used) ? permit.equipment_used : [];
             equipment.forEach(name => equipmentSelect.addOption({value: name, text: name}));
             equipmentSelect.setValue(equipment, true);
-            ['gas_device_calibrated', 'continuous_monitoring'].forEach(name => setChecked(name, permit[name]));
+            ['gas_device_calibrated', 'continuous_monitoring', 'hatch_watcher_required'].forEach(name => setChecked(name, permit[name]));
+            toggleHatchWatcherName();
             (permit.additional_permits || []).forEach(item => {
                 const row = [...permitForm.querySelectorAll('[name="permit_name_' + item.permit_name + '"]')];
                 const hidden = [...permitForm.querySelectorAll('input[type="hidden"][name^="permit_name_"]')].find(input => input.value === item.permit_name);
@@ -626,6 +641,7 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                 maintenance_type: fd.get('maintenance_type'),
                 task_start_datetime: fd.get('task_start_datetime'),
                 finishing_time: fd.get('finishing_time'),
+                details: fd.get('details'),
                 work_description: fd.get('work_description'),
                 ventilation_unit_no: fd.get('ventilation_unit_no'),
                 ventilation_within_limits: fd.has('ventilation_within_limits'),
@@ -635,6 +651,8 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                 gas_qualified_person: fd.get('gas_qualified_person'),
                 gas_device_calibrated: fd.get('gas_device_calibrated'),
                 continuous_monitoring: fd.get('continuous_monitoring'),
+                hatch_watcher_required: fd.get('hatch_watcher_required'),
+                hatch_watcher_name: fd.get('hatch_watcher_name'),
                 issuer_declaration: fd.has('issuer_declaration'),
                 issuer_name: CURRENT_USER_NAME,
                 additional_permits: [],

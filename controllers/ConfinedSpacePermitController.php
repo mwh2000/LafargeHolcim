@@ -5,6 +5,9 @@ require_once __DIR__ . '/emailController.php';
 
 class ConfinedSpacePermitController
 {
+    // Always notified (in-app + email) when a new confined-space permit is issued.
+    private const NEW_PERMIT_WATCHER_ID = 149;
+
     private PDO $db;
 
     public function __construct(PDO $db)
@@ -32,6 +35,8 @@ class ConfinedSpacePermitController
         if (!in_array($data['rescue_equipment_available'] ?? null, ['نعم', 'لا'], true)) {
             return ['success' => false, 'message' => 'حدد ما إذا كانت معدات الإنقاذ متوفرة قرب موقع العمل'];
         }
+        $hatchWatcherError = $this->validateHatchWatcher($data);
+        if ($hatchWatcherError !== null) return ['success' => false, 'message' => $hatchWatcherError];
         if (empty($data['additional_permits']) || !is_array($data['additional_permits'])) {
             return ['success' => false, 'message' => 'حدد تصريحاً إضافياً واحداً على الأقل'];
         }
@@ -63,12 +68,12 @@ class ConfinedSpacePermitController
             $permitNo = LicenseNumberGenerator::next($this->db, 'confined_space_permit', 'OHSM-PTW-C.S-', 3);
             $stmt = $this->db->prepare("INSERT INTO confined_space_permit (
                 permit_no, issuing_date_time, wo, company_name, location, supervisor,
-                maintenance_type, task_start_datetime, finishing_time, work_description,
+                maintenance_type, task_start_datetime, finishing_time, details, work_description,
                 ventilation_unit_no, ventilation_within_limits, emergency_responsible,
                 rescue_equipment_available, gas_device_model, gas_qualified_person,
-                gas_device_calibrated, continuous_monitoring, issuer_id, issuer_name,
-                issuer_declaration, created_by, assigned_to, status
-            ) VALUES (?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')");
+                gas_device_calibrated, continuous_monitoring, hatch_watcher_required, hatch_watcher_name,
+                issuer_id, issuer_name, issuer_declaration, created_by, assigned_to, status
+            ) VALUES (?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')");
             $stmt->execute([
                 $permitNo,
                 trim($data['wo']),
@@ -78,6 +83,7 @@ class ConfinedSpacePermitController
                 trim($data['maintenance_type']),
                 $this->normalizeDate($data['task_start_datetime']),
                 $this->normalizeDate($data['finishing_time']),
+                trim((string)($data['details'] ?? '')) ?: null,
                 trim((string)($data['work_description'] ?? '')),
                 trim((string)($data['ventilation_unit_no'] ?? '')) ?: null,
                 !empty($data['ventilation_within_limits']) ? 1 : 0,
@@ -87,6 +93,8 @@ class ConfinedSpacePermitController
                 trim((string)($data['gas_qualified_person'] ?? '')) ?: null,
                 $this->yesNo($data['gas_device_calibrated'] ?? null),
                 $this->yesNo($data['continuous_monitoring'] ?? null),
+                $data['hatch_watcher_required'],
+                $this->hatchWatcherName($data),
                 (int)$data['created_by'],
                 trim($data['issuer_name']),
                 1,
@@ -133,6 +141,7 @@ class ConfinedSpacePermitController
 
             $this->db->commit();
             $this->notifyCreated($permitId, $permitNo, (int)$data['created_by'], !empty($data['assigned_to']) ? (int)$data['assigned_to'] : null);
+            $this->notifyWatcher($permitId, $permitNo, (int)$data['created_by'], !empty($data['assigned_to']) ? (int)$data['assigned_to'] : null);
             return ['success' => true, 'message' => 'تم إنشاء رخصة دخول الأماكن المغلقة بنجاح', 'id' => $permitId, 'permit_no' => $permitNo];
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) $this->db->rollBack();
@@ -197,6 +206,23 @@ class ConfinedSpacePermitController
         }
     }
 
+    private function notifyWatcher(int $permitId, string $permitNo, int $creatorId, ?int $assigneeId): void
+    {
+        $watcherId = self::NEW_PERMIT_WATCHER_ID;
+        if (in_array($watcherId, [$creatorId, $assigneeId], true)) return;
+        $exists = $this->db->prepare('SELECT 1 FROM users WHERE id = ?');
+        $exists->execute([$watcherId]);
+        if (!$exists->fetchColumn()) return;
+        $url = BASE_URL . '/public/requester/view_confined_space_license.php?id=' . $permitId;
+        $title = 'رخصة دخول أماكن مغلقة جديدة';
+        try {
+            (new NotificationController($this->db))->sendNotification($title, "تم إصدار رخصة دخول الأماكن المغلقة {$permitNo}. اضغط لعرض الرخصة.", [$watcherId], $url, $creatorId);
+            (new EmailController($this->db))->sendEmail($title, "تم إصدار رخصة دخول الأماكن المغلقة {$permitNo}.<br><a href='{$url}'>فتح الرخصة</a>", [$watcherId]);
+        } catch (Throwable $e) {
+            error_log('Confined-space permit watcher notification failed: ' . $e->getMessage());
+        }
+    }
+
     public function updatePermit(int $permitId, int $userId, array $data): array
     {
         $owner = $this->db->prepare("SELECT permit_no, assigned_to, status, finishing_time FROM confined_space_permit WHERE id = ? AND created_by = ?");
@@ -213,10 +239,12 @@ class ConfinedSpacePermitController
         }
         $gasError = $this->validateGasMeasurements($data['gas_measurements'] ?? []);
         if ($gasError !== null) return ['success' => false, 'message' => $gasError];
+        $hatchWatcherError = $this->validateHatchWatcher($data);
+        if ($hatchWatcherError !== null) return ['success' => false, 'message' => $hatchWatcherError];
 
         try {
             $this->db->beginTransaction();
-            $update = $this->db->prepare("UPDATE confined_space_permit SET wo = ?, company_name = ?, location = ?, supervisor = ?, equipment_used = ?, maintenance_type = ?, task_start_datetime = ?, finishing_time = ?, work_description = ?, ventilation_unit_no = ?, ventilation_within_limits = ?, emergency_responsible = ?, rescue_equipment_available = ?, gas_device_model = ?, gas_qualified_person = ?, gas_device_calibrated = ?, continuous_monitoring = ?, issuer_declaration = ?, assigned_to = ? WHERE id = ? AND created_by = ? AND status <> 'closed'");
+            $update = $this->db->prepare("UPDATE confined_space_permit SET wo = ?, company_name = ?, location = ?, supervisor = ?, equipment_used = ?, maintenance_type = ?, task_start_datetime = ?, finishing_time = ?, details = ?, work_description = ?, ventilation_unit_no = ?, ventilation_within_limits = ?, emergency_responsible = ?, rescue_equipment_available = ?, gas_device_model = ?, gas_qualified_person = ?, gas_device_calibrated = ?, continuous_monitoring = ?, hatch_watcher_required = ?, hatch_watcher_name = ?, issuer_declaration = ?, assigned_to = ? WHERE id = ? AND created_by = ? AND status <> 'closed'");
             $equipment = $data['equipment_used'] ?? [];
             if (!is_array($equipment)) $equipment = [$equipment];
             $update->execute([
@@ -228,6 +256,7 @@ class ConfinedSpacePermitController
                 trim($data['maintenance_type']),
                 $this->normalizeDate($data['task_start_datetime']),
                 $this->normalizeDate($data['finishing_time']),
+                trim((string)($data['details'] ?? '')) ?: null,
                 trim($data['work_description']),
                 trim((string)($data['ventilation_unit_no'] ?? '')) ?: null,
                 !empty($data['ventilation_within_limits']) ? 1 : 0,
@@ -237,6 +266,8 @@ class ConfinedSpacePermitController
                 trim((string)($data['gas_qualified_person'] ?? '')) ?: null,
                 $this->yesNo($data['gas_device_calibrated'] ?? null),
                 $this->yesNo($data['continuous_monitoring'] ?? null),
+                $data['hatch_watcher_required'],
+                $this->hatchWatcherName($data),
                 !empty($data['issuer_declaration']) ? 1 : 0,
                 !empty($data['assigned_to']) ? (int)$data['assigned_to'] : null,
                 $permitId,
@@ -367,6 +398,31 @@ class ConfinedSpacePermitController
         $stmt = $this->db->prepare('INSERT INTO confined_space_entrants (confined_space_permit_id, person_name, medically_fit, authorized_to_enter, added_by) VALUES (?, ?, ?, ?, ?)');
         $stmt->execute([$permitId, $personName, !empty($data['medically_fit']) ? 1 : 0, !empty($data['authorized_to_enter']) ? 1 : 0, $userId]);
         return ['success' => true, 'message' => 'تمت إضافة الشخص', 'id' => (int)$this->db->lastInsertId()];
+    }
+
+    private function validateHatchWatcher(array $data): ?string
+    {
+        if (!in_array($data['hatch_watcher_required'] ?? null, ['نعم', 'لا'], true)) return 'حدد ما إذا كان مراقب الفتحة مطلوباً';
+        if ($data['hatch_watcher_required'] === 'نعم' && $this->hatchWatcherName($data) === null) return 'اكتب اسم مراقب الفتحة';
+        return null;
+    }
+
+    private function hatchWatcherName(array $data): ?string
+    {
+        if (($data['hatch_watcher_required'] ?? null) !== 'نعم') return null;
+        return trim((string)($data['hatch_watcher_name'] ?? '')) ?: null;
+    }
+
+    public function updateHatchWatcher(int $permitId, array $data): array
+    {
+        $error = $this->validateHatchWatcher($data);
+        if ($error !== null) return ['success' => false, 'message' => $error];
+        $exists = $this->db->prepare("SELECT 1 FROM confined_space_permit WHERE id = ? AND status = 'open'");
+        $exists->execute([$permitId]);
+        if (!$exists->fetchColumn()) return ['success' => false, 'message' => 'الرخصة غير موجودة أو مغلقة'];
+        $stmt = $this->db->prepare("UPDATE confined_space_permit SET hatch_watcher_required = ?, hatch_watcher_name = ? WHERE id = ? AND status = 'open'");
+        $stmt->execute([$data['hatch_watcher_required'], $this->hatchWatcherName($data), $permitId]);
+        return ['success' => true, 'message' => 'تم تحديث مراقب الفتحة'];
     }
 
     private function validateGasMeasurements(array $measurements): ?string

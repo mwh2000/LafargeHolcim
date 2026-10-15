@@ -7,6 +7,9 @@ return function (PDO $pdo) {
         'closed_at' => 'DATETIME DEFAULT NULL',
         'finishing_time_updated_at' => 'DATETIME DEFAULT NULL',
         'finishing_time_updated_by' => 'BIGINT UNSIGNED DEFAULT NULL',
+        'details' => 'TEXT DEFAULT NULL',
+        'hatch_watcher_required' => 'VARCHAR(10) DEFAULT NULL',
+        'hatch_watcher_name' => 'VARCHAR(255) DEFAULT NULL',
     ];
     foreach ($columns as $column => $definition) {
         $check = $pdo->prepare('SHOW COLUMNS FROM confined_space_permit LIKE ?');

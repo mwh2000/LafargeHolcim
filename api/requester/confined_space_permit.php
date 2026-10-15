@@ -53,6 +53,13 @@ try {
                 } else {
                     $result = $controller->addGasMeasurement((int)($input['permit_id'] ?? 0), (int)$decoded->id, $input['measurement'] ?? []);
                 }
+            } elseif ($action === 'updateHatchWatcher') {
+                if (!in_array((int)$decoded->role_id, [3, 5, 7], true)) {
+                    http_response_code(403);
+                    $result = ['success' => false, 'message' => 'تعديل مراقب الفتحة متاح للأدوار 3 و5 و7 فقط'];
+                } else {
+                    $result = $controller->updateHatchWatcher((int)($input['permit_id'] ?? 0), $input);
+                }
             } elseif ($action === 'close') {
                 $result = $controller->closePermit((int)($input['permit_id'] ?? 0), (int)$decoded->id);
             } elseif ($action === 'updateFinishingTime') {
