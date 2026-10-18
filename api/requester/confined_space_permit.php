@@ -60,6 +60,16 @@ try {
                 } else {
                     $result = $controller->updateHatchWatcher((int)($input['permit_id'] ?? 0), $input);
                 }
+            } elseif ($action === 'updateStaffGroups') {
+                $result = $controller->updateStaffGroups((int)($input['permit_id'] ?? 0), (int)$decoded->id, (int)$decoded->role_id, $input['staff_groups'] ?? []);
+            } elseif ($action === 'toggleGroupDone') {
+                $result = $controller->toggleGroupDone(
+                    (int)($input['permit_id'] ?? 0),
+                    (int)($input['group_id'] ?? 0),
+                    (int)$decoded->id,
+                    (int)$decoded->role_id,
+                    !empty($input['is_done'])
+                );
             } elseif ($action === 'close') {
                 $result = $controller->closePermit((int)($input['permit_id'] ?? 0), (int)$decoded->id);
             } elseif ($action === 'updateFinishingTime') {

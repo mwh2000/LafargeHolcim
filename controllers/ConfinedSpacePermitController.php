@@ -37,6 +37,9 @@ class ConfinedSpacePermitController
         }
         $hatchWatcherError = $this->validateHatchWatcher($data);
         if ($hatchWatcherError !== null) return ['success' => false, 'message' => $hatchWatcherError];
+        $data['staff_groups'] = $this->normalizeStaffGroups($data['staff_groups'] ?? []);
+        if ($data['staff_groups'] === null) return ['success' => false, 'message' => 'يرجى ملء أسماء المجموعات وأفرادها.'];
+        if (!$data['staff_groups']) return ['success' => false, 'message' => 'أضف مجموعة واحدة على الأقل لطاقم العمل'];
         if (empty($data['additional_permits']) || !is_array($data['additional_permits'])) {
             return ['success' => false, 'message' => 'حدد تصريحاً إضافياً واحداً على الأقل'];
         }
@@ -138,6 +141,7 @@ class ConfinedSpacePermitController
                     (string)(int)$data['created_by']
                 ]);
             });
+            $this->insertStaffGroups($permitId, $data['staff_groups']);
 
             $this->db->commit();
             $this->notifyCreated($permitId, $permitNo, (int)$data['created_by'], !empty($data['assigned_to']) ? (int)$data['assigned_to'] : null);
@@ -345,6 +349,9 @@ class ConfinedSpacePermitController
 
     public function closePermit(int $permitId, int $userId): array
     {
+        $incomplete = $this->db->prepare('SELECT COUNT(*) FROM confined_space_staff_group WHERE confined_space_permit_id = ? AND is_done = 0');
+        $incomplete->execute([$permitId]);
+        if ((int)$incomplete->fetchColumn() > 0) return ['success' => false, 'message' => 'لا يمكن إغلاق الرخصة حتى يتم إكمال العمل لجميع المجموعات'];
         $stmt = $this->db->prepare("UPDATE confined_space_permit SET status = 'closed', closed_at = NOW() WHERE id = ? AND created_by = ? AND status = 'open'");
         $stmt->execute([$permitId, $userId]);
         if (!$stmt->rowCount()) return ['success' => false, 'message' => 'الرخصة غير موجودة أو مغلقة مسبقاً أو لا تملك صلاحية إغلاقها'];
@@ -398,6 +405,74 @@ class ConfinedSpacePermitController
         $stmt = $this->db->prepare('INSERT INTO confined_space_entrants (confined_space_permit_id, person_name, medically_fit, authorized_to_enter, added_by) VALUES (?, ?, ?, ?, ?)');
         $stmt->execute([$permitId, $personName, !empty($data['medically_fit']) ? 1 : 0, !empty($data['authorized_to_enter']) ? 1 : 0, $userId]);
         return ['success' => true, 'message' => 'تمت إضافة الشخص', 'id' => (int)$this->db->lastInsertId()];
+    }
+
+    // Returns the cleaned groups, or null when a group is missing its name or members.
+    private function normalizeStaffGroups($groups): ?array
+    {
+        if (!is_array($groups)) return [];
+        $normalized = [];
+        foreach ($groups as $group) {
+            $name = trim((string)($group['group_name'] ?? ''));
+            $members = array_values(array_filter(array_map(static fn($member) => trim((string)$member), (array)($group['members'] ?? [])), static fn($member) => $member !== ''));
+            if ($name === '' || !$members) return null;
+            $normalized[] = ['group_name' => $name, 'members' => $members];
+        }
+        return $normalized;
+    }
+
+    private function insertStaffGroups(int $permitId, array $groups): void
+    {
+        $groupStmt = $this->db->prepare('INSERT INTO confined_space_staff_group (confined_space_permit_id, name) VALUES (?, ?)');
+        $staffStmt = $this->db->prepare('INSERT INTO confined_space_staff (confined_space_permit_id, group_id, name) VALUES (?, ?, ?)');
+        foreach ($groups as $group) {
+            $groupStmt->execute([$permitId, $group['group_name']]);
+            $groupId = (int)$this->db->lastInsertId();
+            foreach ($group['members'] as $member) $staffStmt->execute([$permitId, $groupId, $member]);
+        }
+    }
+
+    // The work crew is managed by the permit creator and by roles 3 / 5 / 7 (the gas-reading roles).
+    private function canManageStaff(int $permitId, int $userId, int $roleId): bool
+    {
+        if (in_array($roleId, [3, 5, 7], true)) return true;
+        $owner = $this->db->prepare('SELECT 1 FROM confined_space_permit WHERE id = ? AND created_by = ?');
+        $owner->execute([$permitId, $userId]);
+        return (bool)$owner->fetchColumn();
+    }
+
+    // Editing the work crew is allowed whatever the permit status.
+    public function updateStaffGroups(int $permitId, int $userId, int $roleId, $groups): array
+    {
+        $exists = $this->db->prepare('SELECT 1 FROM confined_space_permit WHERE id = ?');
+        $exists->execute([$permitId]);
+        if (!$exists->fetchColumn()) return ['success' => false, 'message' => 'الرخصة غير موجودة'];
+        if (!$this->canManageStaff($permitId, $userId, $roleId)) return ['success' => false, 'message' => 'غير مخول لتعديل طاقم العمل'];
+        $groups = $this->normalizeStaffGroups($groups);
+        if ($groups === null) return ['success' => false, 'message' => 'يرجى ملء أسماء المجموعات وأفرادها.'];
+        try {
+            $this->db->beginTransaction();
+            $this->db->prepare('DELETE FROM confined_space_staff_group WHERE confined_space_permit_id = ?')->execute([$permitId]);
+            $this->insertStaffGroups($permitId, $groups);
+            $this->db->commit();
+            return ['success' => true, 'message' => 'تم تحديث طاقم العمل بنجاح'];
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
+            error_log('Confined-space staff update failed: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'تعذر تحديث طاقم العمل'];
+        }
+    }
+
+    // Marking a group's work as completed is allowed while the permit is open and active.
+    public function toggleGroupDone(int $permitId, int $groupId, int $userId, int $roleId, bool $isDone): array
+    {
+        $permit = $this->db->prepare("SELECT 1 FROM confined_space_permit WHERE id = ? AND status = 'open' AND finishing_time >= NOW()");
+        $permit->execute([$permitId]);
+        if (!$permit->fetchColumn()) return ['success' => false, 'message' => 'الرخصة مغلقة أو غير فعالة'];
+        if (!$this->canManageStaff($permitId, $userId, $roleId)) return ['success' => false, 'message' => 'غير مخول لتحديث حالة المجموعة'];
+        $stmt = $this->db->prepare('UPDATE confined_space_staff_group SET is_done = ? WHERE id = ? AND confined_space_permit_id = ?');
+        $stmt->execute([$isDone ? 1 : 0, $groupId, $permitId]);
+        return ['success' => true, 'message' => 'تم تحديث حالة المجموعة', 'data' => ['group_id' => $groupId, 'is_done' => $isDone ? 1 : 0]];
     }
 
     private function validateHatchWatcher(array $data): ?string
@@ -532,6 +607,12 @@ class ConfinedSpacePermitController
             $signatureByName->execute([(string)($permit[$nameField] ?? '')]);
             $permit[$nameField . '_signature'] = $signatureByName->fetchColumn() ?: null;
         }
+        $staffStmt = $this->db->prepare('SELECT s.name, g.name AS group_name, g.id AS group_id, g.is_done AS group_is_done FROM confined_space_staff s JOIN confined_space_staff_group g ON g.id = s.group_id WHERE s.confined_space_permit_id = ? ORDER BY g.id, s.id');
+        $staffStmt->execute([$id]);
+        $permit['staff'] = $staffStmt->fetchAll(PDO::FETCH_ASSOC);
+        $groupStmt = $this->db->prepare('SELECT id, name, is_done FROM confined_space_staff_group WHERE confined_space_permit_id = ? ORDER BY id');
+        $groupStmt->execute([$id]);
+        $permit['staff_groups'] = $groupStmt->fetchAll(PDO::FETCH_ASSOC);
         $historyStmt = $this->db->prepare('SELECT h.previous_finishing_time, h.new_finishing_time, h.changed_at, h.changed_by, u.name AS changed_by_name FROM confined_space_finishing_time_history h LEFT JOIN users u ON u.id = h.changed_by WHERE h.confined_space_permit_id = ? ORDER BY h.id DESC');
         $historyStmt->execute([$id]);
         $permit['finishing_time_history'] = $historyStmt->fetchAll(PDO::FETCH_ASSOC);

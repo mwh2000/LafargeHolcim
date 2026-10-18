@@ -88,6 +88,31 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
                     <div id="permitContent" class="space-y-6">
                         <p class="bg-white p-8 text-center text-slate-600">جاري تحميل الرخصة...</p>
                     </div>
+                    <div id="editStaffModal" class="hidden no-print fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4">
+                        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+                            <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-lg">
+                                <button type="button" onclick="closeEditStaffModal()" class="text-gray-400 hover:text-red-500 transition-colors">
+                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                                <h3 class="text-lg font-bold text-[#0b6f76]">تعديل طاقم العمل</h3>
+                            </div>
+                            <div class="p-6 overflow-y-auto flex-1 bg-gray-50/50" id="edit-staff-groups-container"></div>
+                            <div class="px-6 py-2 bg-gray-50/50 text-right">
+                                <button type="button" id="editAddGroupBtn" class="flex items-center gap-2 text-sm text-[#0b6f76] font-medium hover:underline w-fit mr-0 ml-auto" dir="rtl">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                                    </svg>
+                                    إضافة مجموعة
+                                </button>
+                            </div>
+                            <div class="p-4 border-t flex justify-end gap-3 bg-gray-50 rounded-b-lg">
+                                <button type="button" id="saveStaffBtn" class="px-6 py-2 bg-[#0b6f76] text-white rounded-md hover:bg-[#085a60] transition font-medium">حفظ التغييرات</button>
+                                <button type="button" onclick="closeEditStaffModal()" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition font-medium">إلغاء</button>
+                            </div>
+                        </div>
+                    </div>
                     <div id="finishingTimeEditModal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-black/50 p-4 no-print">
                         <form id="finishingTimeEditForm" class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
                             <h2 class="mb-4 text-lg font-bold text-gray-800">تعديل وقت انتهاء الرخصة</h2>
@@ -132,8 +157,10 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
             .then(async result => {
                 if (!result.success) throw new Error(result.message || 'تعذر تحميل الرخصة');
                 const p = result.data;
+                currentPermitData = p;
                 const isCreator = Number(p.created_by) === VIEWER_ID;
                 const canManagePermit = [3, 5, 7].includes(VIEWER_ROLE);
+                const canManageStaff = isCreator || canManagePermit;
                 const isOpen = p.status !== 'closed';
                 const isNotActive = isOpen && p.finishing_time && new Date(p.finishing_time.replace(' ', 'T')) < new Date();
                 document.getElementById('printPermitButton').classList.toggle('hidden', isOpen);
@@ -150,6 +177,11 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
                             cancelButtonText: 'إلغاء'
                         });
                         if (!confirm.isConfirmed) return;
+                        if ((currentPermitData.staff_groups || []).some(group => Number(group.is_done) !== 1)) return Swal.fire({
+                            icon: 'error',
+                            title: 'تعذر الإغلاق',
+                            text: 'لا يمكن إغلاق الرخصة حتى يتم إكمال العمل لجميع المجموعات'
+                        });
                         const response = await fetch('../../api/requester/confined_space_permit.php?action=close', {
                             method: 'POST',
                             headers: {
@@ -228,6 +260,7 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
                 const entrantRows = p.entrants.map(item => `<tr><td class="p-2 border"><div>${safe(item.person_name)}</div>${item.person_signature ? `<img src="../../public/${safe(item.person_signature)}" alt="توقيع ${safe(item.person_name)}" class="mt-1 h-10 max-w-24 object-contain">` : ''}</td><td class="p-2 border">${Number(item.medically_fit) ? '✓' : '—'}</td><td class="p-2 border">${Number(item.authorized_to_enter) ? '✓' : '—'}</td><td class="p-2 border"><div>${safe(item.added_by_name)}</div>${item.added_by_signature ? `<img src="../../public/${safe(item.added_by_signature)}" alt="توقيع ${safe(item.added_by_name)}" class="mt-1 h-10 max-w-24 object-contain">` : ''}</td></tr>`).join('');
                 const entrantEditor = canManagePermit && isOpen ? `<form id="addEntrantForm" class="no-print mb-4 flex flex-wrap items-end gap-3 rounded border border-gray-200 bg-gray-50 p-3"><label class="min-w-56 flex-1 text-sm">اسم الشخص<input name="person_name" required class="mt-1 w-full rounded border border-gray-300 p-2"></label><label class="flex items-center gap-2 text-sm"><input name="medically_fit" type="checkbox" checked class="h-4 w-4">لائق صحياً</label><label class="flex items-center gap-2 text-sm"><input name="authorized_to_enter" type="checkbox" checked class="h-4 w-4">مصرح له بالدخول</label><button class="rounded bg-teal-800 px-4 py-2 text-white" type="submit">إضافة الشخص</button></form>` : '';
                 html += section('أسماء الأشخاص الذين سيدخلون إلى المكان المغلق', `${entrantEditor}<div class="overflow-x-auto" dir="rtl"><table class="w-full border-collapse text-sm text-right"><thead><tr class="bg-gray-50"><th class="p-2 border">الاسم / التوقيع</th><th class="p-2 border">لائق صحياً</th><th class="p-2 border">مصرح له بالدخول</th><th class="p-2 border">أضيف بواسطة / التوقيع</th></tr></thead><tbody>${entrantRows}</tbody></table></div>`);
+                html += `<section id="staff-card" class="permit-section bg-white p-6 rounded-lg shadow-md"><div class="flex justify-between items-center mb-4 border-b pb-2">${canManageStaff ? `<button id="editStaffBtn" type="button" class="no-print text-sm flex items-center gap-1 text-[#0b6f76] hover:text-[#085a60] font-medium transition-colors bg-[#0b6f76]/10 px-3 py-1.5 rounded-md hover:bg-[#0b6f76]/20"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>تعديل</button>` : '<span></span>'}<h2 class="text-lg font-bold text-[#0b6f76] text-right" dir="rtl">طاقم العمل</h2></div><div id="val-staff" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-right" dir="rtl"></div></section>`;
                 html += section('التهوية والاتصالات', `<dl class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">${info('رقم نموذج وحدة التهوية',p.ventilation_unit_no)}${info('طريقة التهوية تحافظ على الحدود المقبولة',Number(p.ventilation_within_limits) ? 'نعم' : 'لا')}${info('وسائل الاتصالات',p.communications.map(row => row.communication_method).join('، '))}</dl>`);
                 html += section('خطة الطوارئ', `<dl class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">${signedInfo('المسؤول عن تنفيذ خطة الطوارئ',p.emergency_responsible,p.emergency_responsible_signature)}${info('المعدات المطلوبة',p.rescue_equipment.map(row => row.equipment_name).join('، '))}${info('معدات الإنقاذ متوفرة قرب موقع العمل',yesNo(p.rescue_equipment_available))}</dl>`);
                 const gasRows = p.gas_measurements.map(row => `<tr>${['measurement_time','oxygen_percent','lel_uel_percent','co_ppm','h2s_ppm'].map(key => `<td class="border p-2">${safe(row[key])}</td>`).join('')}<td class="border p-2"><div>${safe(row.added_by_name)}</div>${row.added_by_signature ? `<img src="../../public/${safe(row.added_by_signature)}" alt="توقيع ${safe(row.added_by_name)}" class="mx-auto mt-1 h-10 max-w-24 object-contain">` : '<span class="text-xs text-slate-500">لا يوجد توقيع مسجل</span>'}</td></tr>`).join('');
@@ -236,6 +269,8 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
                 html += section('الشخص المخول بإصدار هذا التصريح', `<dl class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl"><div><span class="text-gray-500">الاسم:</span><div class="font-medium text-gray-800">${safe(p.issuer_name)}</div>${issuerSignature}</div>${info('التعهد',Number(p.issuer_declaration) ? 'أقر بأنه قد تمت المراجعة لكل المتطلبات الرئيسية الآمنة لدخول المكان المغلق' : '—')}</dl>`);
                 html += section('إسناد الرخصة', `<dl class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-sm text-right" dir="rtl">${info('المسند إليه',p.assigned_to_name)}</dl>`);
                 content.innerHTML = html;
+                renderStaff(p, canManageStaff && isOpen && !isNotActive, canManageStaff ? (!isOpen ? 'الرخصة مغلقة، لا يمكن تحديث حالة المجموعات.' : (isNotActive ? 'الرخصة غير فعالة لأن وقت انتهائها قد مضى. عدّل وقت الانتهاء أولاً لتتمكن من تحديث حالة المجموعات.' : '')) : '');
+                if (canManageStaff) document.getElementById('editStaffBtn').addEventListener('click', openEditStaffModal);
                 const editFinishingTimeButton = document.getElementById('editFinishingTimeButton');
                 if (editFinishingTimeButton) {
                     editFinishingTimeButton.addEventListener('click', () => {
@@ -302,6 +337,214 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
             .catch(error => {
                 content.innerHTML = `<p class="bg-white p-8 text-center text-red-700">${safe(error.message)}</p>`;
             });
+
+        let currentPermitData = null;
+        const STAFF_API = '../../api/requester/confined_space_permit.php';
+
+        function showStaffLockedReason(reason) {
+            Swal.fire({icon: 'info', title: 'غير متاح حالياً', text: reason});
+        }
+
+        function renderStaff(data, canToggle, lockedReason = '') {
+            const staffContainer = document.getElementById('val-staff');
+            staffContainer.innerHTML = '';
+            if (!data.staff || !data.staff.length) {
+                staffContainer.innerHTML = '<p class="text-gray-400 italic text-sm">لا يوجد طاقم عمل مسجل</p>';
+                return;
+            }
+            const groupsMap = {};
+            data.staff.forEach(member => {
+                const key = member.group_id;
+                if (!groupsMap[key]) groupsMap[key] = {
+                    name: member.group_name || 'طاقم العمل',
+                    members: [],
+                    id: member.group_id,
+                    is_done: Number(member.group_is_done) === 1
+                };
+                groupsMap[key].members.push(member.name);
+            });
+            Object.values(groupsMap).forEach(g => {
+                const groupDiv = document.createElement('div');
+                groupDiv.setAttribute('data-group-id', g.id);
+                groupDiv.className = 'bg-gray-50 border border-gray-100 p-3 rounded-md print:p-1 print:mb-2 break-inside-avoid';
+                if (g.is_done) groupDiv.classList.add('bg-green-50', 'border-green-300');
+
+                const headerRow = document.createElement('div');
+                headerRow.className = 'flex justify-between items-center mb-2';
+                headerRow.setAttribute('dir', 'rtl');
+                const gTitle = document.createElement('h4');
+                gTitle.className = 'text-sm font-bold text-[#0b6f76] mb-0 print:text-[9pt]';
+                gTitle.textContent = g.name;
+                const leftContainer = document.createElement('div');
+                if (canToggle) {
+                    if (!g.is_done) leftContainer.classList.add('no-print');
+                    leftContainer.innerHTML = `
+                        <label class="flex items-center gap-3 cursor-pointer" dir="rtl">
+                            <input type="checkbox" onchange="onGroupDoneChange(${g.id}, this)" class="no-print group-done-cb w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500" ${g.is_done ? 'checked' : ''}>
+                            <span class="text-sm font-medium text-gray-700">تم اكمال العمل</span>
+                        </label>`;
+                } else {
+                    leftContainer.innerHTML = `
+                        <div class="flex items-center gap-2 ${lockedReason ? 'cursor-not-allowed opacity-60' : ''}" ${lockedReason ? `title="${safe(lockedReason)}"` : ''}>
+                            <input type="checkbox" class="w-4 h-4 text-green-600 border-gray-300 rounded" onclick="return false;" ${g.is_done ? 'checked' : ''}>
+                            <span class="text-sm text-gray-600">تم اكمال العمل</span>
+                        </div>`;
+                    if (lockedReason) leftContainer.firstElementChild.addEventListener('click', () => showStaffLockedReason(lockedReason));
+                }
+                headerRow.append(gTitle, leftContainer);
+                groupDiv.appendChild(headerRow);
+
+                const membersDiv = document.createElement('div');
+                membersDiv.className = 'flex flex-wrap gap-2';
+                g.members.forEach(name => {
+                    const span = document.createElement('span');
+                    span.className = 'px-3 py-1 bg-white border border-gray-100 rounded text-xs text-gray-700 font-medium print:text-[8pt] print:px-1.5 print:py-0.5';
+                    span.textContent = name;
+                    membersDiv.appendChild(span);
+                });
+                groupDiv.appendChild(membersDiv);
+                staffContainer.appendChild(groupDiv);
+            });
+        }
+
+        async function onGroupDoneChange(groupId, el) {
+            const checked = el.checked;
+            try {
+                const res = await fetch(`${STAFF_API}?action=toggleGroupDone`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}`},
+                    body: JSON.stringify({permit_id: PERMIT_ID, group_id: groupId, is_done: checked ? 1 : 0})
+                });
+                const result = await res.json();
+                if (!result.success) {
+                    el.checked = !checked;
+                    return Swal.fire('خطأ', result.message || 'لم يتم التحديث', 'error');
+                }
+                const group = (currentPermitData.staff_groups || []).find(g => Number(g.id) === Number(groupId));
+                if (group) group.is_done = checked ? 1 : 0;
+                const groupDiv = el.closest('[data-group-id]');
+                groupDiv.classList.toggle('bg-green-50', checked);
+                groupDiv.classList.toggle('border-green-300', checked);
+                groupDiv.classList.toggle('bg-gray-50', !checked);
+            } catch (e) {
+                el.checked = !checked;
+                Swal.fire('خطأ', 'حدث خطأ غير متوقع', 'error');
+            }
+        }
+
+        // --- Edit Staff Logic ---
+        function openEditStaffModal() {
+            const container = document.getElementById('edit-staff-groups-container');
+            container.innerHTML = '';
+            const groups = {};
+            (currentPermitData.staff || []).forEach(member => {
+                if (!groups[member.group_id]) groups[member.group_id] = {name: member.group_name || '', members: []};
+                groups[member.group_id].members.push(member.name);
+            });
+            const list = Object.values(groups);
+            if (list.length) list.forEach(group => addEditGroup(group.name, group.members));
+            else addEditGroup('', ['']);
+            document.getElementById('editStaffModal').classList.remove('hidden');
+        }
+
+        function closeEditStaffModal() {
+            document.getElementById('editStaffModal').classList.add('hidden');
+        }
+
+        function createEditStaffInput(name = '') {
+            return `
+                <div class="edit-staff-entry flex gap-2 mb-2">
+                    <input type="text" placeholder="ادخل اسم الفرد هنا" value="${name ? safe(name) : ''}" class="flex-1 px-4 py-2 border rounded-md focus:ring-[#0b6f76] edit-staff-name-input">
+                    <button type="button" class="remove-edit-staff px-3 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>`;
+        }
+
+        function addEditGroup(groupName = '', members = ['']) {
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'edit-staff-group-card bg-white border border-gray-200 p-5 rounded-lg shadow-sm relative mb-4';
+            groupDiv.innerHTML = `
+                <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2" dir="rtl">
+                    <div class="flex-1">
+                        <label class="block text-sm font-bold text-[#0b6f76] mb-1">اسم المجموعة</label>
+                        <input type="text" placeholder="مثال: Group A أو فريق الصيانة" value="${groupName ? safe(groupName) : ''}" class="w-full md:w-3/4 px-4 py-2 border border-gray-300 rounded-md focus:ring-[#0b6f76] edit-group-name-input">
+                    </div>
+                    <button type="button" class="remove-edit-group text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-full transition-colors mr-2" title="حذف المجموعة">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="edit-staff-members-container" dir="rtl">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">أفراد المجموعة</label>
+                    ${members.map(createEditStaffInput).join('')}
+                </div>
+                <button type="button" class="add-staff-to-edit-group-btn mt-4 flex items-center gap-2 text-sm text-[#0b6f76] font-bold hover:underline" dir="rtl">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    إضافة فرد للمجموعة
+                </button>`;
+            document.getElementById('edit-staff-groups-container').appendChild(groupDiv);
+            updateEditStaffRemoveButtons(groupDiv);
+        }
+
+        function updateEditStaffRemoveButtons(groupCard) {
+            const entries = groupCard.querySelectorAll('.edit-staff-entry');
+            entries.forEach(entry => entry.querySelector('.remove-edit-staff').classList.toggle('hidden', entries.length === 1));
+        }
+
+        document.getElementById('editAddGroupBtn').addEventListener('click', () => addEditGroup());
+
+        document.getElementById('edit-staff-groups-container').addEventListener('click', e => {
+            if (e.target.closest('.add-staff-to-edit-group-btn')) {
+                const groupCard = e.target.closest('.edit-staff-group-card');
+                groupCard.querySelector('.edit-staff-members-container').insertAdjacentHTML('beforeend', createEditStaffInput());
+                updateEditStaffRemoveButtons(groupCard);
+            }
+            if (e.target.closest('.remove-edit-staff')) {
+                const entry = e.target.closest('.edit-staff-entry');
+                const groupCard = entry.closest('.edit-staff-group-card');
+                entry.remove();
+                updateEditStaffRemoveButtons(groupCard);
+            }
+            if (e.target.closest('.remove-edit-group')) e.target.closest('.edit-staff-group-card').remove();
+        });
+
+        document.getElementById('saveStaffBtn').addEventListener('click', async () => {
+            const groups = document.querySelectorAll('.edit-staff-group-card');
+            const staff_groups = [];
+            let isValid = true;
+            groups.forEach(groupCard => {
+                const groupName = groupCard.querySelector('.edit-group-name-input').value.trim();
+                const members = Array.from(groupCard.querySelectorAll('.edit-staff-name-input')).map(input => input.value.trim()).filter(val => val !== '');
+                if (!groupName || members.length === 0) isValid = false;
+                else staff_groups.push({group_name: groupName, members});
+            });
+            if (groups.length > 0 && !isValid) return Swal.fire('خطأ', 'يرجى ملء أسماء المجموعات وأفرادها.', 'error');
+
+            const saveBtn = document.getElementById('saveStaffBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'جاري الحفظ...';
+            try {
+                const res = await fetch(`${STAFF_API}?action=updateStaffGroups`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}`},
+                    body: JSON.stringify({permit_id: PERMIT_ID, staff_groups})
+                });
+                const result = await res.json();
+                if (result.success) Swal.fire('نجاح', result.message, 'success').then(() => location.reload());
+                else Swal.fire('خطأ', result.message, 'error');
+            } catch (e) {
+                Swal.fire('خطأ', 'حدث خطأ غير متوقع', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'حفظ التغييرات';
+            }
+        });
 
         document.getElementById('cancelFinishingTimeEdit').addEventListener('click', () => {
             const modal = document.getElementById('finishingTimeEditModal');

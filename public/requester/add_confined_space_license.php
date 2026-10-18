@@ -95,11 +95,12 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                         <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="2">تصاريح إضافية</button>
                         <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="3">إجراءات السيطرة</button>
                         <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="4">أسماء الداخلين</button>
-                        <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="5">التهوية والاتصالات</button>
-                        <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="6">خطة الطوارئ</button>
-                        <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="7">قياس الغازات</button>
-                        <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="8">مخول إصدار التصريح</button>
-                        <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="9">إسناد الرخصة</button>
+                        <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="5">طاقم العمل</button>
+                        <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="6">التهوية والاتصالات</button>
+                        <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="7">خطة الطوارئ</button>
+                        <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="8">قياس الغازات</button>
+                        <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="9">مخول إصدار التصريح</button>
+                        <button type="button" class="step-indicator px-2 py-2 shrink-0" data-step="10">إسناد الرخصة</button>
                     </div>
 
                     <form id="confinedSpaceForm" class="space-y-5" data-permit-id="<?= $editPermitId ?>" novalidate>
@@ -188,6 +189,22 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                         </section>
 
                         <section class="step-content bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="5">
+                            <h2 class="section-title text-lg font-bold text-slate-800 mb-5">طاقم العمل</h2>
+                            <p id="staffEditNotice" class="hidden rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">يتم تعديل طاقم العمل من صفحة تفاصيل الرخصة.</p>
+                            <div id="staffCreateFields">
+                                <div id="staff-groups-container" class="space-y-6">
+                                    <!-- Groups will be dynamically added here -->
+                                </div>
+                                <button type="button" id="addGroupBtn" class="mt-4 flex items-center gap-2 text-sm text-[#0b6f76] font-medium hover:underline">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                                    </svg>
+                                    إضافة مجموعة
+                                </button>
+                            </div>
+                        </section>
+
+                        <section class="step-content bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="6">
                             <h2 class="section-title text-lg font-bold text-slate-800 mb-5">التهوية</h2>
                             <label class="block text-sm font-medium max-w-xl">رقم نموذج وحدة التهوية<select name="ventilation_unit_no" class="form-field mt-1">
                                     <option value="ميكانيكية">ميكانيكية</option>
@@ -206,7 +223,7 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                             </fieldset>
                         </section>
 
-                        <section class="step-content bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="6">
+                        <section class="step-content bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="7">
                             <h2 class="section-title text-lg font-bold text-slate-800 mb-5">خطة الطوارئ</h2>
                             <label class="block text-sm font-medium max-w-xl">المسؤول عن تنفيذ خطة الطوارئ
                                 <select name="emergency_responsible" class="form-field mt-1">
@@ -248,7 +265,7 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                             </div>
                         </section>
 
-                        <section class="step-content bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="7">
+                        <section class="step-content bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="8">
                             <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                                 <div>
                                     <h2 class="section-title text-lg font-bold text-slate-800">قياس الغازات</h2>
@@ -294,7 +311,7 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                             </aside>
                         </section>
 
-                        <section class="step-content bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="8">
+                        <section class="step-content bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="9">
                             <h2 class="section-title text-lg font-bold text-slate-800 mb-5">الشخص المخول بإصدار هذا التصريح</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <label class="text-sm font-medium">اسم الشخص<input name="issuer_name" value="<?= htmlspecialchars($currentUserName, ENT_QUOTES, 'UTF-8') ?>" readonly class="form-field mt-1 bg-slate-100"></label>
@@ -302,7 +319,7 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                             <label class="flex items-start gap-2 mt-5 rounded bg-slate-50 p-4"><input type="checkbox" name="issuer_declaration" value="1" required class="mt-1 h-4 w-4 accent-teal-700"><span>أقر بأنه قد تمت المراجعة لكل المتطلبات الرئيسية الآمنة لدخول المكان المغلق.</span></label>
                         </section>
 
-                        <section class="step-content bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="9">
+                        <section class="step-content bg-white border border-slate-200 rounded-md p-5 md:p-6" data-step="10">
                             <h2 class="section-title text-lg font-bold text-slate-800 mb-5">إسناد الرخصة</h2>
                             <label class="block text-sm font-medium max-w-xl">إسناد إلى مستخدم
                                 <select name="assigned_to" id="assignedTo" class="form-field mt-1">
@@ -463,7 +480,7 @@ $editPermitId = (int)($_GET['id'] ?? 0);
         addEntrant();
         addGasRow();
 
-        const totalSteps = 9;
+        const totalSteps = 10;
         let currentStep = 1;
         let highestStepReached = 1;
         const indicators = [...document.querySelectorAll('.step-indicator')];
@@ -489,14 +506,25 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                 const names = [...entrantsList.querySelectorAll('[name="entrant_name[]"]')];
                 return names.length > 0 && names.every(input => input.value.trim());
             }
-            if (step === 6) return !!section.querySelector('[name="rescue_equipment_available"]').value;
-            if (step === 7) return validateGasRows() && !!section.querySelector('[name="gas_device_model"]').value.trim() &&
+            if (step === 5) {
+                if (permitId) return true;
+                const groups = document.querySelectorAll('.staff-group-card');
+                if (groups.length === 0) return false;
+                for (const group of groups) {
+                    if (!group.querySelector('.group-name-input').value.trim()) return false;
+                    const names = Array.from(group.querySelectorAll('.staff-name-input')).map(input => input.value.trim()).filter(val => val !== '');
+                    if (names.length === 0) return false;
+                }
+                return true;
+            }
+            if (step === 7) return !!section.querySelector('[name="rescue_equipment_available"]').value;
+            if (step === 8) return validateGasRows() && !!section.querySelector('[name="gas_device_model"]').value.trim() &&
                 !!section.querySelector('[name="gas_qualified_person"]').value.trim() &&
                 !!section.querySelector('[name="gas_device_calibrated"]:checked') &&
                 !!section.querySelector('[name="continuous_monitoring"]:checked') &&
                 !!section.querySelector('[name="hatch_watcher_required"]:checked') &&
                 (section.querySelector('[name="hatch_watcher_required"]:checked').value !== 'نعم' || !!section.querySelector('[name="hatch_watcher_name"]').value.trim());
-            if (step === 8) return section.querySelector('[name="issuer_declaration"]').checked;
+            if (step === 9) return section.querySelector('[name="issuer_declaration"]').checked;
             return true;
         }
 
@@ -566,6 +594,89 @@ $editPermitId = (int)($_GET['id'] ?? 0);
         function setChecked(name, value) {
             const input = [...permitForm.querySelectorAll(`[name="${name}"]`)].find(item => item.value === String(value));
             if (input) input.checked = true;
+        }
+
+        // Staff dynamic groups logic (same as the energy isolation permit)
+        const staffGroupsContainer = document.getElementById('staff-groups-container');
+        const addGroupBtn = document.getElementById('addGroupBtn');
+
+        function createStaffInput() {
+            return `
+                <div class="staff-entry flex gap-2 mb-2">
+                    <input type="text" placeholder="ادخل اسم الفرد هنا" class="flex-1 px-4 py-2 border rounded-md focus:ring-[#0b6f76] staff-name-input">
+                    <button type="button" class="remove-staff px-3 py-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            `;
+        }
+
+        function addGroup() {
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'staff-group-card bg-white border border-gray-200 p-5 rounded-lg shadow-sm relative mb-4';
+            groupDiv.innerHTML = `
+                <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-2" dir="rtl">
+                    <div class="flex-1">
+                         <label class="block text-sm font-bold text-[#0b6f76] mb-1">اسم المجموعة</label>
+                         <input type="text" placeholder="مثال: Group A أو فريق الصيانة" class="w-full md:w-3/4 px-4 py-2 border border-gray-300 rounded-md focus:ring-[#0b6f76] group-name-input">
+                    </div>
+                    <button type="button" class="remove-group text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-full transition-colors mr-2" title="حذف المجموعة">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="staff-members-container" dir="rtl">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">أفراد المجموعة</label>
+                    ${createStaffInput()}
+                </div>
+                <button type="button" class="add-staff-to-group-btn mt-4 flex items-center gap-2 text-sm text-[#0b6f76] font-bold hover:underline" dir="rtl">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    إضافة فرد للمجموعة
+                </button>
+            `;
+            staffGroupsContainer.appendChild(groupDiv);
+            updateStaffRemoveButtons(groupDiv);
+            updateTabStates();
+        }
+
+        addGroupBtn.addEventListener('click', addGroup);
+
+        staffGroupsContainer.addEventListener('click', (e) => {
+            if (e.target.closest('.add-staff-to-group-btn')) {
+                const groupCard = e.target.closest('.staff-group-card');
+                groupCard.querySelector('.staff-members-container').insertAdjacentHTML('beforeend', createStaffInput());
+                updateStaffRemoveButtons(groupCard);
+                updateTabStates();
+            }
+            if (e.target.closest('.remove-staff')) {
+                const entry = e.target.closest('.staff-entry');
+                const groupCard = entry.closest('.staff-group-card');
+                entry.remove();
+                updateStaffRemoveButtons(groupCard);
+                updateTabStates();
+            }
+            if (e.target.closest('.remove-group')) {
+                e.target.closest('.staff-group-card').remove();
+                updateTabStates();
+            }
+        });
+
+        function updateStaffRemoveButtons(groupCard) {
+            if (!groupCard) return;
+            const entries = groupCard.querySelectorAll('.staff-entry');
+            entries.forEach(entry => entry.querySelector('.remove-staff').classList.toggle('hidden', entries.length === 1));
+        }
+
+        if (permitId) {
+            document.getElementById('staffEditNotice').classList.remove('hidden');
+            document.getElementById('staffCreateFields').classList.add('hidden');
+        } else {
+            addGroup();
         }
 
         function toggleHatchWatcherName() {
@@ -660,8 +771,14 @@ $editPermitId = (int)($_GET['id'] ?? 0);
                 entrants: [],
                 communications: fd.getAll('communications[]'),
                 rescue_equipment: fd.getAll('rescue_equipment[]'),
-                gas_measurements: []
+                gas_measurements: [],
+                staff_groups: []
             };
+            document.querySelectorAll('.staff-group-card').forEach(groupCard => {
+                const groupName = groupCard.querySelector('.group-name-input').value.trim();
+                const members = Array.from(groupCard.querySelectorAll('.staff-name-input')).map(input => input.value.trim()).filter(val => val !== '');
+                if (groupName && members.length > 0) data.staff_groups.push({group_name: groupName, members});
+            });
             data.assigned_to = fd.get('assigned_to') || null;
             fd.getAll('additional_permits_selected[]').forEach(id => data.additional_permits.push({
                 permit_name: fd.get(`permit_name_${id}`),
