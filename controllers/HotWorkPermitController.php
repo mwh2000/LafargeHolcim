@@ -263,7 +263,7 @@ class HotWorkPermitController
         }
     }
 
-    public function approveBySafety($permitId, $safetyUserId, $criticalManagerId = null)
+    public function approveBySafety($permitId, $safetyUserId, $criticalManagerId = null, $comment = null)
     {
         try {
             $stmt = $this->db->prepare("SELECT created_by, assigned_to, is_critical, critical_manager_id, safety_reviewer_id, safety_status FROM hot_work_permit WHERE id = ?");
@@ -289,8 +289,9 @@ class HotWorkPermitController
             }
 
             $nextCriticalStatus = ((int)$permit['is_critical'] === 1) ? 'pending_manager' : 'completed';
-            $stmt = $this->db->prepare("UPDATE hot_work_permit SET safety_status = 'approved', safety_reviewed_at = ?, critical_manager_id = ?, critical_status = ? WHERE id = ?");
-            $stmt->execute([date('Y-m-d H:i:s'), $selectedCriticalManagerId, $nextCriticalStatus, $permitId]);
+            $comment = trim((string)$comment);
+            $stmt = $this->db->prepare("UPDATE hot_work_permit SET safety_status = 'approved', safety_comment = ?, safety_reviewed_at = ?, critical_manager_id = ?, critical_status = ? WHERE id = ?");
+            $stmt->execute([$comment !== '' ? $comment : null, date('Y-m-d H:i:s'), $selectedCriticalManagerId, $nextCriticalStatus, $permitId]);
 
             try {
                 $notificationController = new NotificationController($this->db);

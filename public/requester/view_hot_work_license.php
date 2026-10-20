@@ -216,6 +216,10 @@ $userName = $userData['name'] ?? 'N/A';
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div id="safety_approval_note_container" class="hidden mt-3 text-sm">
+                                                <span class="text-gray-500">ملاحظات قسم السلامة:</span>
+                                                <p id="val-safety-approval-note" class="font-medium text-gray-800 mt-1 whitespace-pre-line"></p>
+                                            </div>
                                         </div>
                                         <!-- القسم الأول: المعلومات الأساسية -->
                                         <div class="bg-white p-6 rounded-lg shadow-md">
@@ -443,6 +447,10 @@ $userName = $userData['name'] ?? 'N/A';
                     sig.src = `../../public/${data.safety_reviewer_signature}`;
                     sig.classList.remove('hidden');
                 }
+                if (data.safety_comment) {
+                    document.getElementById('safety_approval_note_container').classList.remove('hidden');
+                    document.getElementById('val-safety-approval-note').textContent = data.safety_comment;
+                }
             }
 
             document.getElementById('val-permit-type').textContent = (parseInt(data.is_critical) === 1) ? 'رخصة العمل الساخن (الحرجة)' : 'رخصة العمل الساخن (عاديه)';
@@ -579,6 +587,12 @@ $userName = $userData['name'] ?? 'N/A';
                         title: 'تأكيد الموافقة',
                         text: 'هل أنت متأكد من الموافقة على رخصة العمل الساخن؟',
                         icon: 'question',
+                        input: 'textarea',
+                        inputLabel: 'ملاحظات قسم السلامة (اختياري)',
+                        inputPlaceholder: 'اكتب ملاحظاتك هنا...',
+                        inputAttributes: {
+                            'dir': 'rtl'
+                        },
                         showCancelButton: true,
                         confirmButtonText: 'نعم، موافقة',
                         cancelButtonText: 'إلغاء',
@@ -599,7 +613,8 @@ $userName = $userData['name'] ?? 'N/A';
                             },
                             body: JSON.stringify({
                                 permit_id: PERMIT_ID,
-                                critical_manager_id: isCritical ? managerSelect?.value : null
+                                critical_manager_id: isCritical ? managerSelect?.value : null,
+                                comment: result.value || ''
                             })
                         });
                         if (jr?.success) Swal.fire('تم', jr.message, 'success').then(() => location.reload());

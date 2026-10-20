@@ -272,6 +272,9 @@ class LicensePdfController
             if ($sigPath) {
                 $body .= "<img class='signature' src='{$sigPath}' alt='signature'>";
             }
+            if (!empty($permit['safety_comment'])) {
+                $body .= "<p><strong>" . self::esc('ملاحظات قسم السلامة') . ":</strong> " . nl2br(self::esc($permit['safety_comment'])) . "</p>";
+            }
             $body .= "</div>";
         } elseif (($permit['safety_status'] ?? '') === 'rejected' && !empty($permit['safety_comment'])) {
             $body .= "<div class='card' style='border-top:4px solid #dc2626;'>" . self::title('سبب الرفض', '#b91c1c');

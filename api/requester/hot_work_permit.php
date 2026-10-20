@@ -81,7 +81,8 @@ try {
             } elseif ($action === 'approveSafety') {
                 $permitId = $input['permit_id'] ?? null;
                 $criticalManagerId = $input['critical_manager_id'] ?? null;
-                $res = $controller->approveBySafety($permitId, $decoded->id, $criticalManagerId);
+                $comment = $input['comment'] ?? null;
+                $res = $controller->approveBySafety($permitId, $decoded->id, $criticalManagerId, $comment);
             } elseif ($action === 'approveManager') {
                 $permitId = $input['permit_id'] ?? null;
                 $res = $controller->approveByManager($permitId, $decoded->id);
