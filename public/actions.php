@@ -37,6 +37,9 @@ require_once 'helpers/authCheck.php';
                         <option value="overdue">Overdue</option>
                     </select>
 
+                    <input id="assignedSearch" type="search" placeholder="Search assigned to..."
+                        class="hidden border px-4 py-2 rounded-md text-sm w-64" autocomplete="off" />
+
                     <button id="exportExcel"
                         class="bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700">
                         Download Excel
@@ -186,7 +189,13 @@ require_once 'helpers/authCheck.php';
         }
 
         /* ================= FETCH ACTIONS ================= */
+        let fetchController = null;
+
         async function fetchActions() {
+            // إلغاء الطلب السابق حتى لا يرجع رد قديم بعد رد أحدث
+            if (fetchController) fetchController.abort();
+            fetchController = new AbortController();
+
             const params = new URLSearchParams(window.location.search);
             const baseApi = getBaseApi();
 
@@ -200,6 +209,7 @@ require_once 'helpers/authCheck.php';
 
             try {
                 const response = await fetch(finalUrl, {
+                    signal: fetchController.signal,
                     headers: {
                         "Authorization": `Bearer ${TOKEN}`,
                         "Accept": "application/json"
@@ -214,6 +224,7 @@ require_once 'helpers/authCheck.php';
                 renderPagination();
 
             } catch (error) {
+                if (error.name === 'AbortError') return;
                 document.getElementById('actionsTableBody').innerHTML = `
                     <tr>
                         <td colspan="12" class="text-center py-4 text-red-500">
@@ -446,6 +457,30 @@ require_once 'helpers/authCheck.php';
         document.addEventListener("DOMContentLoaded", () => {
             const status = getStatusFromUrl();
             document.getElementById('statusFilter').value = status;
+
+            // البحث باسم المسند له (للي يشوفون كل الأكشنات فقط)
+            if (IS_ADMIN) {
+                const searchInput = document.getElementById('assignedSearch');
+                searchInput.classList.remove('hidden');
+                searchInput.value = new URLSearchParams(window.location.search).get('assigned_name') || '';
+
+                let searchTimer = null;
+                searchInput.addEventListener('input', () => {
+                    clearTimeout(searchTimer);
+                    searchTimer = setTimeout(() => {
+                        const term = searchInput.value.trim();
+                        const params = new URLSearchParams(window.location.search);
+                        if (term === (params.get('assigned_name') || '')) return;
+
+                        term ? params.set('assigned_name', term) : params.delete('assigned_name');
+                        history.replaceState(null, '', '?' + params.toString());
+
+                        currentPage = 1;
+                        fetchActions();
+                    }, 400);
+                });
+            }
+
             fetchActions();
         });
 

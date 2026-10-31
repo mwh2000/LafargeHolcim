@@ -145,7 +145,18 @@ class ActionController
     }
 
     /** ✅ Update Action */
-    public function update(int $id, array $data, array $files = [])
+    /** ✅ المكلّف بالإجراء أو الأدمن فقط */
+    private function isAssigneeOrAdmin(array $action, $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        return (int) ($user->role_id ?? 0) === 1
+            || (int) ($user->id ?? 0) === (int) $action['assigned_user_id'];
+    }
+
+    public function update(int $id, array $data, array $files = [], $user = null)
     {
         // تحقق من وجود السجل
         $check = $this->conn->prepare("SELECT * FROM actions WHERE id = ?");
@@ -153,6 +164,16 @@ class ActionController
         $action = $check->fetch(PDO::FETCH_ASSOC);
         if (!$action) {
             return $this->respond(false, 'Action not found', null, ['code' => 404], 404);
+        }
+
+        // تغيير تاريخ الاستحقاق مسموح فقط للمكلّف أو الأدمن
+        if (array_key_exists('expiry_date', $data)) {
+            $currentDate = substr((string) ($action['expiry_date'] ?? ''), 0, 10);
+            $newDate = substr((string) $data['expiry_date'], 0, 10);
+
+            if ($newDate !== $currentDate && !$this->isAssigneeOrAdmin($action, $user)) {
+                return $this->respond(false, 'You are not allowed to change the due date', null, ['code' => 403], 403);
+            }
         }
 
         $fields = [];
@@ -231,7 +252,7 @@ class ActionController
         return $this->respond(true, 'Action deleted successfully');
     }
 
-    public function updateStatus(int $id, string $status = 'closed', string $note = '')
+    public function updateStatus(int $id, string $status = 'closed', string $note = '', $user = null)
     {
         // تحقق من وجود السجل
         $check = $this->conn->prepare("SELECT * FROM actions WHERE id = ?");
@@ -240,6 +261,14 @@ class ActionController
 
         if (!$action) {
             return $this->respond(false, 'Action not found', null, ['code' => 404], 404);
+        }
+
+        if (!$this->isAssigneeOrAdmin($action, $user)) {
+            return $this->respond(false, 'You are not allowed to change the status of this action', null, ['code' => 403], 403);
+        }
+
+        if ($action['status'] === 'closed') {
+            return $this->respond(false, 'Action is already closed', null, ['code' => 400], 400);
         }
 
         $stmt = $this->conn->prepare("UPDATE actions SET status = ?, note = ? WHERE id = ?");
@@ -432,6 +461,13 @@ class ActionController
                 $baseConditions[] = "a.status = :status";
                 $params[':status'] = $filters['status'];
             }
+        }
+
+        // 🔍 بحث نصي باسم الشخص المسند له
+        $assignedName = trim((string) ($filters['assigned_name'] ?? ''));
+        if ($assignedName !== '') {
+            $baseConditions[] = "u.name LIKE :assigned_name";
+            $params[':assigned_name'] = '%' . addcslashes($assignedName, '%_\\') . '%';
         }
 
         $baseWhere = $baseConditions
@@ -767,6 +803,13 @@ class ActionController
         if (!empty($filters['search'])) {
             $baseConditions[] = "a.description LIKE :search";
             $params[':search'] = '%' . $filters['search'] . '%';
+        }
+
+        // 🔍 بحث نصي باسم الشخص المسند له
+        $assignedName = trim((string) ($filters['assigned_name'] ?? ''));
+        if ($assignedName !== '') {
+            $baseConditions[] = "u.name LIKE :assigned_name";
+            $params[':assigned_name'] = '%' . addcslashes($assignedName, '%_\\') . '%';
         }
 
         $baseWhere = $baseConditions

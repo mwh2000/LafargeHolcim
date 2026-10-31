@@ -63,7 +63,7 @@ try {
             if (!isset($_GET['id'])) {
                 $res = ['success' => false, 'message' => 'Missing ID'];
             } else {
-                $res = $controller->update((int) $_GET['id'], $data);
+                $res = $controller->update((int) $_GET['id'], $data, [], $decoded);
             }
             break;
 

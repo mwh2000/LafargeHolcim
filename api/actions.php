@@ -113,7 +113,7 @@ try {
 
         case 'PUT':
             if ($action === 'update_status' && isset($_GET['id'])) {
-                $res = $controller->updateStatus($_GET['id'], 'closed', $input['note'] ?? '');
+                $res = $controller->updateStatus((int) $_GET['id'], 'closed', $input['note'] ?? '', $decoded);
                 sendJson($res);
             }
             break;
