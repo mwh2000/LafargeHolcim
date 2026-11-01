@@ -279,7 +279,7 @@ class ActionController
 
 
     /** ✅ Get Action by ID */
-    public function getById(int $id)
+    public function getById(int $id, $user = null)
     {
         // 1️⃣ جلب بيانات الأكشن الأساسية
         $stmt = $this->conn->prepare("
@@ -315,6 +315,9 @@ class ActionController
 
         // 3️⃣ إضافة الصور للنتيجة
         $action['images'] = $images; // مصفوفة تحتوي كل الصور
+
+        // 4️⃣ صلاحية تعديل التاريخ والإغلاق (من التوكن وليس الكوكيز)
+        $action['can_manage'] = $this->isAssigneeOrAdmin($action, $user);
 
         return $this->respond(true, 'Action retrieved successfully', $action);
     }

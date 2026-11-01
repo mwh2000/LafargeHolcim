@@ -446,10 +446,7 @@ require_once '../helpers/authCheck.php';
                             document.getElementById("expiry_date").value = toDateInput(a.expiry_date);
 
                             // ✅ تاريخ الاستحقاق: المكلّف أو الأدمن فقط
-                            const CAN_CHANGE_DUE =
-                                "<?= $_COOKIE['user_type'] ?? '' ?>" === "1" ||
-                                "<?= $_COOKIE['user_id'] ?? '' ?>" === String(a.assigned_user_id);
-                            if (!CAN_CHANGE_DUE) {
+                            if (!a.can_manage) {
                                 const dueInput = document.getElementById("expiry_date");
                                 dueInput.readOnly = true;
                                 dueInput.classList.add("bg-gray-100", "cursor-not-allowed");

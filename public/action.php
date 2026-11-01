@@ -320,7 +320,7 @@ require_once 'helpers/authCheck.php';
                 const updateDueBtn = document.getElementById("update_due");
 
                 // Check permissions first
-                if (user_id === String(action.assigned_user_id) || IS_ADMIN) {
+                if (action.can_manage) {
                     updateDueBtn.disabled = false;
                     updateDueBtn.classList.remove("opacity-50", "cursor-not-allowed");
                 } else {
@@ -415,7 +415,7 @@ require_once 'helpers/authCheck.php';
 
                     // السماح بالتغيير فقط إذا:
                     // المستخدم هو المكلّف و الحالة ليست "closed" أو "overdue"
-                    if ((user_id === String(action.assigned_user_id) || IS_ADMIN) && action.status !== "closed" && !isOverdue) {
+                    if (action.can_manage && action.status !== "closed" && !isOverdue) {
                         closeBtn.disabled = false;
                         closeBtn.classList.remove("opacity-50", "cursor-not-allowed");
                     } else {

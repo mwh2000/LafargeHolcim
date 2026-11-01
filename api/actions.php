@@ -96,7 +96,7 @@ try {
             }
 
             if (isset($_GET['id'])) {
-                $res = $controller->getById((int) $_GET['id']);
+                $res = $controller->getById((int) $_GET['id'], $decoded);
             } elseif ($action === 'assigned_to_me') {
                 $res = $controller->getAssignedToMe($user_id, $filters);
             } elseif ($action === 'created_by_me') {
