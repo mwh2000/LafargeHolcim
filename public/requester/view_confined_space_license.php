@@ -163,7 +163,8 @@ $viewerRole = (int)($viewerData['role_id'] ?? 0);
                 const canManageStaff = isCreator || canManagePermit;
                 const isOpen = p.status !== 'closed';
                 const isNotActive = isOpen && p.finishing_time && new Date(p.finishing_time.replace(' ', 'T')) < new Date();
-                document.getElementById('printPermitButton').classList.toggle('hidden', isOpen);
+                const canPrintPermit = ['open', 'closed'].includes(p.status);
+                document.getElementById('printPermitButton').classList.toggle('hidden', !canPrintPermit);
                 const actions = document.getElementById('permitActions');
                 if (isCreator && isOpen) {
                     actions.innerHTML = `${!isNotActive ? `<a class="rounded bg-teal-800 px-4 py-2 text-white" href="add_confined_space_license.php?id=${PERMIT_ID}">تعديل الرخصة</a>` : ''}<button id="closePermit" class="rounded border border-red-700 px-4 py-2 text-red-700">إغلاق الرخصة</button>`;
